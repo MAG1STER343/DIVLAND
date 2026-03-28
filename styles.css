@@ -1,3 +1,5 @@
+.hidden { display: none !important; }
+
 :root {
   --bg: #050505;
   --fg: rgba(255, 255, 255, 0.92);
@@ -236,11 +238,14 @@ a {
   transform: translate3d(0, 0, 0);
   filter: blur(0px);
   pointer-events: auto;
+  overflow-y: auto; /* Allow scrolling within active view */
 }
 
 .homeLayout {
-  height: 100%;
+  min-height: 100vh;
   position: relative;
+  display: flex;
+  flex-direction: column;
 }
 
 .card {
@@ -305,18 +310,27 @@ a {
   display: grid;
   place-items: center;
   padding: 0 16px 18px;
+  position: relative;
+}
+
+/* Both authCard and profileStage live inside same centerStage.
+   They alternate via .hidden class. */
+#profileStage {
+  width: 100%;
+  max-width: 600px;
 }
 
 .customDock {
+  display: none;
   position: absolute;
   right: 22px;
-  bottom: 22px;
-  z-index: 3;
-  width: min(520px, calc(100vw - 44px));
-  display: grid;
   gap: 12px;
   justify-items: end;
   pointer-events: none;
+}
+
+.customDock.is-on {
+  display: grid;
 }
 
 .customDock__card,
@@ -438,6 +452,19 @@ a {
   transform: translateY(1px);
 }
 
+.btn.is-broken {
+  animation: glitchBroken 0.3s steps(2) infinite;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.5s ease-out 0.3s;
+}
+
+@keyframes glitchBroken {
+  0% { transform: translate(2px, -2px); filter: hue-rotate(90deg); }
+  50% { transform: translate(-2px, 2px); filter: hue-rotate(-90deg); }
+  100% { transform: translate(0, 0); }
+}
+
 .btn.primary {
   border-color: rgba(255, 255, 255, 0.22);
   background: rgba(255, 255, 255, 0.12);
@@ -490,14 +517,26 @@ a {
   overflow: hidden;
   border: 1px solid rgba(255, 255, 255, 0.14);
   background: rgba(0, 0, 0, 0.28);
+  aspect-ratio: 1 / 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .caseImg {
   display: block;
   width: 100%;
-  height: auto;
-  filter: grayscale(1) contrast(1.08);
+  height: 100%;
+  object-fit: cover;
+  filter: grayscale(0.6) contrast(1.08);
+  transition: filter 0.4s ease;
 }
+
+.caseImg.is-avatar {
+  filter: none;
+  border-radius: 16px;
+}
+
 
 .caseTextWrap {
   min-height: 220px;
@@ -516,12 +555,29 @@ a {
   min-height: 220px;
 }
 
+/* Expanded DIEVERSI Widget */
+.id-card {
+  width: 580px; /* Expanded from ~420px */
+  padding: 35px;
+  background: rgba(18, 18, 18, 0.75);
+  backdrop-filter: blur(25px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  margin-top: 15vh;
+}
+
+.id-card h2 {
+  font-size: 2.2rem;
+  letter-spacing: 6px;
+  margin-bottom: 25px;
+}
+
 .caseHint {
   margin-top: 10px;
   font-size: 12px;
 }
 
 .libraryBox {
+  display: none !important;
   border-radius: 16px;
   border: 1px solid rgba(255, 255, 255, 0.14);
   background: rgba(0, 0, 0, 0.22);
@@ -709,4 +765,485 @@ a {
     animation: none !important;
     transition: none !important;
   }
+}
+
+/* DIEVERSI Info Repositioning */
+.dieversiInfo {
+  max-width: 440px;
+  margin: 100px auto 0;
+  margin-top: 100px; /* Added for clarity */
+}
+
+.dieversiInfo .cardValue {
+  font-size: 1.4rem;
+  margin: 12px 0;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  color: #fff;
+}
+
+/* User List Styles */
+.user-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-height: 60vh;
+  overflow-y: auto;
+  padding: 10px;
+}
+
+.user-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 15px 20px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.user-item:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.2);
+  transform: translateX(5px);
+}
+
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.user-avatar {
+  width: 45px;
+  height: 45px;
+  background: linear-gradient(135deg, #333, #111);
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.9rem;
+  font-weight: bold;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.7);
+}
+
+.user-name {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 1.1rem;
+}
+
+.view-profile-btn {
+  padding: 8px 16px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #fff;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  transition: all 0.2s;
+}
+
+.view-profile-btn:hover {
+  background: #fff;
+  color: #000;
+}
+
+.logout-btn {
+  margin-top: 20px;
+  background: rgba(255, 50, 50, 0.1);
+  border-color: rgba(255, 50, 50, 0.3) !important;
+}
+
+.logout-btn:hover {
+  background: #ff3232 !important;
+  color: #fff !important;
+}
+
+/* Header User Auth Box */
+.headerUser {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding-left: 12px;
+  border-left: 1px solid var(--stroke);
+  margin-left: 6px;
+  animation: fadeIn 300ms ease;
+}
+
+.headerUser.hidden {
+  display: none !important;
+}
+
+.headerAvatar {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: #fff;
+  background-size: cover;
+  background-position: center;
+  border: 1px solid var(--stroke);
+}
+
+.headerLogin {
+  font-size: 13px;
+  color: rgba(255,255,255,0.8);
+}
+
+.minimal {
+  padding: 4px 8px;
+  font-size: 10px;
+  letter-spacing: 0.5px;
+}
+
+/* Profile Widget Styles */
+.profileStage {
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.profileWidget {
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.profileHeader {
+  display: flex;
+  gap: 24px;
+  align-items: center;
+}
+
+.profileAvatarWrap {
+  width: 100px;
+  height: 100px;
+  border-radius: 12px;
+  background: rgba(0,0,0,0.4);
+  border: 1px solid var(--stroke);
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
+  transition: border-color 0.2s, transform 0.2s;
+}
+
+.profileAvatarWrap:hover.owner-only {
+  border-color: rgba(255,255,255,0.5);
+  transform: scale(1.02);
+}
+
+.profileAvatarEmpty {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--muted);
+}
+
+.pencilIcon {
+  width: 32px;
+  height: 32px;
+  opacity: 0.5;
+  transition: opacity 0.2s;
+}
+
+.profileAvatarWrap:hover.owner-only .pencilIcon {
+  opacity: 1;
+}
+
+#profileAvatarImg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+}
+
+.profileInfoWrap {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.headerRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+
+.userSubText {
+  font-size: 13px;
+}
+
+/* Modals */
+.modal {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0,0,0,0.6);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.modal.hidden {
+  display: none !important;
+}
+
+.modalContent {
+  padding: 24px;
+  border-radius: var(--radius2);
+  width: min(500px, 90vw);
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 30px 60px rgba(0,0,0,0.8);
+}
+
+.wide-modal {
+  width: min(800px, 95vw);
+}
+
+.cropArea {
+  width: 100%;
+  height: 300px;
+  background: #000;
+  margin: 16px 0;
+  position: relative;
+  border: 1px solid var(--stroke);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+#cropCanvas {
+  width: 100%;
+  height: 100%;
+  cursor: grab;
+}
+
+#cropCanvas:active {
+  cursor: grabbing;
+}
+
+/* Split View for Case */
+.splitView {
+  display: flex;
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.splitCol {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.caseTextarea {
+  min-height: 250px;
+  resize: vertical;
+  background: rgba(0,0,0,0.2) !important;
+  font-family: inherit;
+}
+
+.casePreview {
+  min-height: 250px;
+  padding: 12px;
+  border: 1px solid var(--stroke);
+  border-radius: 8px;
+  background: rgba(0,0,0,0.4);
+  font-family: inherit;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+
+.mt-10 { margin-top: 16px; }
+
+/* Themes & Colors */
+.colorPicker {
+  display: flex;
+  gap: 12px;
+  margin-top: 12px;
+  margin-bottom: 24px;
+}
+
+.colorBtn {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition: transform 0.2s, border-color 0.2s;
+  background-size: 200% 200%;
+}
+
+.colorBtn:hover {
+  transform: scale(1.1);
+}
+
+.colorBtn.active {
+  border-color: #fff;
+}
+
+/* Background Gradients for the buttons */
+.colorBtn[data-color="default"] { background: linear-gradient(135deg, #333, #000); }
+.colorBtn[data-color="pink"] { background: linear-gradient(135deg, #ff7eb3, #ff758c); }
+.colorBtn[data-color="green"] { background: linear-gradient(135deg, #4facfe, #00f2fe); }
+.colorBtn[data-color="red"] { background: linear-gradient(135deg, #f093fb, #f5576c); }
+.colorBtn[data-color="purple"] { background: linear-gradient(135deg, #667eea, #764ba2); }
+.colorBtn[data-color="blue"] { background: linear-gradient(135deg, #89f7fe, #66a6ff); }
+
+body[data-theme="pink"] { --theme-glow: 255, 120, 150; }
+body[data-theme="green"] { --theme-glow: 0, 240, 150; }
+body[data-theme="red"] { --theme-glow: 255, 80, 80; }
+body[data-theme="purple"] { --theme-glow: 140, 80, 255; }
+body[data-theme="blue"] { --theme-glow: 80, 180, 255; }
+body[data-theme="default"], body { --theme-glow: 255, 255, 255; }
+
+/* Emojis */
+.emojiGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-top: 16px;
+}
+.emojiItem {
+  width: 48px;
+  height: 48px;
+  cursor: pointer;
+  border: 1px solid var(--stroke);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s;
+  background: rgba(255,255,255,0.05);
+}
+.emojiItem:hover {
+  background: rgba(255,255,255,0.15);
+}
+.emojiSVG {
+  width: 32px;
+  height: 32px;
+  stroke: #fff;
+  fill: none;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* Animated Emojis in text */
+.inline-emoji {
+  display: inline-block;
+  vertical-align: middle;
+  width: 20px;
+  height: 20px;
+  stroke: #fff;
+  fill: none;
+  stroke-width: 2;
+  margin: 0 4px;
+}
+
+@keyframes glitchDash {
+  0% { stroke-dasharray: 10, 20; stroke-dashoffset: 0; }
+  50% { stroke-dasharray: 20, 10; stroke-dashoffset: -20; }
+  100% { stroke-dasharray: 10, 20; stroke-dashoffset: -40; }
+}
+
+.anim-glitchDash { animation: glitchDash 2s infinite linear; }
+
+@keyframes jitter {
+  0%, 100% { transform: translate(0,0); }
+  25% { transform: translate(1px, -1px); }
+  50% { transform: translate(-1px, 1px); }
+  75% { transform: translate(2px, 0); }
+}
+
+.anim-jitter { animation: jitter 0.2s infinite linear; }
+
+@keyframes heartbeat {
+  0%, 100% { transform: scale(1); }
+  15% { transform: scale(1.3); }
+  30% { transform: scale(1); }
+  45% { transform: scale(1.15); }
+}
+.anim-heartbeat { animation: heartbeat 1.5s infinite; filter: drop-shadow(0 0 5px rgba(255,255,255,0.8)); }
+
+@keyframes spin {
+  100% { transform: rotate(360deg); }
+}
+.anim-spin { animation: spin 4s infinite linear; }
+
+.owner-only {
+  display: none !important;
+}
+
+.is-owner .owner-only {
+  display: flex !important;
+}
+.is-owner div.owner-only {
+  display: block !important;
+}
+
+.caseDisplay {
+  padding: 16px;
+  background: rgba(0,0,0,0.3);
+  border: 1px solid var(--stroke);
+  border-radius: 8px;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  margin-top: 16px;
+}
+
+.participant-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 16px;
+  width: 100%;
+  margin-top: 16px;
+}
+
+.participantCard {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--stroke);
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), border-color 0.2s, background 0.2s;
+}
+
+.participantCard:hover {
+  transform: translateY(-5px) scale(1.02);
+  border-color: rgba(255,255,255,0.3);
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.participantCard .user-avatar {
+  width: 64px;
+  height: 64px;
+  font-size: 1.5rem;
+}
+
+.participantCard .avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+}
+
+.pagination {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 24px;
 }

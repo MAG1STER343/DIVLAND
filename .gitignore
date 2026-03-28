@@ -1,3 +1,15 @@
 node_modules/
 server/node_modules/
 .env
+
+# User uploads (these are excluded to keep the GitHub repo small)
+sounds/
+videos/
+avatars/
+
+# Database and data-specific files
+server/data/
+
+# OS specific files
+.DS_Store
+Thumbs.db

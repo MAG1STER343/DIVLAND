@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <meta name="color-scheme" content="dark" />
     <title>DIEVERSI</title>
-    <link rel="stylesheet" href="./styles.css" />
+    <link rel="stylesheet" href="/styles.css" />
   </head>
   <body>
     <video id="profileVideoBg" class="profileVideoBg" muted playsinline loop aria-hidden="true"></video>
@@ -23,50 +23,53 @@
     <header class="topbar">
       <nav class="nav glass">
         <button class="navBtn is-active" type="button" data-nav="home">Главная</button>
+        <button class="navBtn" type="button" data-nav="participants">Участники</button>
         <button class="navBtn" type="button" data-nav="profile">Профиль</button>
         <button class="navBtn" type="button" data-nav="dieversi">DIEVERSI</button>
         <button class="navBtn" type="button" data-nav="discord">DISCORD</button>
+        
+        <div class="headerUser hidden" id="headerUser">
+          <div class="headerAvatar" id="headerAvatar"></div>
+          <span class="headerLogin mono" id="headerLogin">—</span>
+          <button class="btn ghost minimal" id="headerLogout">ВЫХОД</button>
+        </div>
       </nav>
     </header>
 
     <main class="app" id="app">
+      <!-- Home View -->
       <section class="view is-active" data-view="home">
         <div class="homeLayout">
-          <article class="card glass infoCard glitchCard">
-            <div class="glitchTitle glitch-on-hover" data-text="DIEVERSI">
-              <span class="glitchTitle__base">DIEVERSI</span>
+          <article class="card glass dieversiInfo id-card glitchCard">
+            <div class="cardTitle">DIEVERSI</div>
+            <div class="cardValue">
+              Навигация сверху !
             </div>
-            <p class="muted glitch-on-hover">
-              Этот сайт создан <span class="mono">DIEVERSI</span>.<br />
-              Чёрно‑белая эстетика, глич и стекло.
-            </p>
-            <div class="chips">
+            <div class="cardHint muted">MAGISTER — DIEVERSI</div>
+            <div class="chipContainer">
               <span class="chip">black/white</span>
               <span class="chip">glass</span>
               <span class="chip">glitch</span>
             </div>
           </article>
+        </div>
+      </section>
 
-          <div class="bottomWidgets">
-            <article class="card glass glitchCard">
-              <div class="cardTitle">Статус</div>
-              <div class="cardValue mono" id="statusText">ONLINE</div>
-              <div class="cardHint muted">Демо‑интерфейс (без сервера)</div>
-            </article>
-            <article class="card glass glitchCard">
-              <div class="cardTitle">Время</div>
-              <div class="cardValue mono" id="clock">--:--:--</div>
-              <div class="cardHint muted">Локальное время</div>
-            </article>
-            <article class="card glass glitchCard">
-              <div class="cardTitle">Навигация</div>
-              <div class="cardValue">Профиль / DIEVERSI / DISCORD</div>
-              <div class="cardHint muted">Кнопки сверху</div>
-            </article>
+      <!-- Participants View -->
+      <section class="view" data-view="participants">
+        <div class="centerStage">
+          <div class="glass-card full-card">
+            <div class="card-header">
+              <span class="card-label">СИСТЕМА — УЧАСТНИКИ</span>
+            </div>
+            <div id="participants-list" class="user-list">
+              <div class="loading">Получение данных...</div>
+            </div>
           </div>
         </div>
       </section>
 
+      <!-- Profile View -->
       <section class="view" data-view="profile">
         <div class="centerStage">
           <article class="card glass authCard glitchCard" id="authCard">
@@ -117,40 +120,102 @@
               </form>
             </div>
           </article>
-        </div>
 
-        <div class="customDock" id="customDock" hidden>
-          <article class="card glass customDock__card">
-            <div class="customDock__top">
-              <div class="cardTitle">Профиль</div>
-              <div class="muted mono" id="mySlug">u/—</div>
-            </div>
-            <button class="btn ghost" type="button" id="customizeBtn">Кастомизация</button>
-            <div class="row muted" style="margin-top:10px;">
-              <span class="mono" id="myProfileLink">—</span>
-              <button class="btn" type="button" id="copyProfileLink">Копировать</button>
-            </div>
-          </article>
-
-          <article class="card glass customPanel" id="customPanel" hidden>
-            <div class="cardTitle">Кастомизация</div>
-            <div class="customGrid">
-              <div class="customItem">
-                <div class="muted">Звук профиля (mp3 ≤ 40MB)</div>
-                <input class="fileInput" id="audioFile" type="file" accept=".mp3,audio/mpeg" />
-                <button class="btn" type="button" id="pickAudio">Выбрать MP3</button>
-                <div class="muted mono" id="audioName">—</div>
+          <!-- Profile info widget (shown when logged in) -->
+          <article class="card glass wide glitchCard profileWidget hidden" id="profileStage">
+            <div class="profileHeader">
+              <div class="profileAvatarWrap" id="profileAvatarBtn">
+                <div class="profileAvatarEmpty">
+                  <svg viewBox="0 0 24 24" fill="none" class="pencilIcon"><path d="M18.36 5.64a2.828 2.828 0 10-4-4L3 13V17h4l11.36-11.36z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </div>
+                <img id="profileAvatarImg" src="" hidden alt="Avatar" />
               </div>
-              <div class="customItem">
-                <div class="muted">Видео профиля (mp4 ≤ 50MB, без звука)</div>
-                <input class="fileInput" id="videoFile" type="file" accept=".mp4,video/mp4" />
-                <button class="btn" type="button" id="pickVideo">Выбрать MP4</button>
-                <div class="muted mono" id="videoName">—</div>
+
+              <div class="profileInfoWrap">
+                <div class="row headerRow">
+                  <div class="glitchTitle" data-text="PROFILE" id="profileUsername">
+                    <span class="glitchTitle__base">PROFILE</span>
+                  </div>
+                  <button class="btn primary glitch-on-hover owner-only" type="button" id="createCaseBtn">Создать дело</button>
+                </div>
+                <div class="muted mono userSubText" id="profileLinkBox">u/—</div>
+              </div>
+            </div>
+
+            <div class="hr"></div>
+
+            <div class="caseDisplay" id="caseDisplay" hidden>
+              <!-- Renders user case text + emojis -->
+            </div>
+
+            <div class="owner-only">
+              <div class="cardTitle">Оформление</div>
+              <div class="colorPicker" id="colorPicker">
+                <!-- Data attributes define custom color themes via CSS vars -->
+                <button class="colorBtn active" data-color="default"></button>
+                <button class="colorBtn" data-color="pink"></button>
+                <button class="colorBtn" data-color="green"></button>
+                <button class="colorBtn" data-color="red"></button>
+                <button class="colorBtn" data-color="purple"></button>
+                <button class="colorBtn" data-color="blue"></button>
+              </div>
+
+              <div class="mediaControls row">
+                <button class="btn ghost" type="button" id="pickAudioBtn">Добавить музыку</button>
+                <button class="btn ghost" type="button" id="removeAudioBtn" hidden>Убрать музыку</button>
+                <input class="fileInput" id="audioFile" type="file" accept=".mp3" hidden />
+                
+                <button class="btn ghost" type="button" id="pickVideoBtn">Добавить видео фон</button>
+                <button class="btn ghost" type="button" id="removeVideoBtn" hidden>Убрать фон</button>
+                <input class="fileInput" id="videoFile" type="file" accept=".mp4" hidden />
               </div>
             </div>
           </article>
         </div>
       </section>
+
+      <!-- Modals (Overlay views) -->
+      <div class="modal hidden" id="cropModal">
+        <div class="modalContent glass">
+          <div class="cardTitle">Обрезка аватара</div>
+          <div class="cropArea">
+            <canvas id="cropCanvas"></canvas>
+          </div>
+          <div class="row right">
+            <button class="btn ghost" id="cropResetBtn">Сброс</button>
+            <button class="btn primary" id="cropDoneBtn">Готово</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal hidden" id="caseModal">
+        <div class="modalContent glass wide-modal">
+          <div class="cardTitle">Дело (Case)</div>
+          <div class="splitView">
+            <div class="splitCol">
+              <textarea class="input caseTextarea" id="caseInput" placeholder="Введите информацию..."></textarea>
+            </div>
+            <div class="splitCol">
+              <div class="casePreview" id="casePreview"></div>
+            </div>
+          </div>
+          <div class="row right mt-10">
+            <button class="btn ghost" id="emojiBtn">Эмодзи</button>
+            <button class="btn ghost" id="caseCancelBtn">Отмена</button>
+            <button class="btn primary" id="caseDoneBtn">Готово</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal hidden" id="emojiModal">
+        <div class="modalContent glass">
+          <div class="cardTitle">Эмодзи</div>
+          <div class="emojiGrid" id="emojiGrid">
+            <!-- Populated by JS -->
+          </div>
+          <button class="btn primary mt-10" id="emojiCloseBtn" style="width: 100%;">Закрыть</button>
+        </div>
+      </div>
 
       <section class="view" data-view="dieversi">
         <div class="centerStage">
@@ -167,7 +232,12 @@
 
             <div class="caseLayout">
               <div class="caseImgWrap">
-                <img class="caseImg" src="./assets/dieversi-case.png" alt="DIEVERSI" loading="lazy" />
+                <img
+                  id="dieversiCaseImg"
+                  src="/assets/dieversi-case.png"
+                  alt="DIEVERSI case"
+                  class="caseImg glitch-on-hover"
+                />
               </div>
               <div class="caseTextWrap">
                 <pre class="caseText mono glitch-on-hover" id="caseOutput" aria-live="polite"></pre>
@@ -178,7 +248,7 @@
             </div>
 
             <div class="hr"></div>
-            <div class="libraryBox">
+            <div class="libraryBox" style="display: none !important;">
               <div class="cardTitle">DIEVERSI / Library</div>
               <div class="libraryRow">
                 <span class="muted">Sound:</span>
@@ -194,29 +264,7 @@
         </div>
       </section>
 
-      <section class="view" data-view="publicProfile">
-        <div class="centerStage">
-          <article class="card glass wide glitchCard">
-            <div class="glitchTitle glitch-on-hover" data-text="PROFILE">
-              <span class="glitchTitle__base">PROFILE</span>
-            </div>
-            <p class="muted glitch-on-hover" id="publicSubtitle">Загрузка профиля…</p>
-            <div class="hr"></div>
-            <div class="twoCol">
-              <div>
-                <div class="cardTitle">Информация</div>
-                <div class="mono" id="publicInfo">—</div>
-              </div>
-              <div>
-                <div class="cardTitle">Медиа</div>
-                <div class="row" style="margin-top:10px;">
-                  <span class="muted mono" id="mediaStatus">—</span>
-                </div>
-              </div>
-            </div>
-          </article>
-        </div>
-      </section>
+<!-- publicProfile view deleted as we use data-view="profile" for both -->
 
       <section class="view" data-view="discord">
         <div class="centerStage">
@@ -242,6 +290,6 @@
       <div class="toast__text" id="toastText">...</div>
     </div>
 
-    <script src="./script.js"></script>
+    <script src="/script.js"></script>
   </body>
 </html>

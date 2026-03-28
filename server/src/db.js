@@ -80,7 +80,10 @@ function migrate(db) {
       verified_at TEXT NULL,
       created_at TEXT NOT NULL,
       audio_path TEXT NULL,
-      video_path TEXT NULL
+      video_path TEXT NULL,
+      avatar_path TEXT NULL,
+      bg_color TEXT NULL,
+      case_text TEXT NULL
     );
 
     CREATE TABLE IF NOT EXISTS email_verifications (
@@ -102,6 +105,9 @@ function migrate(db) {
       FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
     );
   `);
+  ['avatar_path', 'bg_color', 'case_text'].forEach(col => {
+    try { db.exec(`ALTER TABLE users ADD COLUMN ${col} TEXT NULL`); } catch(e){}
+  });
 }
 
 function nowIso() {

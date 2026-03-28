@@ -16,10 +16,12 @@ const ROOT_DIR = path.join(__dirname, "..", "..");
 const SOUNDS_DIR = path.join(ROOT_DIR, "sounds");
 const VIDEOS_DIR = path.join(ROOT_DIR, "videos");
 const ASSETS_DIR = path.join(ROOT_DIR, "assets");
+const AVATARS_DIR = path.join(ROOT_DIR, "avatars");
 const TEMP_DIR = path.join(__dirname, "..", "data", "tmp");
 
 fs.mkdirSync(SOUNDS_DIR, { recursive: true });
 fs.mkdirSync(VIDEOS_DIR, { recursive: true });
+fs.mkdirSync(AVATARS_DIR, { recursive: true });
 fs.mkdirSync(TEMP_DIR, { recursive: true });
 
 const app = express();
@@ -31,43 +33,16 @@ app.get("/favicon.ico", (req, res) => res.status(204).end());
 app.get("/", (req, res) => res.sendFile(path.join(ROOT_DIR, "index.html")));
 app.get("/styles.css", (req, res) => res.sendFile(path.join(ROOT_DIR, "styles.css")));
 app.get("/script.js", (req, res) => res.sendFile(path.join(ROOT_DIR, "script.js")));
-app.use("/assets", express.static(ASSETS_DIR));
 
-// Uploaded media
+// Routes that should NOT be handled by SPA wildcard should come first
+app.use("/assets", express.static(ASSETS_DIR));
 app.use("/sounds", express.static(SOUNDS_DIR));
 app.use("/videos", express.static(VIDEOS_DIR));
+app.use("/avatars", express.static(AVATARS_DIR));
 
-// Public: show first files in sounds/videos as DIEVERSI's
-app.get("/api/library/first", (req, res) => {
-  try {
-    const sound = pickFirstFile(SOUNDS_DIR, [".mp3"]);
-    const video = pickFirstFile(VIDEOS_DIR, [".mp4"]);
-    return res.json({
-      ok: true,
-      sound: sound ? { name: sound, url: `/sounds/${sound}` } : null,
-      video: video ? { name: video, url: `/videos/${video}` } : null,
-    });
-  } catch (e) {
-    // eslint-disable-next-line no-console
-    console.error(e);
-    return bad(res, 500, "Ошибка");
-  }
-});
-
-function pickFirstFile(dir, exts) {
-  if (!fs.existsSync(dir)) return null;
-  const list = fs
-    .readdirSync(dir, { withFileTypes: true })
-    .filter((d) => d.isFile())
-    .map((d) => d.name)
-    .filter((name) => exts.indexOf(path.extname(name).toLowerCase()) >= 0)
-    .sort((a, b) => a.localeCompare(b));
-  return list.length ? list[0] : null;
-}
-
-const SITE_NAME = process.env.SITE_NAME || "UNNVERSI";
-const COOKIE_NAME = process.env.SESSION_COOKIE || "unnversi_session";
-const SESSION_TTL_DAYS = Number(process.env.SESSION_TTL_DAYS || 14);
+const SITE_NAME = process.env.SITE_NAME || "DIIEVERSI";
+const COOKIE_NAME = process.env.SESSION_COOKIE || "dieversi_session";
+const SESSION_TTL_DAYS = 14;
 
 let db;
 
@@ -127,13 +102,24 @@ function setSessionCookie(res, token) {
   res.setHeader("Set-Cookie", attrs.join("; "));
 }
 
+function verifyPassword(password, stored) {
+  const parts = String(stored).split("$");
+  if (parts.length !== 5) return false;
+  const [algoName, algo, iterStr, salt, hash] = parts;
+  if (algoName !== "pbkdf2" || algo !== "sha256") return false;
+  const iters = Number(iterStr);
+  if (!iters || iters < 20000) return false;
+  const h = crypto.pbkdf2Sync(password, salt, iters, 32, "sha256").toString("hex");
+  return crypto.timingSafeEqual(Buffer.from(h, "hex"), Buffer.from(hash, "hex"));
+}
+
 // --- Auth: register
 app.post("/api/auth/register", async (req, res) => {
   try {
     const username = validateString(req.body?.username, { min: 2, max: 40 });
     const login = validateString(req.body?.login, { min: 2, max: 40 });
-    const password = validateString(req.body?.password, { min: 6, max: 120 });
-    if (!username || !login || !password) return bad(res, 400, "Некорректные данные");
+    const password = validateString(req.body?.password, { min: 2, max: 120 });
+    if (!username || !login || !password) return bad(res, 400, "Некорректные данные (min 2 символа)");
 
     const loginNorm = login.toLowerCase();
     const emailNorm = `${loginNorm}@local.invalid`;
@@ -141,7 +127,6 @@ app.post("/api/auth/register", async (req, res) => {
     const exists = db.get("SELECT id FROM users WHERE login = ? LIMIT 1", [loginNorm]);
     if (exists) return bad(res, 409, "Пользователь с таким логином уже существует");
 
-    // password hash (pbkdf2 for no extra deps)
     const salt = crypto.randomBytes(16).toString("hex");
     const hash = crypto.pbkdf2Sync(password, salt, 120000, 32, "sha256").toString("hex");
     const passwordHash = `pbkdf2$sha256$120000$${salt}$${hash}`;
@@ -151,13 +136,25 @@ app.post("/api/auth/register", async (req, res) => {
 
     const createdAt = nowIso();
     const ins = db.run(
-      "INSERT INTO users(username, login, email, password_hash, slug, verified_at, created_at) VALUES(?,?,?,?,?,?,?)",
-      [username, loginNorm, emailNorm, passwordHash, slug, nowIso(), createdAt]
+      "INSERT INTO users(username, login, email, password_hash, slug, created_at) VALUES(?,?,?,?,?,?)",
+      [username, loginNorm, emailNorm, passwordHash, slug, createdAt]
     );
     const userId = Number(ins.lastInsertRowid);
+
+    // Create session directly
+    const token = randomToken(32);
+    const tokenHash = sha256Hex(token);
+    const expiresAt = new Date(Date.now() + SESSION_TTL_DAYS * 24 * 60 * 60 * 1000).toISOString();
+    db.run("INSERT INTO sessions(user_id, token_hash, expires_at, created_at) VALUES(?,?,?,?)", [
+      userId,
+      tokenHash,
+      expiresAt,
+      createdAt,
+    ]);
+    setSessionCookie(res, token);
+
     return res.json({ ok: true, userId });
   } catch (e) {
-    // eslint-disable-next-line no-console
     console.error(e);
     return bad(res, 500, "Ошибка регистрации");
   }
@@ -167,10 +164,10 @@ app.post("/api/auth/register", async (req, res) => {
 app.post("/api/auth/login", (req, res) => {
   try {
     const login = validateString(req.body?.login, { min: 2, max: 80 });
-    const password = validateString(req.body?.password, { min: 6, max: 120 });
+    const password = validateString(req.body?.password, { min: 2, max: 120 });
     if (!login || !password) return bad(res, 400, "Некорректные данные");
 
-    const user = db.get("SELECT id, password_hash, verified_at FROM users WHERE login = ? LIMIT 1", [
+    const user = db.get("SELECT id, password_hash FROM users WHERE login = ? LIMIT 1", [
       login.toLowerCase(),
     ]);
     if (!user) return bad(res, 400, "Неверный логин или пароль");
@@ -190,7 +187,6 @@ app.post("/api/auth/login", (req, res) => {
     setSessionCookie(res, token);
     return res.json({ ok: true });
   } catch (e) {
-    // eslint-disable-next-line no-console
     console.error(e);
     return bad(res, 500, "Ошибка входа");
   }
@@ -207,7 +203,6 @@ app.post("/api/auth/logout", requireAuth, (req, res) => {
     );
     return res.json({ ok: true });
   } catch (e) {
-    // eslint-disable-next-line no-console
     console.error(e);
     return bad(res, 500, "Ошибка выхода");
   }
@@ -216,7 +211,7 @@ app.post("/api/auth/logout", requireAuth, (req, res) => {
 // --- Auth: current user
 app.get("/api/me", requireAuth, (req, res) => {
   try {
-    const u = db.get("SELECT username, login, slug, audio_path, video_path FROM users WHERE id = ? LIMIT 1", [
+    const u = db.get("SELECT username, login, slug, audio_path, video_path, avatar_path, bg_color, case_text FROM users WHERE id = ? LIMIT 1", [
       req.user.id,
     ]);
     if (!u) return bad(res, 404, "Пользователь не найден");
@@ -228,25 +223,16 @@ app.get("/api/me", requireAuth, (req, res) => {
         slug: u.slug,
         audioUrl: u.audio_path || null,
         videoUrl: u.video_path || null,
+        avatarUrl: u.avatar_path || null,
+        bgColor: u.bg_color || "default",
+        caseText: u.case_text || null,
       },
     });
   } catch (e) {
-    // eslint-disable-next-line no-console
     console.error(e);
     return bad(res, 500, "Ошибка");
   }
 });
-
-function verifyPassword(password, stored) {
-  const parts = String(stored).split("$");
-  if (parts.length !== 6) return false;
-  const [, algo, iterStr, , salt, hash] = parts;
-  if (algo !== "sha256") return false;
-  const iters = Number(iterStr);
-  if (!iters || iters < 20000) return false;
-  const h = crypto.pbkdf2Sync(password, salt, iters, 32, "sha256").toString("hex");
-  return crypto.timingSafeEqual(Buffer.from(h, "hex"), Buffer.from(hash, "hex"));
-}
 
 // --- Uploads
 const upload = multer({
@@ -276,7 +262,6 @@ app.post("/api/media/audio", requireAuth, upload.single("file"), (req, res) => {
     db.run("UPDATE users SET audio_path = ? WHERE id = ?", [rel, req.user.id]);
     return res.json({ ok: true, audioUrl: rel });
   } catch (e) {
-    // eslint-disable-next-line no-console
     console.error(e);
     return bad(res, 500, "Ошибка загрузки аудио");
   }
@@ -286,10 +271,6 @@ app.post("/api/media/video", requireAuth, upload.single("file"), async (req, res
   try {
     const f = req.file;
     if (!f) return bad(res, 400, "Файл не получен");
-    if (f.size > 50 * 1024 * 1024) {
-      safeUnlink(f.path);
-      return bad(res, 400, "MP4 должен весить не больше 50MB");
-    }
     const ext = path.extname(f.originalname).toLowerCase();
     if (ext !== ".mp4") {
       safeUnlink(f.path);
@@ -308,57 +289,29 @@ app.post("/api/media/video", requireAuth, upload.single("file"), async (req, res
     db.run("UPDATE users SET video_path = ? WHERE id = ?", [rel, req.user.id]);
     return res.json({ ok: true, videoUrl: rel });
   } catch (e) {
-    // eslint-disable-next-line no-console
     console.error(e);
     return bad(res, 500, "Ошибка загрузки видео");
   }
 });
 
 function safeUnlink(p) {
-  try {
-    fs.unlinkSync(p);
-  } catch (_) {
-    // ignore
-  }
+  try { fs.unlinkSync(p); } catch (_) {}
 }
 
 function stripAudioWithFfmpeg(inputPath, outPath) {
   const ffmpeg = process.env.FFMPEG_PATH || "ffmpeg";
-  const argsFast = ["-y", "-i", inputPath, "-c:v", "copy", "-an", outPath];
-
+  const args = ["-y", "-i", inputPath, "-c:v", "copy", "-an", outPath];
   return new Promise((resolve, reject) => {
-    const p = spawn(ffmpeg, argsFast, { stdio: ["ignore", "pipe", "pipe"] });
-    let err = "";
-    p.on("error", (e) => {
-      reject(new Error(`ffmpeg не найден. Установи ffmpeg и добавь в PATH, либо укажи FFMPEG_PATH.\n${e.message}`));
-    });
-    p.stderr.on("data", (d) => {
-      err += d.toString();
-    });
-    p.on("close", (code) => {
-      if (code === 0) return resolve();
-      // fallback: re-encode video if stream copy fails
-      const argsSlow = ["-y", "-i", inputPath, "-c:v", "libx264", "-preset", "veryfast", "-crf", "23", "-an", outPath];
-      const p2 = spawn(ffmpeg, argsSlow, { stdio: ["ignore", "pipe", "pipe"] });
-      let err2 = "";
-      p2.on("error", (e) => {
-        reject(new Error(`ffmpeg ошибка: ${e.message}`));
-      });
-      p2.stderr.on("data", (d) => {
-        err2 += d.toString();
-      });
-      p2.on("close", (code2) => {
-        if (code2 === 0) return resolve();
-        return reject(new Error(`ffmpeg failed: ${err}\n---fallback---\n${err2}`));
-      });
-    });
+    const p = spawn(ffmpeg, args);
+    p.on("error", (e) => reject(new Error("ffmpeg not found")));
+    p.on("close", (code) => code === 0 ? resolve() : reject(new Error("ffmpeg failed")));
   });
 }
 
-// --- Public profile
+// --- Public APIs
 app.get("/api/profile/:slug", (req, res) => {
   const slug = String(req.params.slug || "").toLowerCase();
-  const u = db.get("SELECT username, login, slug, created_at, audio_path, video_path FROM users WHERE slug = ? LIMIT 1", [
+  const u = db.get("SELECT username, login, slug, created_at, audio_path, video_path, avatar_path, bg_color, case_text FROM users WHERE slug = ? LIMIT 1", [
     slug,
   ]);
   if (!u) return bad(res, 404, "Профиль не найден");
@@ -371,49 +324,94 @@ app.get("/api/profile/:slug", (req, res) => {
       createdAt: u.created_at,
       audioUrl: u.audio_path || null,
       videoUrl: u.video_path || null,
+      avatarUrl: u.avatar_path || null,
+      bgColor: u.bg_color || "default",
+      caseText: u.case_text || null,
     },
   });
 });
 
-// SPA fallback for profile links
-app.get(["/u/:slug", "/profile/:slug"], (req, res) => {
-  res.sendFile(path.join(ROOT_DIR, "index.html"));
+app.post("/api/profile/update", requireAuth, (req, res) => {
+  try {
+    const body = req.body || {};
+    const updates = [];
+    const params = [];
+    
+    if (body.bgColor !== undefined) {
+      updates.push("bg_color = ?");
+      params.push(String(body.bgColor).trim());
+    }
+    if (body.caseText !== undefined) {
+      updates.push("case_text = ?");
+      params.push(String(body.caseText).trim());
+    }
+    
+    if (updates.length > 0) {
+      params.push(req.user.id);
+      db.run(`UPDATE users SET ${updates.join(", ")} WHERE id = ?`, params);
+    }
+    
+    return res.json({ ok: true });
+  } catch (e) {
+    console.error(e);
+    return bad(res, 500, "Ошибка обновления профиля");
+  }
 });
 
-const preferredPort = Number(process.env.PORT || 3000);
-async function main() {
-  db = await openDb();
-  await listenWithFallback(preferredPort, 12);
-}
+app.post("/api/media/avatar", requireAuth, upload.single("file"), (req, res) => {
+  try {
+    const f = req.file;
+    if (!f) return bad(res, 400, "Файл не получен");
+    const name = `a${req.user.id}-${Date.now()}-${crypto.randomBytes(4).toString("hex")}.png`;
+    const dest = path.join(AVATARS_DIR, name);
+    fs.renameSync(f.path, dest);
+    
+    const rel = `/avatars/${name}`;
+    db.run("UPDATE users SET avatar_path = ? WHERE id = ?", [rel, req.user.id]);
+    return res.json({ ok: true, avatarUrl: rel });
+  } catch (e) {
+    console.error(e);
+    return bad(res, 500, "Ошибка загрузки аватара");
+  }
+});
 
-main().catch((e) => {
-  // eslint-disable-next-line no-console
-  console.error(e);
-  process.exit(1);
+app.get("/api/users", (req, res) => {
+  try {
+    const users = db.all("SELECT username, login, slug, created_at, avatar_path FROM users ORDER BY id DESC");
+    return res.json({ ok: true, users });
+  } catch (e) {
+    return bad(res, 500, "Ошибка");
+  }
+});
+
+// --- SPA Wildcard
+app.get("*", (req, res) => {
+  res.sendFile(path.join(ROOT_DIR, "index.html"));
 });
 
 function listenWithFallback(port, attemptsLeft) {
   return new Promise((resolve, reject) => {
     const server = app.listen(port, () => {
-      // eslint-disable-next-line no-console
-      console.log(`[server] ${SITE_NAME} listening on http://localhost:${port}`);
+      console.log(`[server] listening on http://localhost:${port}`);
       resolve();
     });
     server.on("error", (e) => {
-      if (e && e.code === "EADDRINUSE" && attemptsLeft > 0) {
-        // eslint-disable-next-line no-console
-        console.warn(`[server] port ${port} busy, trying ${port + 1}…`);
-        try {
-          server.close();
-        } catch (_) {
-          // ignore
-        }
+      if (e.code === "EADDRINUSE" && attemptsLeft > 0) {
         return resolve(listenWithFallback(port + 1, attemptsLeft - 1));
       }
-      // eslint-disable-next-line no-console
-      console.error("[server] listen error:", e?.message || e);
-      return reject(e);
+      reject(e);
     });
   });
 }
 
+async function start() {
+  try {
+    db = await openDb();
+    await listenWithFallback(3000, 15);
+  } catch (e) {
+    console.error(e);
+    process.exit(1);
+  }
+}
+
+start();
