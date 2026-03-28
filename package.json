@@ -5,5 +5,11 @@
   "description": "Root package for DIIEVERSI deployment",
   "engines": {
     "node": ">=20.0.0"
+  },
+  "dependencies": {
+    "dotenv": "^16.6.1",
+    "express": "^4.21.2",
+    "multer": "^2.0.2",
+    "sql.js": "^1.13.0"
   }
 }
