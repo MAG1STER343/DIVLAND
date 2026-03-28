@@ -191,7 +191,7 @@ app.post("/api/auth/register", async (req, res) => {
     return res.json({ ok: true, userId });
   } catch (e) {
     console.error(e);
-    return bad(res, 500, "Ошибка регистрации");
+    return res.status(500).json({ ok: false, error: "Ошибка регистрации", details: e.message, stack: e.stack });
   }
 });
 
