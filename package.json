@@ -1,0 +1,9 @@
+{
+  "name": "dieversi-root",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Root package for DIIEVERSI deployment",
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}
