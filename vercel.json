@@ -3,11 +3,11 @@
   "rewrites": [
     {
       "source": "/api/(.*)",
-      "destination": "/server/src/index.js"
+      "destination": "/api/index.js"
     },
     {
       "source": "/auth/(.*)",
-      "destination": "/server/src/index.js"
+      "destination": "/api/index.js"
     },
     {
       "source": "/(main|profile|diversi|discord)",
