@@ -35,6 +35,31 @@ if (isVercel) {
 }
 
 const app = express();
+let db = null;
+let dbInitialization = null;
+
+async function getDb() {
+  if (db) return db;
+  if (!dbInitialization) {
+    dbInitialization = openDb().then(instance => {
+      db = instance;
+      return db;
+    });
+  }
+  return dbInitialization;
+}
+
+// Middleware to ensure DB is initialized
+app.use(async (req, res, next) => {
+  try {
+    await getDb();
+    next();
+  } catch (e) {
+    console.error("DB Initialization failed:", e);
+    res.status(500).json({ status: "error", message: "Database initialization failed" });
+  }
+});
+
 app.disable("x-powered-by");
 app.use(express.json({ limit: "1mb" }));
 
@@ -54,7 +79,7 @@ const SITE_NAME = process.env.SITE_NAME || "DIIEVERSI";
 const COOKIE_NAME = process.env.SESSION_COOKIE || "dieversi_session";
 const SESSION_TTL_DAYS = 14;
 
-let db;
+// global db is initialized via getDb() middleware
 
 function bad(res, status, message) {
   return res.status(status).json({ ok: false, error: message });
@@ -416,16 +441,15 @@ function listenWithFallback(port, attemptsLeft) {
 
 async function start() {
   try {
-    db = await openDb();
-    await listenWithFallback(3000, 15);
+    await getDb();
+    if (require.main === module) {
+       await listenWithFallback(3000, 15);
+    }
   } catch (e) {
-    console.error(e);
-    process.exit(1);
+    console.error("FAILED TO START SERVER:", e);
   }
 }
 
-if (require.main === module) {
-  start();
-}
+start();
 
 module.exports = app;
