@@ -2,8 +2,14 @@ const path = require("node:path");
 const fs = require("node:fs");
 
 async function openDb() {
-  const dbPath = path.join(__dirname, "..", "data", "db.sqlite");
-  fs.mkdirSync(path.dirname(dbPath), { recursive: true });
+  const isVercel = process.env.VERCEL === "1";
+  const dbPath = isVercel 
+    ? path.join("/tmp", "db.sqlite") 
+    : path.join(__dirname, "..", "data", "db.sqlite");
+    
+  if (!isVercel) {
+    fs.mkdirSync(path.dirname(dbPath), { recursive: true });
+  }
 
   // sql.js is a WASM SQLite build (no native компиляции на Windows)
   // eslint-disable-next-line global-require

@@ -12,17 +12,27 @@ const { sha256Hex, randomToken } = require("./security");
 
 dotenv.config({ path: path.join(__dirname, "..", ".env") });
 
+const isVercel = process.env.VERCEL === "1";
 const ROOT_DIR = path.join(__dirname, "..", "..");
-const SOUNDS_DIR = path.join(ROOT_DIR, "sounds");
-const VIDEOS_DIR = path.join(ROOT_DIR, "videos");
+const SOUNDS_DIR = isVercel ? path.join("/tmp", "sounds") : path.join(ROOT_DIR, "sounds");
+const VIDEOS_DIR = isVercel ? path.join("/tmp", "videos") : path.join(ROOT_DIR, "videos");
 const ASSETS_DIR = path.join(ROOT_DIR, "assets");
-const AVATARS_DIR = path.join(ROOT_DIR, "avatars");
-const TEMP_DIR = path.join(__dirname, "..", "data", "tmp");
+const AVATARS_DIR = isVercel ? path.join("/tmp", "avatars") : path.join(ROOT_DIR, "avatars");
+const TEMP_DIR = isVercel ? path.join("/tmp", "data", "tmp") : path.join(__dirname, "..", "data", "tmp");
 
 fs.mkdirSync(SOUNDS_DIR, { recursive: true });
 fs.mkdirSync(VIDEOS_DIR, { recursive: true });
 fs.mkdirSync(AVATARS_DIR, { recursive: true });
 fs.mkdirSync(TEMP_DIR, { recursive: true });
+
+// Vercel: copy original assets to /tmp so they can be served
+if (isVercel) {
+  const origSound = path.join(ROOT_DIR, "sounds", "diversipapa.mp3");
+  const destSound = path.join(SOUNDS_DIR, "diversipapa.mp3");
+  if (fs.existsSync(origSound) && !fs.existsSync(destSound)) {
+    fs.copyFileSync(origSound, destSound);
+  }
+}
 
 const app = express();
 app.disable("x-powered-by");
