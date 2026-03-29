@@ -6,10 +6,12 @@ const path = require("node:path");
  * Expects POSTGRES_URL or DATABASE_URL in environment.
  */
 async function openDb() {
-  // Use any available Postgres connection string
+  // Use any available Postgres connection string (searching for both standard and prefixed names found in logs)
   const connectionString = 
     process.env.POSTGRES_URL || 
     process.env.DATABASE_URL || 
+    process.env.DIVI_POSTGRES_URL ||
+    process.env.DIVI_DATABASE_URL ||
     process.env.POSTGRES_PRISMA_URL ||
     process.env.POSTGRES_URL_NON_POOLING;
   
