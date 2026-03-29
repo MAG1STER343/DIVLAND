@@ -1,90 +1,71 @@
+const { Pool } = require("pg");
 const path = require("node:path");
-const fs = require("node:fs");
 
+/**
+ * Open connection to Vercel Postgres.
+ * Expects POSTGRES_URL or DATABASE_URL in environment.
+ */
 async function openDb() {
-  const isVercel = process.env.VERCEL === "1";
-  const dbPath = isVercel 
-    ? path.join("/tmp", "db.sqlite") 
-    : path.join(__dirname, "..", "data", "db.sqlite");
-    
-  if (!isVercel) {
-    fs.mkdirSync(path.dirname(dbPath), { recursive: true });
-  }
-
-  // sql.js is a WASM SQLite build (no native компиляции на Windows)
-  // eslint-disable-next-line global-require
-  const initSqlJs = require("sql.js");
-  const SQL = await initSqlJs();
-
-  let db;
-  if (fs.existsSync(dbPath)) {
-    const buf = fs.readFileSync(dbPath);
-    db = new SQL.Database(buf);
-  } else {
-    db = new SQL.Database();
-  }
-
-  migrate(db);
-
-  let saveTimer = 0;
-  function persistSoon() {
-    clearTimeout(saveTimer);
-    saveTimer = setTimeout(() => {
-      const data = db.export();
-      fs.writeFileSync(dbPath, Buffer.from(data));
-    }, 120);
-  }
-
-  function run(sql, params = []) {
-    db.run(sql, params);
-    // last_insert_rowid() is per-connection
-    const r = get("SELECT last_insert_rowid() AS id");
-    persistSoon();
-    return { lastInsertRowid: r?.id ?? null };
-  }
-
-  function get(sql, params = []) {
-    const stmt = db.prepare(sql);
-    try {
-      stmt.bind(params);
-      if (!stmt.step()) return undefined;
-      return stmt.getAsObject();
-    } finally {
-      stmt.free();
+  const connectionString = process.env.POSTGRES_URL || process.env.DATABASE_URL;
+  
+  if (!connectionString) {
+    if (process.env.VERCEL === "1") {
+       throw new Error("POSTGRES_URL is missing in Vercel environment variables. Please create a Postgres store in Vercel and connect it.");
     }
+    console.warn("WARNING: DATABASE_URL not found. Falling back to default (might fail).");
   }
 
-  function all(sql, params = []) {
-    const stmt = db.prepare(sql);
-    try {
-      stmt.bind(params);
-      const rows = [];
-      while (stmt.step()) rows.push(stmt.getAsObject());
-      return rows;
-    } finally {
-      stmt.free();
+  // Use connection pooling
+  const pool = new Pool({
+    connectionString,
+    ssl: {
+      rejectUnauthorized: false 
     }
+  });
+
+  // Test connection
+  await pool.query("SELECT NOW()");
+
+  // Wrapper functions for compatibility with existing code (but now async)
+  async function run(sql, params = []) {
+    const res = await pool.query(sql, params);
+    // last_insert_rowid() was used previously. In PG, we use RETURNING clause. 
+    // We'll return the first row's ID if available.
+    return { lastInsertRowid: res.rows[0]?.id || null };
   }
 
-  function exec(sql) {
-    db.exec(sql);
-    persistSoon();
+  async function get(sql, params = []) {
+    const res = await pool.query(sql, params);
+    return res.rows[0];
   }
 
-  return { run, get, all, exec };
+  async function all(sql, params = []) {
+    const res = await pool.query(sql, params);
+    return res.rows;
+  }
+
+  async function exec(sql) {
+    await pool.query(sql);
+  }
+
+  // Initial migration
+  await migrate({ exec, get });
+
+  return { run, get, all, exec, pool };
 }
 
-function migrate(db) {
-  db.exec(`
+async function migrate(db) {
+  // PostgreSQL syntax: SERIAL for autoincrement
+  await db.exec(`
     CREATE TABLE IF NOT EXISTS users (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      id SERIAL PRIMARY KEY,
       username TEXT NOT NULL,
       login TEXT NOT NULL UNIQUE,
       email TEXT NOT NULL UNIQUE,
       password_hash TEXT NOT NULL,
       slug TEXT NOT NULL UNIQUE,
-      verified_at TEXT NULL,
-      created_at TEXT NOT NULL,
+      verified_at TIMESTAMP NULL,
+      created_at TIMESTAMP NOT NULL DEFAULT NOW(),
       audio_path TEXT NULL,
       video_path TEXT NULL,
       avatar_path TEXT NULL,
@@ -92,28 +73,36 @@ function migrate(db) {
       case_text TEXT NULL
     );
 
-    CREATE TABLE IF NOT EXISTS email_verifications (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      user_id INTEGER NOT NULL,
-      code_hash TEXT NOT NULL,
-      expires_at TEXT NOT NULL,
-      created_at TEXT NOT NULL,
-      attempts INTEGER NOT NULL DEFAULT 0,
-      FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
-    );
-
     CREATE TABLE IF NOT EXISTS sessions (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      user_id INTEGER NOT NULL,
+      id SERIAL PRIMARY KEY,
+      user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
       token_hash TEXT NOT NULL UNIQUE,
-      expires_at TEXT NOT NULL,
-      created_at TEXT NOT NULL,
-      FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
+      expires_at TIMESTAMP NOT NULL,
+      created_at TIMESTAMP NOT NULL DEFAULT NOW()
     );
   `);
-  ['avatar_path', 'bg_color', 'case_text'].forEach(col => {
-    try { db.exec(`ALTER TABLE users ADD COLUMN ${col} TEXT NULL`); } catch(e){}
-  });
+
+  // Email verifications table is mentioned in previous code, let's keep it schema-ready
+  await db.exec(`
+    CREATE TABLE IF NOT EXISTS email_verifications (
+      id SERIAL PRIMARY KEY,
+      user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      code_hash TEXT NOT NULL,
+      expires_at TIMESTAMP NOT NULL,
+      created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+      attempts INTEGER NOT NULL DEFAULT 0
+    );
+  `);
+
+  // Add columns if they missed (migration support)
+  const cols = ["avatar_path", "bg_color", "case_text"];
+  for (const col of cols) {
+    try { 
+      await db.exec(`ALTER TABLE users ADD COLUMN IF NOT EXISTS ${col} TEXT NULL`);
+    } catch(e) {
+      // In PG, ADD COLUMN IF NOT EXISTS requires PG 9.6+.
+    }
+  }
 }
 
 function nowIso() {
@@ -130,10 +119,10 @@ function slugify(input) {
     .slice(0, 40);
 }
 
-function ensureUniqueSlug(db, base) {
+async function ensureUniqueSlug(db, base) {
   let slug = base || "user";
   let i = 0;
-  while (db.get("SELECT 1 as one FROM users WHERE slug = ? LIMIT 1", [slug])) {
+  while (await db.get("SELECT 1 FROM users WHERE slug = $1 LIMIT 1", [slug])) {
     i += 1;
     slug = `${base}-${i}`;
   }
@@ -141,4 +130,3 @@ function ensureUniqueSlug(db, base) {
 }
 
 module.exports = { openDb, nowIso, slugify, ensureUniqueSlug };
-
