@@ -6,7 +6,7 @@
       "destination": "/api/index.js"
     },
     {
-      "source": "/(main|profile|diversi|discord)",
+      "source": "/(main|profile|diversi|discord)(.*)",
       "destination": "/index.html"
     },
     {
