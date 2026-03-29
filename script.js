@@ -54,9 +54,23 @@
   tickClock();
   window.setInterval(tickClock, 1000);
 
+  const burgerBtn = $("#burgerBtn");
+  const mainNav = $("#mainNav");
+
+  if (burgerBtn && mainNav) {
+    burgerBtn.onclick = () => {
+      burgerBtn.classList.toggle("is-open");
+      mainNav.classList.toggle("is-open");
+    };
+  }
+
   // ------- Navigation + Glitch transitions
   function setActiveNav(viewName) {
     navBtns.forEach((b) => b.classList.toggle("is-active", b.dataset.nav === viewName));
+    if (burgerBtn && mainNav) {
+      burgerBtn.classList.remove("is-open");
+      mainNav.classList.remove("is-open");
+    }
   }
 
   let transitioning = false;
@@ -723,7 +737,10 @@
         list.appendChild(pagWrapper);
       }
     } catch (err) {
-      list.innerHTML = `<div class="error">${err.message}</div>`;
+      const msg = err.message === "Database initialization failed" 
+        ? "Ошибка: База данных Postgres не подключена в Vercel."
+        : `Ошибка: ${err.message}`;
+      list.innerHTML = `<div class="error" style="color: #ff3232; padding: 20px; border: 1px solid #ff3232; border-radius: 8px; text-align: center;">${msg}</div>`;
     }
   }
 

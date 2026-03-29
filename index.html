@@ -21,19 +21,26 @@
     </div>
 
     <header class="topbar">
-      <nav class="nav glass">
-        <button class="navBtn is-active" type="button" data-nav="home">Главная</button>
-        <button class="navBtn" type="button" data-nav="participants">Участники</button>
-        <button class="navBtn" type="button" data-nav="profile">Профиль</button>
-        <button class="navBtn" type="button" data-nav="dieversi">DIEVERSI</button>
-        <button class="navBtn" type="button" data-nav="discord">DISCORD</button>
-        
-        <div class="headerUser hidden" id="headerUser">
-          <div class="headerAvatar" id="headerAvatar"></div>
-          <span class="headerLogin mono" id="headerLogin">—</span>
-          <button class="btn ghost minimal" id="headerLogout">ВЫХОД</button>
-        </div>
-      </nav>
+      <div class="header-container">
+        <button class="burgerBtn glass" id="burgerBtn" aria-label="Menu">
+          <span></span>
+          <span></span>
+          <span></span>
+        </button>
+        <nav class="nav glass" id="mainNav">
+          <button class="navBtn is-active" type="button" data-nav="home">ГЛАВНАЯ</button>
+          <button class="navBtn" type="button" data-nav="participants">УЧАСТНИКИ</button>
+          <button class="navBtn" type="button" data-nav="profile">ПРОФИЛЬ</button>
+          <button class="navBtn" type="button" data-nav="dieversi">DIEVERSI</button>
+          <button class="navBtn" type="button" data-nav="discord">DISCORD</button>
+          
+          <div class="headerUser hidden" id="headerUser">
+            <div class="headerAvatar" id="headerAvatar"></div>
+            <span class="headerLogin mono" id="headerLogin">—</span>
+            <button class="btn ghost minimal" id="headerLogout">ВЫХОД</button>
+          </div>
+        </nav>
+      </div>
     </header>
 
     <main class="app" id="app">
@@ -43,7 +50,7 @@
           <article class="card glass dieversiInfo id-card glitchCard">
             <div class="cardTitle">DIEVERSI</div>
             <div class="cardValue">
-              Навигация сверху !
+              Добро пожаловать в систему
             </div>
             <div class="cardHint muted">MAGISTER — DIEVERSI</div>
             <div class="chipContainer">
