@@ -133,19 +133,26 @@
       if (viewName === "profile") {
         const authCard_ = document.querySelector("#authCard");
         const profileStage_ = document.querySelector("#profileStage");
-        if (me) {
-          // Logged in — show profile widget, hide auth form
+        
+        // Check if we are on a specific profile URL
+        const m = profileRe.exec(window.location.pathname);
+        const isPublicProfile = !!m;
+
+        if (me && !isPublicProfile) {
+          // Logged in AND on the main "My Profile" tab
           if (authCard_) authCard_.classList.add("hidden");
           if (profileStage_) profileStage_.classList.remove("hidden");
-          // Re-apply avatar + case in case they changed
+          document.body.classList.add("is-owner");
           updateProfileAvatarView(me.avatarUrl || me.avatar_path);
           updateProfileCase(me.caseText);
           applyThemeFromUser(me);
-        } else {
-          // Not logged in — show auth form
+        } else if (!isPublicProfile) {
+          // Not logged in AND trying to access the main tab
           if (authCard_) authCard_.classList.remove("hidden");
           if (profileStage_) profileStage_.classList.add("hidden");
+          document.body.classList.remove("is-owner");
         }
+        // If isPublicProfile is true, the separate catch-all in the startup block handles the data.
       }
 
       if (viewName === "participants") {
@@ -896,12 +903,7 @@
     });
   }
 
-    // Apply theme when switching tabs (if user is logged in)
-    const originalShowView = showView;
-    showView = function(viewName, opts = {}) {
-      originalShowView(viewName, opts);
-      if (me) applyThemeFromUser(me);
-    };
+    // Applied theme is handled inside showView and the startup block
 
     // ------- Background: dots + lines, hover freeze + glitch
   const background = createNetworkBackground({
@@ -918,24 +920,67 @@
     }
   } catch(_) {}
 
-  // ------- Startup
+  // ------- Unified Startup Logic
   (async () => {
+    // 1. Try to load current user
     try {
       await loadMeAndShowDock();
     } catch (_) {
-      // Not logged in
+      // Not logged in, that's fine
     }
+
+    // 2. Identify initial route
     const curPath = window.location.pathname;
-    const view = viewMap[curPath];
-    if (view) {
-      showView(view, { withGlitch: false });
-    } else {
-      const pm = profileRe.exec(curPath);
-      if (pm) {
-        showView("publicProfile", { withGlitch: false });
-      } else {
+    const pm = profileRe.exec(curPath);
+    const viewTab = viewMap[curPath];
+
+    if (pm) {
+      // Viewing a public profile (or own via /profile/slug)
+      const slug = pm[1].toLowerCase();
+      showView("profile", { withGlitch: false });
+      
+      try {
+        const data = await apiJson(`/api/profile/${encodeURIComponent(slug)}`);
+        const p = data.profile;
+        
+        // Render visited user's data
+        const myLink = $("#profileLinkBox");
+        if (myLink) myLink.textContent = `u/${p.slug}`;
+        
+        const myUsername = $("#profileUsername");
+        if (myUsername && myUsername.querySelector(".glitchTitle__base")) {
+          myUsername.dataset.text = p.username;
+          myUsername.querySelector(".glitchTitle__base").textContent = p.username;
+        }
+
+        updateProfileAvatarView(p.avatarUrl || p.avatar_path);
+        updateProfileCase(p.caseText || p.case_text);
+        setMediaBackground({ videoUrl: p.videoUrl, audioUrl: p.audioUrl });
+        applyThemeFromUser(p);
+
+        // Check ownership
+        if (me && me.slug === slug) {
+          document.body.classList.add("is-owner");
+        } else {
+          document.body.classList.remove("is-owner");
+        }
+
+        // Show stage
+        const authCard_ = $("#authCard");
+        const profileStage_ = $("#profileStage");
+        if (authCard_) authCard_.classList.add("hidden");
+        if (profileStage_) profileStage_.classList.remove("hidden");
+
+      } catch (err) {
+        showToast("Профиль не найден или ошибка загрузки");
         showView("home", { withGlitch: false });
       }
+    } else if (viewTab) {
+      // Normal tab
+      showView(viewTab, { withGlitch: false });
+    } else {
+      // Fallback
+      showView("home", { withGlitch: false });
     }
   })();
 
@@ -952,74 +997,8 @@
     });
   }
 
-
-
   // Expose for debugging if needed
   window.__dieversi = { showView };
-
-  // Customization UI is initialized only after successful login (loadMeAndShowDock).
-
-  // ------- DIEVERSI library (removed by user)
-  (async () => {
-    // Removed
-  })();
-
-  // ------- Public profile route: /profile/:slug
-  (async () => {
-    const m = profileRe.exec(window.location.pathname);
-    if (!m) return;
-    const slug = m[1].toLowerCase();
-    try {
-      showView("profile", { withGlitch: false });
-      
-      const data = await apiJson(`/api/profile/${encodeURIComponent(slug)}`);
-      const p = data.profile;
-      
-      const myLink = $("#profileLinkBox");
-      if (myLink) myLink.textContent = `u/${p.slug}`;
-      const myUsername = $("#profileUsername");
-      // Apply theme for public profile view
-      applyThemeFromUser(p);
-
-      if (myUsername && myUsername.querySelector(".glitchTitle__base")) {
-        myUsername.dataset.text = p.username;
-        myUsername.querySelector(".glitchTitle__base").textContent = p.username;
-      }
-
-      setMediaBackground({ videoUrl: p.videoUrl, audioUrl: p.audioUrl });
-
-      if (p.bg_color) {
-        document.body.setAttribute('data-theme', p.bg_color);
-        if (background && background.setThemeColor) background.setThemeColor(p.bg_color);
-      } else {
-        document.body.setAttribute('data-theme', 'default');
-        if (background && background.setThemeColor) background.setThemeColor('default');
-      }
-
-      if (typeof updateProfileAvatarView === 'function') {
-        updateProfileAvatarView(p.avatarUrl || p.avatar_path);
-      }
-      if (typeof updateProfileCase === 'function') {
-        updateProfileCase(p.caseText || p.case_text);
-      }
-
-      // Check if it's the current user viewing their own profile
-      if (me && me.slug === slug) {
-        document.body.classList.add("is-owner");
-      } else {
-        document.body.classList.remove("is-owner");
-      }
-
-      const authStage = document.querySelector(".authStage") || document.querySelector("#authCard");
-      if (authStage) authStage.classList.add("hidden");
-      const profileStage = $("#profileStage");
-      if (profileStage) profileStage.classList.remove("hidden");
-
-    } catch (err) {
-      showToast(String((err && err.message) || err));
-      showView("home", { withGlitch: false });
-    }
-  })();
 
   // Keep canvas behind everything
   if (app) {
