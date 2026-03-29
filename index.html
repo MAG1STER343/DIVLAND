@@ -8,7 +8,6 @@
     <link rel="stylesheet" href="/styles.css" />
   </head>
   <body>
-    <video id="profileVideoBg" class="profileVideoBg" muted playsinline loop aria-hidden="true"></video>
     <canvas id="bg" aria-hidden="true"></canvas>
     <div class="scanlines" aria-hidden="true"></div>
     <div id="glitchOverlay" class="glitchOverlay" aria-hidden="true"></div>
@@ -28,6 +27,7 @@
           <span></span>
         </button>
         <nav class="nav glass" id="mainNav">
+          <div class="nav-indicator" id="navIndicator"></div>
           <button class="navBtn is-active" type="button" data-nav="home">ГЛАВНАЯ</button>
           <button class="navBtn" type="button" data-nav="participants">УЧАСТНИКИ</button>
           <button class="navBtn" type="button" data-nav="profile">ПРОФИЛЬ</button>
@@ -136,6 +136,7 @@
                   <svg viewBox="0 0 24 24" fill="none" class="pencilIcon"><path d="M18.36 5.64a2.828 2.828 0 10-4-4L3 13V17h4l11.36-11.36z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
                 </div>
                 <img id="profileAvatarImg" src="" hidden alt="Avatar" />
+                <button class="avatarDeleteBtn owner-only" id="removeAvatarBtn" type="button" title="Удалить аватар" hidden>×</button>
               </div>
 
               <div class="profileInfoWrap">
@@ -172,9 +173,6 @@
                 <button class="btn ghost" type="button" id="removeAudioBtn" hidden>Убрать музыку</button>
                 <input class="fileInput" id="audioFile" type="file" accept=".mp3" hidden />
                 
-                <button class="btn ghost" type="button" id="pickVideoBtn">Добавить видео фон</button>
-                <button class="btn ghost" type="button" id="removeVideoBtn" hidden>Убрать фон</button>
-                <input class="fileInput" id="videoFile" type="file" accept=".mp4" hidden />
               </div>
             </div>
           </article>
@@ -271,21 +269,18 @@
         </div>
       </section>
 
-<!-- publicProfile view deleted as we use data-view="profile" for both -->
-
       <section class="view" data-view="discord">
         <div class="centerStage">
-          <article class="card glass wide glitchCard">
-            <div class="glitchTitle glitch-on-hover" data-text="DISCORD">
-              <span class="glitchTitle__base">DISCORD</span>
+          <article class="card glass discord-card glitchCard">
+            <div class="card-header">
+              <div class="discord-logo-wrap">
+                <svg viewBox="0 0 24 24"><path d="M19.27 4.58C17.81 3.92 16.24 3.44 14.59 3.17.433 3.17.406 3.17.38 3.2c-.214.38-.45.865-.617 1.253-1.785-.267-3.553-.267-5.307 0-.167-.388-.41-.873-.63-1.253-.027-.03-.054-.03-.434-.03-1.65.27-3.216.75-4.673 1.41-.01.006-.02.013-.027.022-2.915 4.352-3.714 8.59-3.326 12.763 0 .01.006.02.013.026 1.947 1.426 3.83 2.29 5.688 2.86.014.004.028-.001.036-.013.438-.597.83-1.236 1.164-1.913.01-.02.001-.045-.02-.054-0.62-.234-1.208-.512-1.767-.83-.024-.014-.025-.048-.002-.064.126-.094.252-.193.37-.294.02-.016.05-.02.07-.01 3.73 1.71 7.78 1.71 11.46 0 .02-.01.05-.006.07.01.118.101.244.2.37.294.023.016.022.05-.002.064-.56.318-1.147.596-1.768.83-.02.01-.03.033-.02.054.334.677.726 1.316 1.164 1.913.008.012.022.017.036.013 1.865-.57 3.748-1.434 5.695-2.86.007-.006.013-.016.013-.026.46-4.908-.785-9.106-3.326-12.763-.007-.01-.017-.016-.027-.022zM8.14 14.3c-1.102 0-2.02-.916-2.02-2.037 0-1.12.898-2.037 2.02-2.037 1.13 0 2.037.917 2.037 2.037 0 1.12-.907 2.037-2.037 2.037zm7.72 0c-1.102 0-2.02-.916-2.02-2.037 0-1.12.898-2.037 2.02-2.037 1.13 0 2.037.917 2.037 2.037 0 1.12-.907 2.037-2.037 2.037z"/></svg>
+              </div>
             </div>
-            <p class="muted glitch-on-hover">
-              Тут можно разместить ссылку‑инвайт или встроить виджет сервера.
-            </p>
-            <div class="hr"></div>
-            <div class="row">
-              <a class="btn ghost" href="#" onclick="return false;">Вставить invite позже</a>
-              <span class="muted mono">discord.gg/...</span>
+            <div class="discord-body">
+              <div class="discord-title mono">DIVI LAND</div>
+              <div class="discord-desc">Добро пожаловать в наше сообщество. Присоединяйся к нам в Discord для общения и новостей.</div>
+              <a href="https://discord.gg/hsqTkYYZ5w" target="_blank" class="invite-link-btn primary glitch-on-hover">Присоединиться</a>
             </div>
           </article>
         </div>

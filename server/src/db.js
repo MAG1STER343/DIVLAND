@@ -7,19 +7,19 @@ const path = require("node:path");
  */
 async function openDb() {
   // Use any available Postgres connection string (searching for both standard and prefixed names found in logs)
-  const connectionString = 
-    process.env.POSTGRES_URL || 
-    process.env.DATABASE_URL || 
+  const connectionString =
+    process.env.POSTGRES_URL ||
+    process.env.DATABASE_URL ||
     process.env.DIVI_POSTGRES_URL ||
     process.env.DIVI_DATABASE_URL ||
     process.env.POSTGRES_PRISMA_URL ||
     process.env.POSTGRES_URL_NON_POOLING;
-  
+
   if (!connectionString) {
     if (process.env.VERCEL === "1") {
-       const envKeys = Object.keys(process.env).filter(k => k.toLowerCase().includes("url") || k.toLowerCase().includes("postgres"));
-       console.error("DEBUG: Available ENV keys (filtered):", envKeys);
-       throw new Error(`DATABASE ERROR: POSTGRES_URL is missing. Available relevant keys: ${envKeys.join(", ")}`);
+      const envKeys = Object.keys(process.env).filter(k => k.toLowerCase().includes("url") || k.toLowerCase().includes("postgres"));
+      console.error("DEBUG: Available ENV keys (filtered):", envKeys);
+      throw new Error(`DATABASE ERROR: POSTGRES_URL is missing. Available relevant keys: ${envKeys.join(", ")}`);
     }
     console.warn("WARNING: DATABASE_URL not found. Local dev?");
   }
@@ -29,11 +29,11 @@ async function openDb() {
     ssl: { rejectUnauthorized: false },
     max: 10,
     idleTimeoutMillis: 10000,
-    connectionTimeoutMillis: 5000, // Reduced timeout for faster fail/retry
+    connectionTimeoutMillis: 2000, // Reduced to 2s for Vercel Hobby
   });
 
-  // Resilience: Attempt to connect up to 3 times
-  let retries = 3;
+  // Resilience: Attempt up to 2 times for live environment
+  let retries = 2;
   while (retries > 0) {
     try {
       await pool.query("SELECT NOW()");
@@ -41,9 +41,9 @@ async function openDb() {
       break;
     } catch (err) {
       retries -= 1;
-      console.error(`DB connection failed. Retries left: ${retries}. Error: ${err.message}`);
+      console.error(`DB connection failed. Retries left: ${retries}. ${err.message}`);
       if (retries === 0) throw err;
-      await new Promise(r => setTimeout(r, 1000));
+      await new Promise(r => setTimeout(r, 500)); // Shorter delay
     }
   }
 
@@ -114,16 +114,6 @@ async function migrate(db) {
       attempts INTEGER NOT NULL DEFAULT 0
     );
   `);
-
-  // Add columns if they missed (migration support)
-  const cols = ["avatar_path", "bg_color", "case_text"];
-  for (const col of cols) {
-    try { 
-      await db.exec(`ALTER TABLE users ADD COLUMN IF NOT EXISTS ${col} TEXT NULL`);
-    } catch(e) {
-      // In PG, ADD COLUMN IF NOT EXISTS requires PG 9.6+.
-    }
-  }
 }
 
 function nowIso() {

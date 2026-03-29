@@ -2,11 +2,11 @@ const path = require("node:path");
 const fs = require("node:fs");
 const crypto = require("node:crypto");
 const { spawn } = require("node:child_process");
+const { put, del } = require("@vercel/blob");
 
 const express = require("express");
 const multer = require("multer");
 const dotenv = require("dotenv");
-const { put } = require("@vercel/blob");
 
 const { openDb, nowIso, slugify, ensureUniqueSlug } = require("./db");
 const { sha256Hex, randomToken } = require("./security");
@@ -14,10 +14,27 @@ const { sha256Hex, randomToken } = require("./security");
 dotenv.config({ path: path.join(__dirname, "..", ".env") });
 
 const isVercel = process.env.VERCEL === "1";
+
+function getBlobToken() {
+  // 1. Try standard and previously known custom names
+  let token = process.env.BLOB_READ_WRITE_TOKEN || process.env.OISDFGJ989_READ_WRITE_TOKEN;
+  if (token) return token;
+
+  // 2. Dynamic discovery: search for any key containing 'READ_WRITE_TOKEN'
+  const foundKey = Object.keys(process.env).find(k => k.includes("READ_WRITE_TOKEN") || k.includes("BLOB_RW"));
+  if (foundKey) return process.env[foundKey];
+
+  return null;
+}
+
+if (isVercel && !getBlobToken()) {
+  console.warn("WARNING: No Vercel Blob token found in environment variables.");
+}
+
 const ROOT_DIR = path.join(__dirname, "..", "..");
 const ASSETS_DIR = path.join(ROOT_DIR, "assets");
 
-// For Vercel, we'll use Memory Storage for small uploads before sending to Blob
+// For Vercel, we'll use Memory Storage for small uploads
 const storage = isVercel ? multer.memoryStorage() : multer.diskStorage({
   destination: (req, file, cb) => {
     const dir = path.join(__dirname, "..", "data", "tmp");
@@ -51,16 +68,17 @@ async function getDb() {
 // Middleware to ensure DB is initialized
 app.use(async (req, res, next) => {
   try {
-    await getDb();
+    const database = await getDb();
+    if (!database) throw new Error("Database instance is null after init.");
     next();
   } catch (e) {
-    console.error("DB Initialization failed:", e.message);
-    const errorPrefix = process.env.VERCEL === "1" ? "DATABASE ERROR (Vercel): " : "DATABASE ERROR (Local): ";
+    console.error("CRITICAL DB ERROR:", e);
+    const mode = process.env.VERCEL === "1" ? "VERCEL" : "LOCAL";
     res.status(500).json({ 
        ok: false, 
        status: "error", 
        message: "Database initialization failed",
-       error: errorPrefix + e.message 
+       details: `[${mode}] ${e.message}` 
     });
   }
 });
@@ -68,7 +86,7 @@ app.use(async (req, res, next) => {
 app.disable("x-powered-by");
 app.use(express.json({ limit: "1mb" }));
 
-// Static: only the site entry files 
+// Standardized favicon handle to stop 404/500 noise
 app.get("/favicon.ico", (req, res) => res.status(204).end());
 app.get("/", (req, res) => res.sendFile(path.join(ROOT_DIR, "index.html")));
 app.get("/styles.css", (req, res) => res.sendFile(path.join(ROOT_DIR, "styles.css")));
@@ -266,30 +284,84 @@ app.get("/api/me", requireAuth, async (req, res) => {
   }
 });
 
-// --- Upload Logic (Vercel Blob)
-async function uploadToBlob(file, prefix) {
-  const filename = `${prefix}/${Date.now()}-${file.originalname}`;
-  // For Vercel, file.buffer is used; for local, readFileSync is used
-  const buffer = file.buffer || fs.readFileSync(file.path);
-  const blob = await put(filename, buffer, {
-    access: "public",
-    addRandomSuffix: true
-  });
-  return blob.url;
+async function uploadToDb(file, type, userId) {
+  try {
+    const buffer = file.buffer || (file.path ? fs.readFileSync(file.path) : null);
+    if (!buffer) throw new Error("File content is missing.");
+    
+    // Save to DB (as bytea)
+    if (type === 'avatar') {
+      await db.run("UPDATE users SET avatar_blob = $1, avatar_path = $2 WHERE id = $3", 
+        [buffer, `/api/media/render/avatar/${userId}`, userId]);
+    } else if (type === 'audio') {
+      await db.run("UPDATE users SET audio_blob = $1, audio_path = $2 WHERE id = $3", 
+        [buffer, `/api/media/render/audio/${userId}`, userId]);
+    }
+    return true;
+  } catch (err) {
+    console.error("DB Upload error:", err);
+    throw err;
+  }
 }
 
-app.post("/api/media/audio", requireAuth, upload.single("file"), async (req, res) => {
+async function uploadToBlob(file, prefix) {
   try {
-    const f = req.file;
-    if (!f) return bad(res, 400, "Файл не получен");
-    if (f.size > 40 * 1024 * 1024) return bad(res, 400, "MP3 должен весить не больше 40MB");
+    const filename = `${prefix}/${Date.now()}-${file.originalname || "upload"}`;
+    const buffer = file.buffer || (file.path ? fs.readFileSync(file.path) : null);
+    if (!buffer) throw new Error("File content is missing.");
+
+    const token = getBlobToken();
+    if (!token) throw new Error("Vercel Blob token is missing! Please connect your Blob store in the dashboard.");
+
+    const blob = await put(filename, buffer, {
+      access: "public", 
+      addRandomSuffix: true,
+      token: token
+    });
+    return blob.url;
+  } catch (err) {
+    if (err.message.includes("public access on a private store")) {
+       throw new Error("CRITICAL: Vercel Blob is set to PRIVATE. Change it to PUBLIC in Vercel settings.");
+    }
+    throw err;
+  }
+}
+
+app.post("/api/media/avatar", requireAuth, upload.single("avatar"), async (req, res) => {
+  try {
+    if (!req.file) return res.status(400).json({ error: "No file uploaded" });
+    await uploadToDb(req.file, 'avatar', req.user.id);
+    res.json({ ok: true, avatar_url: `/api/media/render/avatar/${req.user.id}?t=${Date.now()}` });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post("/api/media/audio", requireAuth, upload.single("audio"), async (req, res) => {
+  try {
+    if (!req.file) return res.status(400).json({ error: "No audio file uploaded" });
+    await uploadToDb(req.file, 'audio', req.user.id);
+    res.json({ ok: true, audio_url: `/api/media/render/audio/${req.user.id}?t=${Date.now()}` });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// New route to serve media from DB
+app.get("/api/media/render/:type/:userId", async (req, res) => {
+  try {
+    const { type, userId } = req.params;
+    const colName = type === 'avatar' ? 'avatar_blob' : 'audio_blob';
+    const user = await db.get(`SELECT ${colName} FROM users WHERE id = $1`, [userId]);
     
-    const url = await uploadToBlob(f, "audio");
-    await db.run("UPDATE users SET audio_path = $1 WHERE id = $2", [url, req.user.id]);
-    return res.json({ ok: true, audioUrl: url });
-  } catch (e) {
-    console.error(e);
-    return bad(res, 500, "Ошибка загрузки аудио");
+    if (!user || !user[colName]) return res.status(404).send("Not found");
+    
+    const contentType = type === 'avatar' ? 'image/webp' : 'audio/mpeg';
+    res.setHeader('Content-Type', contentType);
+    res.setHeader('Cache-Control', 'public, max-age=3600');
+    res.send(user[colName]);
+  } catch (err) {
+    res.status(500).send(err.message);
   }
 });
 
@@ -304,22 +376,43 @@ app.post("/api/media/video", requireAuth, upload.single("file"), async (req, res
     await db.run("UPDATE users SET video_path = $1 WHERE id = $2", [url, req.user.id]);
     return res.json({ ok: true, videoUrl: url });
   } catch (e) {
-    console.error(e);
-    return bad(res, 500, "Ошибка загрузки видео");
+    console.error("Video Upload Error:", e);
+    return bad(res, 500, `Ошибка загрузки видео: ${e.message}`);
   }
 });
 
-app.post("/api/media/avatar", requireAuth, upload.single("file"), async (req, res) => {
+// --- Delete Logic
+app.delete("/api/media/avatar", requireAuth, async (req, res) => {
   try {
-    const f = req.file;
-    if (!f) return bad(res, 400, "Файл не получен");
-    
-    const url = await uploadToBlob(f, "avatars");
-    await db.run("UPDATE users SET avatar_path = $1 WHERE id = $2", [url, req.user.id]);
-    return res.json({ ok: true, avatarUrl: url });
+    await db.run("UPDATE users SET avatar_blob = NULL, avatar_path = NULL WHERE id = $1", [req.user.id]);
+    return res.json({ ok: true });
+  } catch (e) {
+    console.error("Avatar Delete Error:", e);
+    return bad(res, 500, `Ошибка удаления аватара: ${e.message}`);
+  }
+});
+
+app.delete("/api/media/audio", requireAuth, async (req, res) => {
+  try {
+    await db.run("UPDATE users SET audio_blob = NULL, audio_path = NULL WHERE id = $1", [req.user.id]);
+    return res.json({ ok: true });
   } catch (e) {
     console.error(e);
-    return bad(res, 500, "Ошибка загрузки аватара");
+    return bad(res, 500, "Ошибка удаления аудио");
+  }
+});
+
+app.delete("/api/media/video", requireAuth, async (req, res) => {
+  try {
+    const u = await db.get("SELECT video_path FROM users WHERE id = $1", [req.user.id]);
+    if (u && u.video_path && u.video_path.includes("blob.vercel-storage.com")) {
+      try { await del(u.video_path); } catch(e) { console.error("Blob delete failed:", e); }
+    }
+    await db.run("UPDATE users SET video_path = NULL WHERE id = $1", [req.user.id]);
+    return res.json({ ok: true });
+  } catch (e) {
+    console.error(e);
+    return bad(res, 500, "Ошибка удаления видео");
   }
 });
 
@@ -378,12 +471,25 @@ app.get("/api/users", async (req, res) => {
     const users = await db.all("SELECT username, login, slug, created_at, avatar_path FROM users ORDER BY id DESC");
     return res.json({ ok: true, users });
   } catch (e) {
-    return bad(res, 500, "Ошибка");
+    console.error("API /api/users ERROR:", e);
+    return bad(res, 500, `Ошибка: ${e.message}`);
   }
 });
 
 app.get("*", (req, res) => {
   res.sendFile(path.join(ROOT_DIR, "index.html"));
+});
+
+// Global error handler to catch EVERYTHING and report as JSON
+app.use((err, req, res, next) => {
+  console.error("Express Global Error:", err);
+  const mode = process.env.VERCEL === "1" ? "VERCEL" : "LOCAL";
+  res.status(500).json({ 
+     ok: false, 
+     error: `Internal Server Error [${mode}]`, 
+     details: err.message,
+     stack: process.env.VERCEL === "1" ? undefined : err.stack 
+  });
 });
 
 async function start() {

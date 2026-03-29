@@ -31,6 +31,7 @@
 
   const authCard = $("#authCard");
   const authForms = $$("[data-auth]", authCard);
+  const navIndicator = $("#navIndicator");
 
   // ------- Toast
   let toastTimer = 0;
@@ -66,7 +67,21 @@
 
   // ------- Navigation + Glitch transitions
   function setActiveNav(viewName) {
-    navBtns.forEach((b) => b.classList.toggle("is-active", b.dataset.nav === viewName));
+    const activeBtn = navBtns.find((b) => b.dataset.nav === viewName);
+    navBtns.forEach((b) => b.classList.toggle("is-active", b === activeBtn));
+    
+    if (activeBtn && navIndicator) {
+      requestAnimationFrame(() => {
+        const rect = activeBtn.getBoundingClientRect();
+        const parentRect = activeBtn.parentElement.getBoundingClientRect();
+        if (rect.width > 0) {
+          navIndicator.style.width = `${rect.width}px`;
+          navIndicator.style.left = `${rect.left - parentRect.left}px`;
+          navIndicator.classList.add("is-visible");
+        }
+      });
+    }
+
     if (burgerBtn && mainNav) {
       burgerBtn.classList.remove("is-open");
       mainNav.classList.remove("is-open");
@@ -92,23 +107,39 @@
     }, durationMs);
   }
 
-  function showView(viewName, { withGlitch = true } = {}) {
+  function showView(viewName, { withGlitch = true, originEl = null } = {}) {
     const doIt = () => {
-      views.forEach((v) => v.classList.toggle("is-active", v.dataset.view === viewName));
+      views.forEach((v) => {
+        const isActive = v.dataset.view === viewName;
+        v.classList.toggle("is-active", isActive);
+        
+        if (isActive) {
+          if (originEl) {
+            const rect = originEl.getBoundingClientRect();
+            const x = rect.left + rect.width / 2;
+            const y = rect.top + rect.height / 2;
+            v.style.setProperty("--reveal-x", x + "px");
+            v.style.setProperty("--reveal-y", y + "px");
+          } else {
+            v.style.setProperty("--reveal-x", "50%");
+            v.style.setProperty("--reveal-y", "0%");
+          }
+        }
+      });
       setActiveNav(viewName);
       currentViewName = viewName;
 
       // Update URL
       const routeMap = {
-        home: "/main",
+        home: "/",
         participants: "/participants",
         profile: "/profile",
-        dieversi: "/diversi",
+        dieversi: "/dieversi",
         discord: "/discord"
       };
-      // ONLY push state for main tabs. Public profiles handle their own URL via the IIFE or manual navigation.
+      
       const path = routeMap[viewName];
-      if (path && window.location.pathname !== path) {
+      if (path && window.location.pathname !== path && !window.location.pathname.startsWith("/profile/")) {
         window.history.pushState({ view: viewName }, "", path);
       }
 
@@ -131,28 +162,45 @@
 
       // Show correct stage when entering profile tab
       if (viewName === "profile") {
-        const authCard_ = document.querySelector("#authCard");
-        const profileStage_ = document.querySelector("#profileStage");
+        const authCard_ = $("#authCard");
+        const profileStage_ = $("#profileStage");
         
-        // Check if we are on a specific profile URL
+        let targetSlug = null;
         const m = profileRe.exec(window.location.pathname);
-        const isPublicProfile = !!m;
+        if (m) targetSlug = m[1];
 
-        if (me && !isPublicProfile) {
-          // Logged in AND on the main "My Profile" tab
-          if (authCard_) authCard_.classList.add("hidden");
-          if (profileStage_) profileStage_.classList.remove("hidden");
+        // If we are logged in and no slug is provided, or the slug is our own:
+        if (me && (!targetSlug || targetSlug === me.slug)) {
+          authCard_.classList.add("hidden");
+          profileStage_.classList.remove("hidden");
           document.body.classList.add("is-owner");
+          
           updateProfileAvatarView(me.avatarUrl || me.avatar_path);
           updateProfileCase(me.caseText);
           applyThemeFromUser(me);
-        } else if (!isPublicProfile) {
-          // Not logged in AND trying to access the main tab
-          if (authCard_) authCard_.classList.remove("hidden");
-          if (profileStage_) profileStage_.classList.add("hidden");
+          
+          const myLink = $("#profileLinkBox");
+          if (myLink) myLink.textContent = `u/${me.slug}`;
+          const myUsername = $("#profileUsername");
+          if (myUsername && myUsername.querySelector(".glitchTitle__base")) {
+            myUsername.dataset.text = me.username;
+            myUsername.querySelector(".glitchTitle__base").textContent = me.username;
+          }
+
+          // --- Media Reset Buttons (Owner only) ---
+          updateMediaResetButtons(me, true);
+        } else if (targetSlug) {
+          // Public profile view
+          authCard_.classList.add("hidden");
+          profileStage_.classList.remove("hidden");
+          document.body.classList.remove("is-owner");
+          fetchPublicProfile(targetSlug);
+        } else {
+          // Not logged in and no slug
+          authCard_.classList.remove("hidden");
+          profileStage_.classList.add("hidden");
           document.body.classList.remove("is-owner");
         }
-        // If isPublicProfile is true, the separate catch-all in the startup block handles the data.
       }
 
       if (viewName === "participants") {
@@ -200,7 +248,7 @@
   }
 
   navBtns.forEach((btn) => {
-    btn.addEventListener("click", () => showView(btn.dataset.nav));
+    btn.addEventListener("click", (e) => showView(btn.dataset.nav, { originEl: e.currentTarget }));
   });
 
   // If user navigates to DIEVERSI, apply DIEVERSI media (first files) in background.
@@ -225,7 +273,7 @@
   const isFileProtocol = window.location.protocol === "file:";
   async function apiJson(url, { method = "GET", body, headers } = {}) {
     if (isFileProtocol) {
-      throw new Error("Открой сайт через сервер (например: http://localhost:3000), а не file://");
+      throw new Error("Р С›РЎвЂљР С”РЎР‚Р С•Р в„– РЎРѓР В°Р в„–РЎвЂљ РЎвЂЎР ВµРЎР‚Р ВµР В· РЎРѓР ВµРЎР‚Р Р†Р ВµРЎР‚ (Р Р…Р В°Р С—РЎР‚Р С‘Р СР ВµРЎР‚: http://localhost:3000), Р В° Р Р…Р Вµ file://");
     }
     const res = await fetch(url, {
       method,
@@ -243,7 +291,7 @@
 
   async function apiUpload(url, file) {
     if (isFileProtocol) {
-      throw new Error("Открой сайт через сервер (например: http://localhost:3000), а не file://");
+      throw new Error("Р С›РЎвЂљР С”РЎР‚Р С•Р в„– РЎРѓР В°Р в„–РЎвЂљ РЎвЂЎР ВµРЎР‚Р ВµР В· РЎРѓР ВµРЎР‚Р Р†Р ВµРЎР‚ (Р Р…Р В°Р С—РЎР‚Р С‘Р СР ВµРЎР‚: http://localhost:3000), Р В° Р Р…Р Вµ file://");
     }
     const fd = new FormData();
     fd.append("file", file);
@@ -265,25 +313,8 @@
     if (isVisible) bg.classList.remove("is-hidden");
     else bg.classList.add("is-hidden");
   }
-  function setMediaBackground({ audioUrl, videoUrl } = {}) {
-    const video = $("#profileVideoBg");
+  function setMediaBackground({ audioUrl } = {}) {
     const audio = $("#profileAudioBg");
-
-    if (video) {
-      if (videoUrl) {
-        video.src = videoUrl;
-        video.muted = true;
-        video.loop = true;
-        video.play().catch(() => {});
-        video.classList.add("is-visible");
-        setModelsVisible(false);
-      } else {
-        video.pause();
-        video.src = "";
-        video.classList.remove("is-visible");
-        setModelsVisible(true);
-      }
-    }
 
     if (audio) {
       if (audioUrl) {
@@ -295,6 +326,57 @@
         audio.pause();
         audio.src = "";
       }
+    }
+  }
+
+  function updateMediaResetButtons(u, isOwner) {
+    const infoBox = $(".profileInfoWrap");
+    if (!infoBox) return;
+
+    // Clear existing special reset buttons first
+    const existingAv = $("#resetAvatarBtn");
+    if (existingAv) existingAv.remove();
+    const existingMus = $("#resetMusicBtn");
+    if (existingMus) existingMus.remove();
+
+    if (!isOwner) return;
+
+    // Reset Avatar Button
+    if (u.avatar_path || u.avatarUrl) {
+      const btn = document.createElement("button");
+      btn.id = "resetAvatarBtn";
+      btn.className = "reset-av-btn";
+      btn.textContent = "Р РЋР В±РЎР‚Р С•РЎРѓР С‘РЎвЂљРЎРЉ Р С’Р Р†Р В°РЎвЂљР В°РЎР‚";
+      btn.onclick = async () => {
+        if (!confirm("Р Р€Р Т‘Р В°Р В»Р С‘РЎвЂљРЎРЉ Р В°Р Р†Р В°РЎвЂљР В°РЎР‚?")) return;
+        try {
+          await apiJson("/api/media/avatar", { method: "DELETE" });
+          u.avatar_path = null; u.avatarUrl = null;
+          updateProfileAvatarView(null);
+          updateMediaResetButtons(u, true);
+          showToast("Р С’Р Р†Р В°РЎвЂљР В°РЎР‚ РЎРѓР В±РЎР‚Р С•РЎв‚¬Р ВµР Р…");
+        } catch(e) { showToast("Р С›РЎв‚¬Р С‘Р В±Р С”Р В°"); }
+      };
+      infoBox.appendChild(btn);
+    }
+
+    // Reset Music Button
+    if (u.audio_path || u.audioUrl) {
+      const btn = document.createElement("button");
+      btn.id = "resetMusicBtn";
+      btn.className = "reset-music-btn";
+      btn.textContent = "Р РЋР В±РЎР‚Р С•РЎРѓР С‘РЎвЂљРЎРЉ Р СљРЎС“Р В·РЎвЂ№Р С”РЎС“";
+      btn.onclick = async () => {
+        if (!confirm("Р Р€Р Т‘Р В°Р В»Р С‘РЎвЂљРЎРЉ Р СРЎС“Р В·РЎвЂ№Р С”РЎС“?")) return;
+        try {
+          await apiJson("/api/media/audio", { method: "DELETE" });
+          u.audio_path = null; u.audioUrl = null;
+          setMediaBackground({ audioUrl: null });
+          updateMediaResetButtons(u, true);
+          showToast("Р СљРЎС“Р В·РЎвЂ№Р С”Р В° РЎС“Р Т‘Р В°Р В»Р ВµР Р…Р В°");
+        } catch(e) { showToast("Р С›РЎв‚¬Р С‘Р В±Р С”Р В°"); }
+      };
+      infoBox.appendChild(btn);
     }
   }
 
@@ -338,7 +420,7 @@
       
       setMediaBackground({ videoUrl: me.videoUrl, audioUrl: me.audioUrl });
 
-      // Apply saved theme for the logged‑in user
+      // Apply saved theme for the loggedРІР‚вЂin user
       applyThemeFromUser(me);
 
       const myLink = $("#profileLinkBox");
@@ -363,6 +445,8 @@
         let currentC = me.bgColor;
         b.classList.toggle('active', b.dataset.color === currentC || (b.dataset.color === 'default' && !currentC));
       });
+
+      updateMediaResetButtons(me, true);
 
       if (!customizationReady) {
         customizationReady = true;
@@ -417,36 +501,55 @@
     disp.innerHTML = renderEmojisInText(text);
   }
 
+  async function fetchPublicProfile(slug) {
+    try {
+      const data = await apiJson(`/api/profile/${slug}`);
+      const u = data.user;
+      if (!u) throw new Error("Р СџР С•Р В»РЎРЉР В·Р С•Р Р†Р В°РЎвЂљР ВµР В»РЎРЉ Р Р…Р Вµ Р Р…Р В°Р в„–Р Т‘Р ВµР Р…");
+
+      const profileUsername = $("#profileUsername");
+      if (profileUsername) {
+        profileUsername.dataset.text = u.username;
+        const base = profileUsername.querySelector(".glitchTitle__base");
+        if (base) base.textContent = u.username;
+      }
+      const profileLinkBox = $("#profileLinkBox");
+      if (profileLinkBox) profileLinkBox.textContent = `u/${u.slug}`;
+
+      // Remove reset button from public profile (just in case)
+      const oldBtn = $("#resetAvatarBtn");
+      if (oldBtn) oldBtn.remove();
+
+      updateProfileAvatarView(u.avatar_path);
+      updateProfileCase(u.case_text);
+      applyThemeFromUser({ bgColor: u.bg_color });
+      setMediaBackground({ audioUrl: u.audio_path });
+      updateMediaResetButtons(u, false); // No resets on public view
+    } catch (err) {
+      showToast("Р С›РЎв‚¬Р С‘Р В±Р С”Р В° Р В·Р В°Р С–РЎР‚РЎС“Р В·Р С”Р С‘ Р С—РЎР‚Р С•РЎвЂћР С‘Р В»РЎРЏ");
+      console.error(err);
+    }
+  }
+
   function setupCustomization() {
     const pickAudio = $("#pickAudioBtn");
-    const pickVideo = $("#pickVideoBtn");
-    const audioInput = $("#audioFile");
-    const videoInput = $("#videoFile");
-
-    if (pickAudio) pickAudio.addEventListener("click", () => audioInput && audioInput.click());
-    if (pickVideo) pickVideo.addEventListener("click", () => videoInput && videoInput.click());
-
     if (audioInput) audioInput.addEventListener("change", async () => {
       try {
         if (!audioInput.files[0]) return;
-        await apiUpload("/api/media/audio", audioInput.files[0]);
-        showToast("Звук сохранён.");
-        await loadMeAndShowDock();
+        showToast("Р вЂ”Р В°Р С–РЎР‚РЎС“Р В·Р С”Р В° Р СРЎС“Р В·РЎвЂ№Р С”Р С‘...");
+        const data = await apiUpload("/api/media/audio", audioInput.files[0]);
+        showToast("Р вЂ”Р Р†РЎС“Р С” РЎРѓР С•РЎвЂ¦РЎР‚Р В°Р Р…РЎвЂР Р….");
+        if (me) {
+          me.audio_path = data.audioUrl;
+          setMediaBackground({ audioUrl: me.audio_path });
+          updateMediaResetButtons(me, true);
+        }
       } catch (err) {
         showToast(String(err.message || err));
       } finally { audioInput.value = ""; }
     });
 
-    if (videoInput) videoInput.addEventListener("change", async () => {
-      try {
-        if (!videoInput.files[0]) return;
-        await apiUpload("/api/media/video", videoInput.files[0]);
-        showToast("Видео сохранено.");
-        await loadMeAndShowDock();
-      } catch (err) {
-        showToast(String(err.message || err));
-      } finally { videoInput.value = ""; }
-    });
+    // --- Removal Logic moved to updateMediaResetButtons helper ---
 
     // Theme Config
     document.querySelectorAll('.colorBtn').forEach(btn => {
@@ -468,9 +571,9 @@
           await apiJson("/api/profile/update", { method: "POST", body: { bgColor: c } });
           me.bgColor = c;
           applyThemeFromUser(me);
-          showToast("Тема обновлена!");
+          showToast("Р СћР ВµР СР В° Р С•Р В±Р Р…Р С•Р Р†Р В»Р ВµР Р…Р В°!");
         } catch(e) {
-          showToast("Ошибка смены темы");
+          showToast("Р С›РЎв‚¬Р С‘Р В±Р С”Р В° РЎРѓР СР ВµР Р…РЎвЂ№ РЎвЂљР ВµР СРЎвЂ№");
         }
       });
     });
@@ -498,9 +601,9 @@
         me.caseText = caseInp.value;
         updateProfileCase(me.caseText);
         caseModal.classList.add("hidden");
-        showToast("Дело обновлено");
+        showToast("Р вЂќР ВµР В»Р С• Р С•Р В±Р Р…Р С•Р Р†Р В»Р ВµР Р…Р С•");
       } catch(e){
-        showToast("Ошибка");
+        showToast("Р С›РЎв‚¬Р С‘Р В±Р С”Р В°");
       }
     });
 
@@ -636,12 +739,13 @@
           if(!blob) return;
           try {
              const data = await apiUpload("/api/media/avatar", blob);
-             me.avatar_path = data.url;
-             updateProfileAvatarView(data.url);
-             showToast("Аватар сохранен!");
+             me.avatar_path = data.avatarUrl;
+             updateProfileAvatarView(data.avatarUrl);
+             updateMediaResetButtons(me, true);
+             showToast("Р С’Р Р†Р В°РЎвЂљР В°РЎР‚ РЎРѓР С•РЎвЂ¦РЎР‚Р В°Р Р…Р ВµР Р…!");
              cropModal.classList.add("hidden");
           } catch(e) {
-             showToast("Ошибка загрузки");
+             showToast("Р С›РЎв‚¬Р С‘Р В±Р С”Р В° Р В·Р В°Р С–РЎР‚РЎС“Р В·Р С”Р С‘");
           }
         }, "image/jpeg", 0.9);
     });
@@ -656,14 +760,14 @@
     if (!list) return;
     try {
       if (currentParticipants.length === 0) {
-        list.innerHTML = '<div class="loading muted">Загрузка данных...</div>';
+        list.innerHTML = '<div class="loading muted">Р вЂ”Р В°Р С–РЎР‚РЎС“Р В·Р С”Р В° Р Т‘Р В°Р Р…Р Р…РЎвЂ№РЎвЂ¦...</div>';
         const data = await apiJson("/api/users");
         currentParticipants = data.users || [];
       }
       
       list.innerHTML = "";
       if (currentParticipants.length === 0) {
-        list.innerHTML = '<div class="muted">Участников пока нет.</div>';
+        list.innerHTML = '<div class="muted">Р Р€РЎвЂЎР В°РЎРѓРЎвЂљР Р…Р С‘Р С”Р С•Р Р† Р С—Р С•Р С”Р В° Р Р…Р ВµРЎвЂљ.</div>';
         return;
       }
       
@@ -689,7 +793,7 @@
           </div>
           <div class="user-name" style="text-align: center;">${u.username}</div>
           <div class="muted mono" style="font-size: 11px;">u/${u.slug}</div>
-          <button class="btn ghost minimal view-profile-btn" data-slug="${u.slug}" style="margin-top: auto;">ПРОФИЛЬ</button>
+          <button class="btn ghost minimal view-profile-btn" data-slug="${u.slug}" style="margin-top: auto;">Р СџР В Р С›Р В¤Р ВР вЂєР В¬</button>
         `;
         
         item.onclick = (e) => {
@@ -722,7 +826,7 @@
         if (participantsPage > 1) {
           const prev = document.createElement("button");
           prev.className = "btn ghost minimal";
-          prev.textContent = "Назад";
+          prev.textContent = "Р СњР В°Р В·Р В°Р Т‘";
           prev.onclick = () => { participantsPage--; loadParticipants(); };
           pagWrapper.appendChild(prev);
         }
@@ -736,7 +840,7 @@
         if (participantsPage < totalPages) {
           const next = document.createElement("button");
           next.className = "btn ghost minimal";
-          next.textContent = "Далее";
+          next.textContent = "Р вЂќР В°Р В»Р ВµР Вµ";
           next.onclick = () => { participantsPage++; loadParticipants(); };
           pagWrapper.appendChild(next);
         }
@@ -745,8 +849,8 @@
       }
     } catch (err) {
       const msg = err.message === "Database initialization failed" 
-        ? "Ошибка: База данных Postgres не подключена в Vercel."
-        : `Ошибка: ${err.message}`;
+        ? "Р С›РЎв‚¬Р С‘Р В±Р С”Р В°: Р вЂР В°Р В·Р В° Р Т‘Р В°Р Р…Р Р…РЎвЂ№РЎвЂ¦ Postgres Р Р…Р Вµ Р С—Р С•Р Т‘Р С”Р В»РЎР‹РЎвЂЎР ВµР Р…Р В° Р Р† Vercel."
+        : `Р С›РЎв‚¬Р С‘Р В±Р С”Р В°: ${err.message}`;
       list.innerHTML = `<div class="error" style="color: #ff3232; padding: 20px; border: 1px solid #ff3232; border-radius: 8px; text-align: center;">${msg}</div>`;
     }
   }
@@ -757,11 +861,11 @@
     const login = loginEl ? String(loginEl.value).trim() : "";
     const password = passEl ? String(passEl.value) : "";
     if (!login || !password) {
-      showToast("Введи логин и пароль.");
+      showToast("Р вЂ™Р Р†Р ВµР Т‘Р С‘ Р В»Р С•Р С–Р С‘Р Р… Р С‘ Р С—Р В°РЎР‚Р С•Р В»РЎРЉ.");
       return;
     }
     await apiJson("/api/auth/login", { method: "POST", body: { login, password } });
-    showToast("Вход выполнен.");
+    showToast("Р вЂ™РЎвЂ¦Р С•Р Т‘ Р Р†РЎвЂ№Р С—Р С•Р В»Р Р…Р ВµР Р….");
     await loadMeAndShowDock();
   }
 
@@ -773,7 +877,7 @@
     const login = loginEl ? String(loginEl.value).trim() : "";
     const password = passEl ? String(passEl.value) : "";
     if (!username || !login || !password) {
-      showToast("Введи имя пользователя, логин и пароль.");
+      showToast("Р вЂ™Р Р†Р ВµР Т‘Р С‘ Р С‘Р СРЎРЏ Р С—Р С•Р В»РЎРЉР В·Р С•Р Р†Р В°РЎвЂљР ВµР В»РЎРЏ, Р В»Р С•Р С–Р С‘Р Р… Р С‘ Р С—Р В°РЎР‚Р С•Р В»РЎРЉ.");
       return;
     }
 
@@ -782,12 +886,12 @@
         method: "POST",
         body: { username, login, password },
       });
-      showToast("Профиль создан. Выполняем вход...");
+      showToast("Р СџРЎР‚Р С•РЎвЂћР С‘Р В»РЎРЉ РЎРѓР С•Р В·Р Т‘Р В°Р Р…. Р вЂ™РЎвЂ№Р С—Р С•Р В»Р Р…РЎРЏР ВµР С Р Р†РЎвЂ¦Р С•Р Т‘...");
       window.location.reload();
     } catch (e) {
       const msg = String((e && e.message) || e);
-      if (msg.indexOf("существует") >= 0 || msg.indexOf("логином") >= 0 || msg.indexOf("409") >= 0) {
-        showToast("Логин уже занят. Попробуй другой или нажми «Войти».");
+      if (msg.indexOf("РЎРѓРЎС“РЎвЂ°Р ВµРЎРѓРЎвЂљР Р†РЎС“Р ВµРЎвЂљ") >= 0 || msg.indexOf("Р В»Р С•Р С–Р С‘Р Р…Р С•Р С") >= 0 || msg.indexOf("409") >= 0) {
+        showToast("Р вЂєР С•Р С–Р С‘Р Р… РЎС“Р В¶Р Вµ Р В·Р В°Р Р…РЎРЏРЎвЂљ. Р СџР С•Р С—РЎР‚Р С•Р В±РЎС“Р в„– Р Т‘РЎР‚РЎС“Р С–Р С•Р в„– Р С‘Р В»Р С‘ Р Р…Р В°Р В¶Р СР С‘ Р’В«Р вЂ™Р С•Р в„–РЎвЂљР С‘Р’В».");
         setAuthMode("login");
         return;
       }
@@ -816,14 +920,14 @@
   const caseStatus = $("#caseStatus");
 
   const caseText = [
-    "M\u0336A\u0336G\u0336I\u0336S\u0336T\u0336E\u0336R\u0336 — DIEVERSI",
+    "M\u0336A\u0336G\u0336I\u0336S\u0336T\u0336E\u0336R\u0336 РІР‚вЂќ DIEVERSI",
     "",
-    "DIE VERSI — псевдоним был придуман 21 сентября 2025 года;",
-    "смысл имени противоречит личности.",
+    "DIE VERSI РІР‚вЂќ Р С—РЎРѓР ВµР Р†Р Т‘Р С•Р Р…Р С‘Р С Р В±РЎвЂ№Р В» Р С—РЎР‚Р С‘Р Т‘РЎС“Р СР В°Р Р… 21 РЎРѓР ВµР Р…РЎвЂљРЎРЏР В±РЎР‚РЎРЏ 2025 Р С–Р С•Р Т‘Р В°;",
+    "РЎРѓР СРЎвЂ№РЎРѓР В» Р С‘Р СР ВµР Р…Р С‘ Р С—РЎР‚Р С•РЎвЂљР С‘Р Р†Р С•РЎР‚Р ВµРЎвЂЎР С‘РЎвЂљ Р В»Р С‘РЎвЂЎР Р…Р С•РЎРѓРЎвЂљР С‘.",
     "",
-    "Остальная информация засекречена.",
+    "Р С›РЎРѓРЎвЂљР В°Р В»РЎРЉР Р…Р В°РЎРЏ Р С‘Р Р…РЎвЂћР С•РЎР‚Р СР В°РЎвЂ Р С‘РЎРЏ Р В·Р В°РЎРѓР ВµР С”РЎР‚Р ВµРЎвЂЎР ВµР Р…Р В°.",
     "",
-    "Ваш профиль может быть оформлен так же!",
+    "Р вЂ™Р В°РЎв‚¬ Р С—РЎР‚Р С•РЎвЂћР С‘Р В»РЎРЉ Р СР С•Р В¶Р ВµРЎвЂљ Р В±РЎвЂ№РЎвЂљРЎРЉ Р С•РЎвЂћР С•РЎР‚Р СР В»Р ВµР Р… РЎвЂљР В°Р С” Р В¶Р Вµ!",
   ].join("\n");
 
   let caseTyping = { running: false, raf: 0, i: 0 };
@@ -842,7 +946,7 @@
     const start = performance.now();
     const step = () => {
       const elapsed = performance.now() - start;
-      // speed: ~24 chars/sec + slight “glitch” bursts
+      // speed: ~24 chars/sec + slight РІР‚СљglitchРІР‚Сњ bursts
       const base = Math.floor((elapsed / 1000) * 24);
       const burst = Math.random() < 0.08 ? 2 : 1;
       const target = Math.min(caseText.length, Math.max(caseTyping.i, base + burst));
@@ -878,7 +982,7 @@
 
       if (caseTyping.i >= caseText.length) {
         caseTyping.running = false;
-        caseHint && (caseHint.textContent = "Доступ предоставлен.");
+        caseHint && (caseHint.textContent = "Р вЂќР С•РЎРѓРЎвЂљРЎС“Р С— Р С—РЎР‚Р ВµР Т‘Р С•РЎРѓРЎвЂљР В°Р Р†Р В»Р ВµР Р….");
         // Keep cursor blinking for a while
         const finalBlink = () => {
           if (caseTyping.running) return;
@@ -903,9 +1007,9 @@
     });
   }
 
-    // Applied theme is handled inside showView and the startup block
+  // Applied theme is handled inside showView and the startup block
 
-    // ------- Background: dots + lines, hover freeze + glitch
+  // ------- Background: dots + lines, hover freeze + glitch
   const background = createNetworkBackground({
     canvas: $("#bg"),
     reducedMotion: prefersReducedMotion,
@@ -919,70 +1023,6 @@
       if (background && background.setThemeColor) background.setThemeColor(savedTheme);
     }
   } catch(_) {}
-
-  // ------- Unified Startup Logic
-  (async () => {
-    // 1. Try to load current user
-    try {
-      await loadMeAndShowDock();
-    } catch (_) {
-      // Not logged in, that's fine
-    }
-
-    // 2. Identify initial route
-    const curPath = window.location.pathname;
-    const pm = profileRe.exec(curPath);
-    const viewTab = viewMap[curPath];
-
-    if (pm) {
-      // Viewing a public profile (or own via /profile/slug)
-      const slug = pm[1].toLowerCase();
-      showView("profile", { withGlitch: false });
-      
-      try {
-        const data = await apiJson(`/api/profile/${encodeURIComponent(slug)}`);
-        const p = data.profile;
-        
-        // Render visited user's data
-        const myLink = $("#profileLinkBox");
-        if (myLink) myLink.textContent = `u/${p.slug}`;
-        
-        const myUsername = $("#profileUsername");
-        if (myUsername && myUsername.querySelector(".glitchTitle__base")) {
-          myUsername.dataset.text = p.username;
-          myUsername.querySelector(".glitchTitle__base").textContent = p.username;
-        }
-
-        updateProfileAvatarView(p.avatarUrl || p.avatar_path);
-        updateProfileCase(p.caseText || p.case_text);
-        setMediaBackground({ videoUrl: p.videoUrl, audioUrl: p.audioUrl });
-        applyThemeFromUser(p);
-
-        // Check ownership
-        if (me && me.slug === slug) {
-          document.body.classList.add("is-owner");
-        } else {
-          document.body.classList.remove("is-owner");
-        }
-
-        // Show stage
-        const authCard_ = $("#authCard");
-        const profileStage_ = $("#profileStage");
-        if (authCard_) authCard_.classList.add("hidden");
-        if (profileStage_) profileStage_.classList.remove("hidden");
-
-      } catch (err) {
-        showToast("Профиль не найден или ошибка загрузки");
-        showView("home", { withGlitch: false });
-      }
-    } else if (viewTab) {
-      // Normal tab
-      showView(viewTab, { withGlitch: false });
-    } else {
-      // Fallback
-      showView("home", { withGlitch: false });
-    }
-  })();
 
   const logoutBtn = $("#headerLogout") || $("#logoutBtn");
   if (logoutBtn) {
@@ -1019,20 +1059,13 @@
     showView(view, { withGlitch: true });
   });
 
-  // Initial routing
-  const curPath = window.location.pathname;
-  if (viewMap[curPath]) {
-    showView(viewMap[curPath], { withGlitch: false });
-  }
-
   // Dynamic Messages
   const dynamicText = $("#dynamicText");
-  const messages = ["Привет ?", "Чего еще ждешь ?"];
+  const messages = ["Р СџРЎР‚Р С‘Р Р†Р ВµРЎвЂљ ?", "Р В§Р ВµР С–Р С• Р ВµРЎвЂ°Р Вµ Р В¶Р Т‘Р ВµРЎв‚¬РЎРЉ ?"];
   let msgIdx = 0;
   window.setInterval(() => {
     if (!dynamicText) return;
     msgIdx = (msgIdx + 1) % messages.length;
-    // Glitch effect on update
     dynamicText.style.filter = "blur(10px) contrast(3)";
     setTimeout(() => {
       dynamicText.textContent = messages[msgIdx];
@@ -1040,7 +1073,23 @@
       if (background && background.pulseGlitch) background.pulseGlitch(250);
     }, 200);
   }, 5000);
-})();
+
+  // Initial load
+  (async () => {
+    try {
+      await loadMeAndShowDock().catch(() => { me = null; });
+      const path = window.location.pathname;
+      const m = profileRe.exec(path);
+      if (m) {
+        showView("profile", { withGlitch: false });
+      } else {
+        const viewName = viewMap[path] || "home";
+        showView(viewName, { withGlitch: false });
+      }
+    } catch (err) {
+      console.error("Startup error:", err);
+    }
+  })();
 
 function createNetworkBackground({ canvas, reducedMotion }) {
   if (!canvas) return null;
@@ -1271,3 +1320,4 @@ function createNetworkBackground({ canvas, reducedMotion }) {
 
   return { setPointer, freezeFor, pulseGlitch, setZoom, setThemeColor };
 }
+})();
