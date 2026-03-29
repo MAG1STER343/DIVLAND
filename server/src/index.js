@@ -54,8 +54,14 @@ app.use(async (req, res, next) => {
     await getDb();
     next();
   } catch (e) {
-    console.error("DB Initialization failed:", e);
-    res.status(500).json({ status: "error", message: "Database initialization failed" });
+    console.error("DB Initialization failed:", e.message);
+    const errorPrefix = process.env.VERCEL === "1" ? "DATABASE ERROR (Vercel): " : "DATABASE ERROR (Local): ";
+    res.status(500).json({ 
+       ok: false, 
+       status: "error", 
+       message: "Database initialization failed",
+       error: errorPrefix + e.message 
+    });
   }
 });
 

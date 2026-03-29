@@ -6,25 +6,44 @@ const path = require("node:path");
  * Expects POSTGRES_URL or DATABASE_URL in environment.
  */
 async function openDb() {
-  const connectionString = process.env.POSTGRES_URL || process.env.DATABASE_URL;
+  // Use any available Postgres connection string
+  const connectionString = 
+    process.env.POSTGRES_URL || 
+    process.env.DATABASE_URL || 
+    process.env.POSTGRES_PRISMA_URL ||
+    process.env.POSTGRES_URL_NON_POOLING;
   
   if (!connectionString) {
     if (process.env.VERCEL === "1") {
-       throw new Error("POSTGRES_URL is missing in Vercel environment variables. Please create a Postgres store in Vercel and connect it.");
+       const envKeys = Object.keys(process.env).filter(k => k.toLowerCase().includes("url") || k.toLowerCase().includes("postgres"));
+       console.error("DEBUG: Available ENV keys (filtered):", envKeys);
+       throw new Error(`DATABASE ERROR: POSTGRES_URL is missing. Available relevant keys: ${envKeys.join(", ")}`);
     }
-    console.warn("WARNING: DATABASE_URL not found. Falling back to default (might fail).");
+    console.warn("WARNING: DATABASE_URL not found. Local dev?");
   }
 
-  // Use connection pooling
   const pool = new Pool({
     connectionString,
-    ssl: {
-      rejectUnauthorized: false 
-    }
+    ssl: { rejectUnauthorized: false },
+    max: 10,
+    idleTimeoutMillis: 10000,
+    connectionTimeoutMillis: 5000, // Reduced timeout for faster fail/retry
   });
 
-  // Test connection
-  await pool.query("SELECT NOW()");
+  // Resilience: Attempt to connect up to 3 times
+  let retries = 3;
+  while (retries > 0) {
+    try {
+      await pool.query("SELECT NOW()");
+      console.log("Database connected successfully.");
+      break;
+    } catch (err) {
+      retries -= 1;
+      console.error(`DB connection failed. Retries left: ${retries}. Error: ${err.message}`);
+      if (retries === 0) throw err;
+      await new Promise(r => setTimeout(r, 1000));
+    }
+  }
 
   // Wrapper functions for compatibility with existing code (but now async)
   async function run(sql, params = []) {
