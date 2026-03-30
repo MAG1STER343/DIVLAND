@@ -66,6 +66,20 @@
       burgerBtn.classList.toggle("is-open");
       mainNav.classList.toggle("is-open");
     };
+
+    // Navigation Sync Loop while hovering to handle CSS transitions
+    let navSyncRaf = null;
+    const syncNav = () => {
+      setActiveNav(currentViewName);
+      navSyncRaf = requestAnimationFrame(syncNav);
+    };
+    mainNav.addEventListener("mouseenter", () => {
+      navSyncRaf = requestAnimationFrame(syncNav);
+    });
+    mainNav.addEventListener("mouseleave", () => {
+      if (navSyncRaf) cancelAnimationFrame(navSyncRaf);
+      setActiveNav(currentViewName);
+    });
   }
 
   // ------- Navigation + Glitch transitions
@@ -74,15 +88,15 @@
     navBtns.forEach((b) => b.classList.toggle("is-active", b === activeBtn));
     
     if (activeBtn && navIndicator) {
-      requestAnimationFrame(() => {
-        const rect = activeBtn.getBoundingClientRect();
-        const parentRect = activeBtn.parentElement.getBoundingClientRect();
-        if (rect.width > 0) {
-          navIndicator.style.width = `${rect.width}px`;
-          navIndicator.style.left = `${rect.left - parentRect.left}px`;
-          navIndicator.classList.add("is-visible");
-        }
-      });
+      const rect = activeBtn.getBoundingClientRect();
+      const parentRect = mainNav.getBoundingClientRect();
+      if (rect.width > 0) {
+        navIndicator.style.width = `${rect.width}px`;
+        navIndicator.style.height = `${rect.height}px`;
+        navIndicator.style.left = `${rect.left - parentRect.left}px`;
+        navIndicator.style.top = `${rect.top - parentRect.top}px`;
+        navIndicator.classList.add("is-visible");
+      }
     }
 
     if (burgerBtn && mainNav) {
