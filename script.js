@@ -1,4 +1,4 @@
-﻿/* eslint-disable no-use-before-define */
+/* eslint-disable no-use-before-define */
 (() => {
   let prefersReducedMotion = false;
   try {
@@ -314,7 +314,7 @@
   const isFileProtocol = window.location.protocol === "file:";
   async function apiJson(url, { method = "GET", body, headers } = {}) {
     if (isFileProtocol) {
-      throw new Error("Р В РЎвЂєР РЋРІР‚С™Р В РЎвЂќР РЋР вЂљР В РЎвЂўР В РІвЂћвЂ“ Р РЋР С“Р В Р’В°Р В РІвЂћвЂ“Р РЋРІР‚С™ Р РЋРІР‚РЋР В Р’ВµР РЋР вЂљР В Р’ВµР В Р’В· Р РЋР С“Р В Р’ВµР РЋР вЂљР В Р вЂ Р В Р’ВµР РЋР вЂљ (Р В Р вЂ¦Р В Р’В°Р В РЎвЂ”Р РЋР вЂљР В РЎвЂР В РЎВР В Р’ВµР РЋР вЂљ: http://localhost:3000), Р В Р’В° Р В Р вЂ¦Р В Р’Вµ file://");
+      throw new Error("Откройте сайт через сервер (например: http://localhost:3000), а не file://");
     }
     const res = await fetch(url, {
       method,
@@ -332,7 +332,7 @@
 
   async function apiUpload(url, file) {
     if (isFileProtocol) {
-      throw new Error("Р В РЎвЂєР РЋРІР‚С™Р В РЎвЂќР РЋР вЂљР В РЎвЂўР В РІвЂћвЂ“ Р РЋР С“Р В Р’В°Р В РІвЂћвЂ“Р РЋРІР‚С™ Р РЋРІР‚РЋР В Р’ВµР РЋР вЂљР В Р’ВµР В Р’В· Р РЋР С“Р В Р’ВµР РЋР вЂљР В Р вЂ Р В Р’ВµР РЋР вЂљ (Р В Р вЂ¦Р В Р’В°Р В РЎвЂ”Р РЋР вЂљР В РЎвЂР В РЎВР В Р’ВµР РЋР вЂљ: http://localhost:3000), Р В Р’В° Р В Р вЂ¦Р В Р’Вµ file://");
+      throw new Error("Откройте сайт через сервер (например: http://localhost:3000), а не file://");
     }
     const fd = new FormData();
     fd.append("file", file);
@@ -387,16 +387,16 @@
       const btn = document.createElement("button");
       btn.id = "resetAvatarBtn";
       btn.className = "reset-av-btn";
-      btn.textContent = "Р В Р Р‹Р В Р’В±Р РЋР вЂљР В РЎвЂўР РЋР С“Р В РЎвЂР РЋРІР‚С™Р РЋР Р‰ Р В РЎвЂ™Р В Р вЂ Р В Р’В°Р РЋРІР‚С™Р В Р’В°Р РЋР вЂљ";
+      btn.textContent = "Сбросить аватар";
       btn.onclick = async () => {
-        if (!confirm("Р В Р в‚¬Р В РўвЂР В Р’В°Р В Р’В»Р В РЎвЂР РЋРІР‚С™Р РЋР Р‰ Р В Р’В°Р В Р вЂ Р В Р’В°Р РЋРІР‚С™Р В Р’В°Р РЋР вЂљ?")) return;
+        if (!confirm("Удалить аватар?")) return;
         try {
           await apiJson("/api/media/avatar", { method: "DELETE" });
           u.avatar_path = null; u.avatarUrl = null;
           updateProfileAvatarView(null);
           updateMediaResetButtons(u, true);
-          showToast("Р В РЎвЂ™Р В Р вЂ Р В Р’В°Р РЋРІР‚С™Р В Р’В°Р РЋР вЂљ Р РЋР С“Р В Р’В±Р РЋР вЂљР В РЎвЂўР РЋРІвЂљВ¬Р В Р’ВµР В Р вЂ¦");
-        } catch(e) { showToast("Р В РЎвЂєР РЋРІвЂљВ¬Р В РЎвЂР В Р’В±Р В РЎвЂќР В Р’В°"); }
+          showToast("Аватар сброшен");
+        } catch(e) { showToast("Ошибка"); }
       };
       infoBox.appendChild(btn);
     }
@@ -406,16 +406,16 @@
       const btn = document.createElement("button");
       btn.id = "resetMusicBtn";
       btn.className = "reset-music-btn";
-      btn.textContent = "Р В Р Р‹Р В Р’В±Р РЋР вЂљР В РЎвЂўР РЋР С“Р В РЎвЂР РЋРІР‚С™Р РЋР Р‰ Р В РЎС™Р РЋРЎвЂњР В Р’В·Р РЋРІР‚в„–Р В РЎвЂќР РЋРЎвЂњ";
+      btn.textContent = "Сбросить музыку";
       btn.onclick = async () => {
-        if (!confirm("Р В Р в‚¬Р В РўвЂР В Р’В°Р В Р’В»Р В РЎвЂР РЋРІР‚С™Р РЋР Р‰ Р В РЎВР РЋРЎвЂњР В Р’В·Р РЋРІР‚в„–Р В РЎвЂќР РЋРЎвЂњ?")) return;
+        if (!confirm("Удалить музыку?")) return;
         try {
           await apiJson("/api/media/audio", { method: "DELETE" });
           u.audio_path = null; u.audioUrl = null;
           setMediaBackground({ audioUrl: null });
           updateMediaResetButtons(u, true);
-          showToast("Р В РЎС™Р РЋРЎвЂњР В Р’В·Р РЋРІР‚в„–Р В РЎвЂќР В Р’В° Р РЋРЎвЂњР В РўвЂР В Р’В°Р В Р’В»Р В Р’ВµР В Р вЂ¦Р В Р’В°");
-        } catch(e) { showToast("Р В РЎвЂєР РЋРІвЂљВ¬Р В РЎвЂР В Р’В±Р В РЎвЂќР В Р’В°"); }
+          showToast("Музыка удалена");
+        } catch(e) { showToast("Ошибка"); }
       };
       infoBox.appendChild(btn);
     }
@@ -461,7 +461,7 @@
       
       setMediaBackground({ videoUrl: me.videoUrl, audioUrl: me.audioUrl });
 
-      // Apply saved theme for the loggedР Р†Р вЂљРІР‚Вin user
+      // Apply saved theme for the logged-in user
       applyThemeFromUser(me);
 
       const myLink = $("#profileLinkBox");
@@ -546,7 +546,7 @@
     try {
       const data = await apiJson(`/api/profile/${slug}`);
       const u = data.user;
-      if (!u) throw new Error("Р В РЎСџР В РЎвЂўР В Р’В»Р РЋР Р‰Р В Р’В·Р В РЎвЂўР В Р вЂ Р В Р’В°Р РЋРІР‚С™Р В Р’ВµР В Р’В»Р РЋР Р‰ Р В Р вЂ¦Р В Р’Вµ Р В Р вЂ¦Р В Р’В°Р В РІвЂћвЂ“Р В РўвЂР В Р’ВµР В Р вЂ¦");
+      if (!u) throw new Error("Пользователь не найден");
 
       const profileUsername = $("#profileUsername");
       if (profileUsername) {
@@ -567,7 +567,7 @@
       setMediaBackground({ audioUrl: u.audio_path });
       updateMediaResetButtons(u, false); // No resets on public view
     } catch (err) {
-      showToast("Р В РЎвЂєР РЋРІвЂљВ¬Р В РЎвЂР В Р’В±Р В РЎвЂќР В Р’В° Р В Р’В·Р В Р’В°Р В РЎвЂ“Р РЋР вЂљР РЋРЎвЂњР В Р’В·Р В РЎвЂќР В РЎвЂ Р В РЎвЂ”Р РЋР вЂљР В РЎвЂўР РЋРІР‚С›Р В РЎвЂР В Р’В»Р РЋР РЏ");
+      showToast("Ошибка загрузки профиля");
       console.error(err);
     }
   }
@@ -577,9 +577,9 @@
     if (audioInput) audioInput.addEventListener("change", async () => {
       try {
         if (!audioInput.files[0]) return;
-        showToast("Р В РІР‚вЂќР В Р’В°Р В РЎвЂ“Р РЋР вЂљР РЋРЎвЂњР В Р’В·Р В РЎвЂќР В Р’В° Р В РЎВР РЋРЎвЂњР В Р’В·Р РЋРІР‚в„–Р В РЎвЂќР В РЎвЂ...");
+        showToast("Загрузка музыки...");
         const data = await apiUpload("/api/media/audio", audioInput.files[0]);
-        showToast("Р В РІР‚вЂќР В Р вЂ Р РЋРЎвЂњР В РЎвЂќ Р РЋР С“Р В РЎвЂўР РЋРІР‚В¦Р РЋР вЂљР В Р’В°Р В Р вЂ¦Р РЋРІР‚ВР В Р вЂ¦.");
+        showToast("Звук сохранен.");
         if (me) {
           me.audio_path = data.audioUrl;
           setMediaBackground({ audioUrl: me.audio_path });
@@ -612,9 +612,9 @@
           await apiJson("/api/profile/update", { method: "POST", body: { bgColor: c } });
           me.bgColor = c;
           applyThemeFromUser(me);
-          showToast("Р В РЎС›Р В Р’ВµР В РЎВР В Р’В° Р В РЎвЂўР В Р’В±Р В Р вЂ¦Р В РЎвЂўР В Р вЂ Р В Р’В»Р В Р’ВµР В Р вЂ¦Р В Р’В°!");
+          showToast("Тема обновлена!");
         } catch(e) {
-          showToast("Р В РЎвЂєР РЋРІвЂљВ¬Р В РЎвЂР В Р’В±Р В РЎвЂќР В Р’В° Р РЋР С“Р В РЎВР В Р’ВµР В Р вЂ¦Р РЋРІР‚в„– Р РЋРІР‚С™Р В Р’ВµР В РЎВР РЋРІР‚в„–");
+          showToast("Ошибка смены темы");
         }
       });
     });
@@ -642,9 +642,9 @@
         me.caseText = caseInp.value;
         updateProfileCase(me.caseText);
         caseModal.classList.add("hidden");
-        showToast("Р В РІР‚СњР В Р’ВµР В Р’В»Р В РЎвЂў Р В РЎвЂўР В Р’В±Р В Р вЂ¦Р В РЎвЂўР В Р вЂ Р В Р’В»Р В Р’ВµР В Р вЂ¦Р В РЎвЂў");
+        showToast("Статус обновлен");
       } catch(e){
-        showToast("Р В РЎвЂєР РЋРІвЂљВ¬Р В РЎвЂР В Р’В±Р В РЎвЂќР В Р’В°");
+        showToast("Ошибка");
       }
     });
 
@@ -783,10 +783,10 @@
              me.avatar_path = data.avatarUrl;
              updateProfileAvatarView(data.avatarUrl);
              updateMediaResetButtons(me, true);
-             showToast("Р В РЎвЂ™Р В Р вЂ Р В Р’В°Р РЋРІР‚С™Р В Р’В°Р РЋР вЂљ Р РЋР С“Р В РЎвЂўР РЋРІР‚В¦Р РЋР вЂљР В Р’В°Р В Р вЂ¦Р В Р’ВµР В Р вЂ¦!");
+             showToast("Аватар сохранен!");
              cropModal.classList.add("hidden");
           } catch(e) {
-             showToast("Р В РЎвЂєР РЋРІвЂљВ¬Р В РЎвЂР В Р’В±Р В РЎвЂќР В Р’В° Р В Р’В·Р В Р’В°Р В РЎвЂ“Р РЋР вЂљР РЋРЎвЂњР В Р’В·Р В РЎвЂќР В РЎвЂ");
+             showToast("Ошибка загрузки");
           }
         }, "image/jpeg", 0.9);
     });
@@ -801,14 +801,14 @@
     if (!list) return;
     try {
       if (currentParticipants.length === 0) {
-        list.innerHTML = '<div class="loading muted">Р В РІР‚вЂќР В Р’В°Р В РЎвЂ“Р РЋР вЂљР РЋРЎвЂњР В Р’В·Р В РЎвЂќР В Р’В° Р В РўвЂР В Р’В°Р В Р вЂ¦Р В Р вЂ¦Р РЋРІР‚в„–Р РЋРІР‚В¦...</div>';
+        list.innerHTML = '<div class="loading muted">Загрузка данных...</div>';
         const data = await apiJson("/api/users");
         currentParticipants = data.users || [];
       }
       
       list.innerHTML = "";
       if (currentParticipants.length === 0) {
-        list.innerHTML = '<div class="muted">Р В Р в‚¬Р РЋРІР‚РЋР В Р’В°Р РЋР С“Р РЋРІР‚С™Р В Р вЂ¦Р В РЎвЂР В РЎвЂќР В РЎвЂўР В Р вЂ  Р В РЎвЂ”Р В РЎвЂўР В РЎвЂќР В Р’В° Р В Р вЂ¦Р В Р’ВµР РЋРІР‚С™.</div>';
+        list.innerHTML = '<div class="muted">Участников пока нет.</div>';
         return;
       }
       
@@ -834,7 +834,7 @@
           </div>
           <div class="user-name" style="text-align: center;">${u.username}</div>
           <div class="muted mono" style="font-size: 11px;">u/${u.slug}</div>
-          <button class="btn ghost minimal view-profile-btn" data-slug="${u.slug}" style="margin-top: auto;">Р В РЎСџР В Р’В Р В РЎвЂєР В Р’В¤Р В Р’ВР В РІР‚С”Р В Р’В¬</button>
+          <button class="btn ghost minimal view-profile-btn" data-slug="${u.slug}" style="margin-top: auto;">ПРОФИЛЬ</button>
         `;
         
         item.onclick = (e) => {
@@ -867,7 +867,7 @@
         if (participantsPage > 1) {
           const prev = document.createElement("button");
           prev.className = "btn ghost minimal";
-          prev.textContent = "Р В РЎСљР В Р’В°Р В Р’В·Р В Р’В°Р В РўвЂ";
+          prev.textContent = "Назад";
           prev.onclick = () => { participantsPage--; loadParticipants(); };
           pagWrapper.appendChild(prev);
         }
@@ -881,7 +881,7 @@
         if (participantsPage < totalPages) {
           const next = document.createElement("button");
           next.className = "btn ghost minimal";
-          next.textContent = "Р В РІР‚СњР В Р’В°Р В Р’В»Р В Р’ВµР В Р’Вµ";
+          next.textContent = "Далее";
           next.onclick = () => { participantsPage++; loadParticipants(); };
           pagWrapper.appendChild(next);
         }
@@ -890,8 +890,8 @@
       }
     } catch (err) {
       const msg = err.message === "Database initialization failed" 
-        ? "Р В РЎвЂєР РЋРІвЂљВ¬Р В РЎвЂР В Р’В±Р В РЎвЂќР В Р’В°: Р В РІР‚ВР В Р’В°Р В Р’В·Р В Р’В° Р В РўвЂР В Р’В°Р В Р вЂ¦Р В Р вЂ¦Р РЋРІР‚в„–Р РЋРІР‚В¦ Postgres Р В Р вЂ¦Р В Р’Вµ Р В РЎвЂ”Р В РЎвЂўР В РўвЂР В РЎвЂќР В Р’В»Р РЋР вЂ№Р РЋРІР‚РЋР В Р’ВµР В Р вЂ¦Р В Р’В° Р В Р вЂ  Vercel."
-        : `Р В РЎвЂєР РЋРІвЂљВ¬Р В РЎвЂР В Р’В±Р В РЎвЂќР В Р’В°: ${err.message}`;
+        ? "Ошибка: База данных Postgres не подключена в Vercel."
+        : `Ошибка: ${err.message}`;
       list.innerHTML = `<div class="error" style="color: #ff3232; padding: 20px; border: 1px solid #ff3232; border-radius: 8px; text-align: center;">${msg}</div>`;
     }
   }
@@ -902,11 +902,11 @@
     const login = loginEl ? String(loginEl.value).trim() : "";
     const password = passEl ? String(passEl.value) : "";
     if (!login || !password) {
-      showToast("Р В РІР‚в„ўР В Р вЂ Р В Р’ВµР В РўвЂР В РЎвЂ Р В Р’В»Р В РЎвЂўР В РЎвЂ“Р В РЎвЂР В Р вЂ¦ Р В РЎвЂ Р В РЎвЂ”Р В Р’В°Р РЋР вЂљР В РЎвЂўР В Р’В»Р РЋР Р‰.");
+      showToast("Введите логин и пароль.");
       return;
     }
     await apiJson("/api/auth/login", { method: "POST", body: { login, password } });
-    showToast("Р В РІР‚в„ўР РЋРІР‚В¦Р В РЎвЂўР В РўвЂ Р В Р вЂ Р РЋРІР‚в„–Р В РЎвЂ”Р В РЎвЂўР В Р’В»Р В Р вЂ¦Р В Р’ВµР В Р вЂ¦.");
+    showToast("Вход выполнен.");
     await loadMeAndShowDock();
   }
 
@@ -918,7 +918,7 @@
     const login = loginEl ? String(loginEl.value).trim() : "";
     const password = passEl ? String(passEl.value) : "";
     if (!username || !login || !password) {
-      showToast("Р В РІР‚в„ўР В Р вЂ Р В Р’ВµР В РўвЂР В РЎвЂ Р В РЎвЂР В РЎВР РЋР РЏ Р В РЎвЂ”Р В РЎвЂўР В Р’В»Р РЋР Р‰Р В Р’В·Р В РЎвЂўР В Р вЂ Р В Р’В°Р РЋРІР‚С™Р В Р’ВµР В Р’В»Р РЋР РЏ, Р В Р’В»Р В РЎвЂўР В РЎвЂ“Р В РЎвЂР В Р вЂ¦ Р В РЎвЂ Р В РЎвЂ”Р В Р’В°Р РЋР вЂљР В РЎвЂўР В Р’В»Р РЋР Р‰.");
+      showToast("Введите имя пользователя, логин и пароль.");
       return;
     }
 
@@ -927,12 +927,12 @@
         method: "POST",
         body: { username, login, password },
       });
-      showToast("Р В РЎСџР РЋР вЂљР В РЎвЂўР РЋРІР‚С›Р В РЎвЂР В Р’В»Р РЋР Р‰ Р РЋР С“Р В РЎвЂўР В Р’В·Р В РўвЂР В Р’В°Р В Р вЂ¦. Р В РІР‚в„ўР РЋРІР‚в„–Р В РЎвЂ”Р В РЎвЂўР В Р’В»Р В Р вЂ¦Р РЋР РЏР В Р’ВµР В РЎВ Р В Р вЂ Р РЋРІР‚В¦Р В РЎвЂўР В РўвЂ...");
+      showToast("Профиль создан. Выполняем вход...");
       window.location.reload();
     } catch (e) {
       const msg = String((e && e.message) || e);
-      if (msg.indexOf("Р РЋР С“Р РЋРЎвЂњР РЋРІР‚В°Р В Р’ВµР РЋР С“Р РЋРІР‚С™Р В Р вЂ Р РЋРЎвЂњР В Р’ВµР РЋРІР‚С™") >= 0 || msg.indexOf("Р В Р’В»Р В РЎвЂўР В РЎвЂ“Р В РЎвЂР В Р вЂ¦Р В РЎвЂўР В РЎВ") >= 0 || msg.indexOf("409") >= 0) {
-        showToast("Р В РІР‚С”Р В РЎвЂўР В РЎвЂ“Р В РЎвЂР В Р вЂ¦ Р РЋРЎвЂњР В Р’В¶Р В Р’Вµ Р В Р’В·Р В Р’В°Р В Р вЂ¦Р РЋР РЏР РЋРІР‚С™. Р В РЎСџР В РЎвЂўР В РЎвЂ”Р РЋР вЂљР В РЎвЂўР В Р’В±Р РЋРЎвЂњР В РІвЂћвЂ“ Р В РўвЂР РЋР вЂљР РЋРЎвЂњР В РЎвЂ“Р В РЎвЂўР В РІвЂћвЂ“ Р В РЎвЂР В Р’В»Р В РЎвЂ Р В Р вЂ¦Р В Р’В°Р В Р’В¶Р В РЎВР В РЎвЂ Р вЂ™Р’В«Р В РІР‚в„ўР В РЎвЂўР В РІвЂћвЂ“Р РЋРІР‚С™Р В РЎвЂР вЂ™Р’В».");
+      if (msg.indexOf("существует") >= 0 || msg.indexOf("логином") >= 0 || msg.indexOf("409") >= 0) {
+        showToast("Логин уже занят. Попробуй другой или нажми «Войти».");
         setAuthMode("login");
         return;
       }
@@ -961,14 +961,14 @@
   const caseStatus = $("#caseStatus");
 
   const caseText = [
-    "M\u0336A\u0336G\u0336I\u0336S\u0336T\u0336E\u0336R\u0336 Р Р†Р вЂљРІР‚Сњ DIEVERSI",
+    "MAGISTER — DIEVERSI",
     "",
-    "DIE VERSI Р Р†Р вЂљРІР‚Сњ Р В РЎвЂ”Р РЋР С“Р В Р’ВµР В Р вЂ Р В РўвЂР В РЎвЂўР В Р вЂ¦Р В РЎвЂР В РЎВ Р В Р’В±Р РЋРІР‚в„–Р В Р’В» Р В РЎвЂ”Р РЋР вЂљР В РЎвЂР В РўвЂР РЋРЎвЂњР В РЎВР В Р’В°Р В Р вЂ¦ 21 Р РЋР С“Р В Р’ВµР В Р вЂ¦Р РЋРІР‚С™Р РЋР РЏР В Р’В±Р РЋР вЂљР РЋР РЏ 2025 Р В РЎвЂ“Р В РЎвЂўР В РўвЂР В Р’В°;",
-    "Р РЋР С“Р В РЎВР РЋРІР‚в„–Р РЋР С“Р В Р’В» Р В РЎвЂР В РЎВР В Р’ВµР В Р вЂ¦Р В РЎвЂ Р В РЎвЂ”Р РЋР вЂљР В РЎвЂўР РЋРІР‚С™Р В РЎвЂР В Р вЂ Р В РЎвЂўР РЋР вЂљР В Р’ВµР РЋРІР‚РЋР В РЎвЂР РЋРІР‚С™ Р В Р’В»Р В РЎвЂР РЋРІР‚РЋР В Р вЂ¦Р В РЎвЂўР РЋР С“Р РЋРІР‚С™Р В РЎвЂ.",
+    "DIE VERSI — псевдоним был придуман 21 сентября 2025 года;",
+    "смысл имени — противоречить личности.",
     "",
-    "Р В РЎвЂєР РЋР С“Р РЋРІР‚С™Р В Р’В°Р В Р’В»Р РЋР Р‰Р В Р вЂ¦Р В Р’В°Р РЋР РЏ Р В РЎвЂР В Р вЂ¦Р РЋРІР‚С›Р В РЎвЂўР РЋР вЂљР В РЎВР В Р’В°Р РЋРІР‚В Р В РЎвЂР РЋР РЏ Р В Р’В·Р В Р’В°Р РЋР С“Р В Р’ВµР В РЎвЂќР РЋР вЂљР В Р’ВµР РЋРІР‚РЋР В Р’ВµР В Р вЂ¦Р В Р’В°.",
+    "Остальная информация засекречена.",
     "",
-    "Р В РІР‚в„ўР В Р’В°Р РЋРІвЂљВ¬ Р В РЎвЂ”Р РЋР вЂљР В РЎвЂўР РЋРІР‚С›Р В РЎвЂР В Р’В»Р РЋР Р‰ Р В РЎВР В РЎвЂўР В Р’В¶Р В Р’ВµР РЋРІР‚С™ Р В Р’В±Р РЋРІР‚в„–Р РЋРІР‚С™Р РЋР Р‰ Р В РЎвЂўР РЋРІР‚С›Р В РЎвЂўР РЋР вЂљР В РЎВР В Р’В»Р В Р’ВµР В Р вЂ¦ Р РЋРІР‚С™Р В Р’В°Р В РЎвЂќ Р В Р’В¶Р В Р’Вµ!",
+    "Ваш профиль может быть оформлен так же!",
   ].join("\n");
 
   let caseTyping = { running: false, raf: 0, i: 0 };
@@ -987,7 +987,7 @@
     const start = performance.now();
     const step = () => {
       const elapsed = performance.now() - start;
-      // speed: ~24 chars/sec + slight Р Р†Р вЂљРЎС™glitchР Р†Р вЂљРЎСљ bursts
+      // speed: ~24 chars/sec + slight glitch bursts
       const base = Math.floor((elapsed / 1000) * 24);
       const burst = Math.random() < 0.08 ? 2 : 1;
       const target = Math.min(caseText.length, Math.max(caseTyping.i, base + burst));
@@ -1023,7 +1023,7 @@
 
       if (caseTyping.i >= caseText.length) {
         caseTyping.running = false;
-        caseHint && (caseHint.textContent = "Р В РІР‚СњР В РЎвЂўР РЋР С“Р РЋРІР‚С™Р РЋРЎвЂњР В РЎвЂ” Р В РЎвЂ”Р РЋР вЂљР В Р’ВµР В РўвЂР В РЎвЂўР РЋР С“Р РЋРІР‚С™Р В Р’В°Р В Р вЂ Р В Р’В»Р В Р’ВµР В Р вЂ¦.");
+        caseHint && (caseHint.textContent = "Поиск приостановлен.");
         // Keep cursor blinking for a while
         const finalBlink = () => {
           if (caseTyping.running) return;
@@ -1102,7 +1102,7 @@
 
   // Dynamic Messages
   const dynamicText = $("#dynamicText");
-  const messages = ["Р В РЎСџР РЋР вЂљР В РЎвЂР В Р вЂ Р В Р’ВµР РЋРІР‚С™ ?", "Р В Р’В§Р В Р’ВµР В РЎвЂ“Р В РЎвЂў Р В Р’ВµР РЋРІР‚В°Р В Р’Вµ Р В Р’В¶Р В РўвЂР В Р’ВµР РЋРІвЂљВ¬Р РЋР Р‰ ?"];
+  const messages = ["Принять ?", "Чего еще ждешь ?"];
   let msgIdx = 0;
   window.setInterval(() => {
     if (!dynamicText) return;
