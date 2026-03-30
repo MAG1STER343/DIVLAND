@@ -261,7 +261,7 @@ app.post("/api/auth/logout", requireAuth, async (req, res) => {
 // --- Auth: current user
 app.get("/api/me", requireAuth, async (req, res) => {
   try {
-    const u = await db.get("SELECT username, login, slug, audio_path, video_path, avatar_path, bg_color, case_text, balance_l FROM users WHERE id = $1 LIMIT 1", [
+    const u = await db.get("SELECT username, login, slug, audio_path, video_path, avatar_path, bg_color, case_text, balance_l, steam_url, faceit_url, discord_user, instagram_url, telegram_user, twitch_url FROM users WHERE id = $1 LIMIT 1", [
       req.user.id,
     ]);
     if (!u) return bad(res, 404, "Пользователь не найден");
@@ -277,6 +277,12 @@ app.get("/api/me", requireAuth, async (req, res) => {
         bgColor: u.bg_color || "default",
         caseText: u.case_text || null,
         balanceL: u.balance_l || 0,
+        steamUrl: u.steam_url || null,
+        faceitUrl: u.faceit_url || null,
+        discordUser: u.discord_user || null,
+        instagramUrl: u.instagram_url || null,
+        telegramUser: u.telegram_user || null,
+        twitchUrl: u.twitch_url || null,
       },
     });
   } catch (e) {
@@ -423,7 +429,7 @@ app.delete("/api/media/video", requireAuth, async (req, res) => {
 // --- Public APIs
 app.get("/api/profile/:slug", async (req, res) => {
   const slug = String(req.params.slug || "").toLowerCase();
-  const u = await db.get("SELECT username, login, slug, created_at, audio_path, video_path, avatar_path, bg_color, case_text FROM users WHERE slug = $1 LIMIT 1", [
+  const u = await db.get("SELECT username, login, slug, created_at, audio_path, video_path, avatar_path, bg_color, case_text, steam_url, faceit_url, discord_user, instagram_url, telegram_user, twitch_url FROM users WHERE slug = $1 LIMIT 1", [
     slug,
   ]);
   if (!u) return bad(res, 404, "Профиль не найден");
@@ -439,6 +445,12 @@ app.get("/api/profile/:slug", async (req, res) => {
       avatarUrl: u.avatar_path || null,
       bgColor: u.bg_color || "default",
       caseText: u.case_text || null,
+      steamUrl: u.steam_url || null,
+      faceitUrl: u.faceit_url || null,
+      discordUser: u.discord_user || null,
+      instagramUrl: u.instagram_url || null,
+      telegramUser: u.telegram_user || null,
+      twitchUrl: u.twitch_url || null,
     },
   });
 });
@@ -457,6 +469,25 @@ app.post("/api/profile/update", requireAuth, async (req, res) => {
       updates.push(`case_text = $${updates.length + 1}`);
       params.push(String(body.caseText).trim());
     }
+    
+    // Integration fields
+    const intFields = ["steam_url", "faceit_url", "discord_user", "instagram_url", "telegram_user", "twitch_url"];
+    const bodyMap = {
+       "steam_url": "steamUrl",
+       "faceit_url": "faceitUrl",
+       "discord_user": "discordUser",
+       "instagram_url": "instagramUrl",
+       "telegram_user": "telegramUser",
+       "twitch_url": "twitchUrl"
+    };
+
+    intFields.forEach(f => {
+      const bKey = bodyMap[f];
+      if (body[bKey] !== undefined) {
+        updates.push(`${f} = $${updates.length + 1}`);
+        params.push(body[bKey] === null ? null : String(body[bKey]).trim());
+      }
+    });
     
     if (updates.length > 0) {
       params.push(req.user.id);

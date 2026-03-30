@@ -94,7 +94,13 @@ async function migrate(db) {
       case_text TEXT NULL,
       avatar_blob BYTEA NULL,
       audio_blob BYTEA NULL,
-      balance_l INTEGER DEFAULT 0
+      balance_l INTEGER DEFAULT 0,
+      steam_url TEXT NULL,
+      faceit_url TEXT NULL,
+      discord_user TEXT NULL,
+      instagram_url TEXT NULL,
+      telegram_user TEXT NULL,
+      twitch_url TEXT NULL
     );
 
     CREATE TABLE IF NOT EXISTS sessions (
@@ -110,6 +116,12 @@ async function migrate(db) {
   try { await db.exec("ALTER TABLE users ADD COLUMN avatar_blob BYTEA NULL"); } catch(e) {}
   try { await db.exec("ALTER TABLE users ADD COLUMN audio_blob BYTEA NULL"); } catch(e) {}
   try { await db.exec("ALTER TABLE users ADD COLUMN balance_l INTEGER DEFAULT 0"); } catch(e) {}
+  try { await db.exec("ALTER TABLE users ADD COLUMN steam_url TEXT NULL"); } catch(e) {}
+  try { await db.exec("ALTER TABLE users ADD COLUMN faceit_url TEXT NULL"); } catch(e) {}
+  try { await db.exec("ALTER TABLE users ADD COLUMN discord_user TEXT NULL"); } catch(e) {}
+  try { await db.exec("ALTER TABLE users ADD COLUMN instagram_url TEXT NULL"); } catch(e) {}
+  try { await db.exec("ALTER TABLE users ADD COLUMN telegram_user TEXT NULL"); } catch(e) {}
+  try { await db.exec("ALTER TABLE users ADD COLUMN twitch_url TEXT NULL"); } catch(e) {}
 
   // Email verifications table is mentioned in previous code, let's keep it schema-ready
   await db.exec(`

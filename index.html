@@ -157,6 +157,9 @@
                   <button class="btn primary glitch-on-hover owner-only" type="button" id="createCaseBtn">Создать дело</button>
                 </div>
                 <div class="muted mono userSubText" id="profileLinkBox">u/—</div>
+                <div class="profileIntegrations" id="profileIntegrations">
+                  <!-- Integration icons will be rendered here -->
+                </div>
               </div>
             </div>
 
@@ -182,7 +185,7 @@
                 <button class="btn ghost" type="button" id="pickAudioBtn">Добавить музыку</button>
                 <button class="btn ghost" type="button" id="removeAudioBtn" hidden>Убрать музыку</button>
                 <input class="fileInput" id="audioFile" type="file" accept=".mp3" hidden />
-                
+                <button class="btn ghost" type="button" id="openIntegrationsBtn">Интеграция</button>
               </div>
             </div>
           </article>
@@ -199,6 +202,75 @@
           <div class="row right">
             <button class="btn ghost" id="cropResetBtn">Сброс</button>
             <button class="btn primary" id="cropDoneBtn">Готово</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Integrations Modal -->
+      <div class="modal hidden" id="integrationsModal">
+        <div class="modalContent glass wide integrationsContent">
+          <div class="modalHeader row between">
+            <div class="cardTitle">Интеграции</div>
+            <button class="btn ghost minimal" id="closeIntegrationsBtn">×</button>
+          </div>
+          <div class="integrationsGrid">
+            <!-- Discord -->
+            <div class="integrationItem" data-service="discord">
+              <div class="integrationIcon discord">
+                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.196.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.06.06 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.419 0 1.334-.947 2.419-2.157 2.419zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.419 0 1.334-.946 2.419-2.157 2.419z"/></svg>
+              </div>
+              <div class="integrationForm">
+                <input type="text" class="integrationInput glass" placeholder="username (no caps)" maxlength="32" id="input_discord_user" />
+              </div>
+            </div>
+            <!-- Telegram -->
+            <div class="integrationItem" data-service="telegram">
+              <div class="integrationIcon telegram">
+                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.894 8.221l-1.97 9.28c-.145.658-.537.818-1.084.508l-3-2.21-1.446 1.394c-.14.14-.24.24-.44.24l.197-2.97 5.46-4.937c.23-.204-.05-.316-.35-.115l-6.75 4.25-2.88-.9c-.626-.196-.64-.627.13-.927l11.272-4.346c.52-.196.974.116.821.821z"/></svg>
+              </div>
+              <div class="integrationForm">
+                <input type="text" class="integrationInput glass" placeholder="username (no caps)" maxlength="32" id="input_telegram_user" />
+              </div>
+            </div>
+            <!-- Steam -->
+            <div class="integrationItem" data-service="steam">
+              <div class="integrationIcon steam">
+                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M11.979 0C5.678 0 .511 4.86.022 11.037l6.432 2.654a3.755 3.755 0 0 1 3.52-.66l3.302-4.792a3.75 3.75 0 1 1 1.066.83l-3.324 4.824a3.75 3.75 0 0 1-5.748 4.23L.261 15.89c1.617 4.718 6.091 8.114 11.718 8.114 6.627 0 12-5.373 12-12S18.605 0 11.979 0zM7.544 14.825a1.125 1.125 0 1 0 0 2.25 1.125 1.125 0 0 0 0-2.25zM15 6.75a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3z"/></svg>
+              </div>
+              <div class="integrationForm">
+                <input type="text" class="integrationInput glass" placeholder="Steam Profile URL" id="input_steam_url" />
+              </div>
+            </div>
+            <!-- Faceit -->
+            <div class="integrationItem" data-service="faceit">
+              <div class="integrationIcon faceit">
+                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M23.908 4.96l-3.076-.118c-.066-.002-.132.046-.145.111l-.887 4.195c-.013.065.035.127.1.128l3.077.01c.065.001.125-.046.13-.111l.93-4.104c.015-.065-.034-.124-.13-.11l.001-.001zm-4.316 14.152l-3.077-.118c-.066-.002-.132.046-.145.11l-.887 4.196c-.013.065.035.127.1.128l3.077.01c.065.001.125-.046.13-.11l.93-4.103c.015-.066-.034-.124-.129-.111l-.001-.002zm-3.418-9.06l-3.076-.118c-.066-.002-.132.046-.145.111l-.887 4.195c-.013.065.035.127.1.128l3.077.01c.065.001.126-.046.131-.111l.923-4.076c.015-.065-.034-.124-.129-.11l.006-.029zM0 0v24h24v-24h-24zm12.35 15.65h-4.35v-1.3h3.05v-1h-3.05v-1.3h4.35v-1h-5.65v4.6h5.65v-1z"/></svg>
+              </div>
+              <div class="integrationForm">
+                <input type="text" class="integrationInput glass" placeholder="Faceit Profile URL" id="input_faceit_url" />
+              </div>
+            </div>
+            <!-- Instagram -->
+            <div class="integrationItem" data-service="instagram">
+              <div class="integrationIcon instagram">
+                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C8.74 0 8.333.015 7.053.072 5.775.132 4.905.333 4.14.63c-.789.306-1.459.717-2.126 1.384S.935 3.35.63 4.14C.333 4.905.131 5.775.072 7.053.012 8.333 0 8.74 0 12s.012 3.667.072 4.947c.06 1.277.261 2.148.558 2.913.306.788.717 1.459 1.384 2.126.667.666 1.336 1.079 2.126 1.384.766.296 1.636.499 2.913.558C8.333 23.988 8.74 24 12 24s3.667-.012 4.947-.072c1.277-.06 2.148-.262 2.913-.558.788-.306 1.459-.718 2.126-1.384.666-.667 1.079-1.335 1.384-2.126.296-.765.499-1.636.558-2.913.06-1.28.072-1.687.072-4.947s-.015-3.333-.072-4.613c-.06-1.277-.262-2.147-.558-2.913-.306-.789-.718-1.459-1.384-2.126C21.334.935 20.665.522 19.875.217c-.765-.306-1.636-.499-2.913-.558C15.667.012 15.26 0 12 0zm0 2.16c3.203 0 3.584.016 4.85.071 1.17.055 1.805.249 2.227.415.562.217.96.477 1.382.896.419.42.679.819.896 1.381.164.422.36 1.057.413 2.227.057 1.266.07 1.646.07 4.85s-.015 3.584-.071 4.85c-.055 1.17-.249 1.805-.415 2.227-.217.562-.477.96-.896 1.382-.419.419-.818.679-1.381.896-.422.164-1.056.36-2.227.413-1.266.057-1.646.07-4.85.07s-3.584-.015-4.85-.071c-1.17-.055-1.805-.249-2.227-.415-.562-.217-.96-.477-1.382-.896-.419-.419-.679-.818-.896-1.381-.164-.422-.36-1.056-.413-2.227-.057-1.266-.07-1.646-.07-4.85s.015-3.584.071-4.85c.055-1.17.249-1.805.415-2.227.217-.562.477-.96.896-1.382.419-.419.818-.679 1.381-.896.422-.164 1.056-.36 2.227-.413 1.266-.057 1.646-.07 4.85-.07zM12 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/></svg>
+              </div>
+              <div class="integrationForm">
+                <input type="text" class="integrationInput glass" placeholder="Instagram Profile URL" id="input_instagram_url" />
+              </div>
+            </div>
+            <!-- Twitch -->
+            <div class="integrationItem" data-service="twitch">
+              <div class="integrationIcon twitch">
+                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M11.571 4.714h1.715v5.143H11.57zm4.715 0H18v5.143h-1.714zM6 0L1.714 4.286v15.428h5.143V24l4.286-4.286h3.428L22.286 12V0zm14.571 11.143l-3.428 3.428h-3.429l-3 3v-3H6.857V1.714h13.714Z"/></svg>
+              </div>
+              <div class="integrationForm">
+                <input type="text" class="integrationInput glass" placeholder="Twitch Profile URL" id="input_twitch_url" />
+              </div>
+            </div>
+          </div>
+          <div class="row center mt-20">
+            <button class="btn primary" id="saveIntegrationsBtn">Сохранить всё</button>
           </div>
         </div>
       </div>
