@@ -261,7 +261,7 @@ app.post("/api/auth/logout", requireAuth, async (req, res) => {
 // --- Auth: current user
 app.get("/api/me", requireAuth, async (req, res) => {
   try {
-    const u = await db.get("SELECT username, login, slug, audio_path, video_path, avatar_path, bg_color, case_text, balance_l, steam_url, faceit_url, discord_user, instagram_url, telegram_user, twitch_url FROM users WHERE id = $1 LIMIT 1", [
+    const u = await db.get("SELECT username, login, slug, audio_path, video_path, avatar_path, bg_color, case_text, balance_l, steam_url, faceit_url, discord_user, instagram_url, telegram_user, twitch_url, active_background, owned_backgrounds FROM users WHERE id = $1 LIMIT 1", [
       req.user.id,
     ]);
     if (!u) return bad(res, 404, "Пользователь не найден");
@@ -283,6 +283,8 @@ app.get("/api/me", requireAuth, async (req, res) => {
         instagramUrl: u.instagram_url || null,
         telegramUser: u.telegram_user || null,
         twitchUrl: u.twitch_url || null,
+        activeBackground: u.active_background || "HOLO",
+        ownedBackgrounds: JSON.parse(u.owned_backgrounds || '["HOLO"]'),
       },
     });
   } catch (e) {
@@ -429,7 +431,7 @@ app.delete("/api/media/video", requireAuth, async (req, res) => {
 // --- Public APIs
 app.get("/api/profile/:slug", async (req, res) => {
   const slug = String(req.params.slug || "").toLowerCase();
-  const u = await db.get("SELECT username, login, slug, created_at, audio_path, video_path, avatar_path, bg_color, case_text, steam_url, faceit_url, discord_user, instagram_url, telegram_user, twitch_url FROM users WHERE slug = $1 LIMIT 1", [
+  const u = await db.get("SELECT username, login, slug, created_at, audio_path, video_path, avatar_path, bg_color, case_text, steam_url, faceit_url, discord_user, instagram_url, telegram_user, twitch_url, active_background FROM users WHERE slug = $1 LIMIT 1", [
     slug,
   ]);
   if (!u) return bad(res, 404, "Профиль не найден");
@@ -451,6 +453,7 @@ app.get("/api/profile/:slug", async (req, res) => {
       instagramUrl: u.instagram_url || null,
       telegramUser: u.telegram_user || null,
       twitchUrl: u.twitch_url || null,
+      activeBackground: u.active_background || "HOLO",
     },
   });
 });
@@ -508,6 +511,71 @@ app.get("/api/users", async (req, res) => {
   } catch (e) {
     console.error("API /api/users ERROR:", e);
     return bad(res, 500, `Ошибка: ${e.message}`);
+  }
+});
+
+// --- Currency: redeem
+app.post("/api/currency/redeem", requireAuth, async (req, res) => {
+  try {
+    const { code } = req.body || {};
+    if (!code) return bad(res, 400, "Введите код");
+
+    if (code.trim().toUpperCase() === "L-FDAK298D32") {
+      await db.run("UPDATE users SET balance_l = balance_l + 20000 WHERE id = $1", [req.user.id]);
+      return res.json({ ok: true, message: "Код активирован! +20,000 L", added: 20000 });
+    }
+
+    return bad(res, 400, "Неверный код");
+  } catch (e) {
+    console.error(e);
+    return bad(res, 500, "Ошибка активации");
+  }
+});
+
+// --- Shop: buy
+app.post("/api/shop/buy", requireAuth, async (req, res) => {
+  try {
+    const { itemId } = req.body || {};
+    if (!itemId) return bad(res, 400, "Предмет не указан");
+
+    const user = await db.get("SELECT balance_l, owned_backgrounds FROM users WHERE id = $1", [req.user.id]);
+    const owned = JSON.parse(user.owned_backgrounds || '["HOLO"]');
+
+    if (itemId === "BLACK_HOLE") {
+      const price = 1500;
+      if (owned.includes("BLACK_HOLE")) return bad(res, 400, "У вас уже есть этот фон");
+      if (user.balance_l < price) return bad(res, 400, "Недостаточно L валюты");
+
+      owned.push("BLACK_HOLE");
+      await db.run("UPDATE users SET balance_l = balance_l - $1, owned_backgrounds = $2 WHERE id = $3", [
+        price, JSON.stringify(owned), req.user.id
+      ]);
+      return res.json({ ok: true, message: "Фон Black Hole куплен!" });
+    }
+
+    return bad(res, 400, "Предмет не найден в магазине");
+  } catch (e) {
+    console.error(e);
+    return bad(res, 500, "Ошибка покупки");
+  }
+});
+
+// --- Background: set
+app.post("/api/background/set", requireAuth, async (req, res) => {
+  try {
+    const { backgroundId } = req.body || {};
+    if (!backgroundId) return bad(res, 400, "Фон не выбран");
+
+    const user = await db.get("SELECT owned_backgrounds FROM users WHERE id = $1", [req.user.id]);
+    const owned = JSON.parse(user.owned_backgrounds || '["HOLO"]');
+
+    if (!owned.includes(backgroundId)) return bad(res, 403, "У вас нет этого фона");
+
+    await db.run("UPDATE users SET active_background = $1 WHERE id = $2", [backgroundId, req.user.id]);
+    return res.json({ ok: true });
+  } catch (e) {
+    console.error(e);
+    return bad(res, 500, "Ошибка смены фона");
   }
 });
 

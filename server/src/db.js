@@ -100,7 +100,9 @@ async function migrate(db) {
       discord_user TEXT NULL,
       instagram_url TEXT NULL,
       telegram_user TEXT NULL,
-      twitch_url TEXT NULL
+      twitch_url TEXT NULL,
+      active_background TEXT DEFAULT 'HOLO',
+      owned_backgrounds TEXT DEFAULT '["HOLO"]'
     );
 
     CREATE TABLE IF NOT EXISTS sessions (
@@ -122,6 +124,8 @@ async function migrate(db) {
   try { await db.exec("ALTER TABLE users ADD COLUMN instagram_url TEXT NULL"); } catch(e) {}
   try { await db.exec("ALTER TABLE users ADD COLUMN telegram_user TEXT NULL"); } catch(e) {}
   try { await db.exec("ALTER TABLE users ADD COLUMN twitch_url TEXT NULL"); } catch(e) {}
+  try { await db.exec("ALTER TABLE users ADD COLUMN active_background TEXT DEFAULT 'HOLO'"); } catch(e) {}
+  try { await db.exec("ALTER TABLE users ADD COLUMN owned_backgrounds TEXT DEFAULT '[\"HOLO\"]'"); } catch(e) {}
 
   // Email verifications table is mentioned in previous code, let's keep it schema-ready
   await db.exec(`
