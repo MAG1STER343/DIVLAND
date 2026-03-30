@@ -271,7 +271,7 @@
       // Shop tab reveal logic
       const shopBtn = $("#shopBtn");
       if (shopBtn) {
-        if (viewName === "profile" || viewName === "shop") {
+        if (me && (viewName === "profile" || viewName === "shop")) {
           shopBtn.classList.remove("hidden");
           requestAnimationFrame(() => shopBtn.classList.add("is-revealed"));
         } else {
@@ -1290,7 +1290,8 @@ function createNetworkBackground({ canvas, reducedMotion }) {
       vRotZ: (Math.random() - 0.5) * 0.02,
       kind: ["cube", "pyramid", "octa"][Math.floor(Math.random() * 3)],
       size: 15 + Math.random() * 15,
-      hover: 0
+      hover: 0,
+      isGlitchy: Math.random() < 0.1
     };
   }
 
@@ -1342,17 +1343,31 @@ function createNetworkBackground({ canvas, reducedMotion }) {
       return { x: pr.x + x * size, y: pr.y + y * size };
     });
 
-    ctx.strokeStyle = isHover ? `rgba(${state.themeRGB},${0.4 + p.hover * 0.6})` : `rgba(${state.themeRGB},${alpha})`;
+    let stroke = isHover ? `rgba(${state.themeRGB},${0.4 + p.hover * 0.6})` : `rgba(${state.themeRGB},${alpha})`;
+    if (p.isGlitchy) {
+      // 10% special effect: white flickering
+      const flicker = Math.random() > 0.5 ? 1 : 0.2;
+      stroke = `rgba(255, 255, 255, ${flicker * 0.8})`;
+    }
+    ctx.strokeStyle = stroke;
     ctx.lineWidth = (isHover ? 2 : 1) * pr.s;
-    if (isHover) {
-      ctx.shadowBlur = 15 * p.hover;
+    if (isHover || p.isGlitchy) {
+      ctx.shadowBlur = (isHover ? 15 * p.hover : 8);
       ctx.shadowColor = "white";
     }
 
     m.e.forEach(e => {
       ctx.beginPath();
-      ctx.moveTo(pts[e[0]].x, pts[e[0]].y);
-      ctx.lineTo(pts[e[1]].x, pts[e[1]].y);
+      let p1 = pts[e[0]], p2 = pts[e[1]];
+      
+      if (p.isGlitchy && Math.random() < 0.15) {
+        // "Some parts falling off and reattaching" - jitter vertex position
+        const jitter = (Math.random() - 0.5) * 15;
+        p1 = { x: p1.x + jitter, y: p1.y + jitter };
+      }
+      
+      ctx.moveTo(p1.x, p1.y);
+      ctx.lineTo(p2.x, p2.y);
       ctx.stroke();
     });
     ctx.shadowBlur = 0;
