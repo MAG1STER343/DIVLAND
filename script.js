@@ -67,19 +67,11 @@
       mainNav.classList.toggle("is-open");
     };
 
-    // Navigation Sync Loop while hovering to handle CSS transitions
-    let navSyncRaf = null;
-    const syncNav = () => {
-      setActiveNav(currentViewName);
-      navSyncRaf = requestAnimationFrame(syncNav);
-    };
-    mainNav.addEventListener("mouseenter", () => {
-      navSyncRaf = requestAnimationFrame(syncNav);
-    });
-    mainNav.addEventListener("mouseleave", () => {
-      if (navSyncRaf) cancelAnimationFrame(navSyncRaf);
+    // Automatically sync indicator whenever the nav bar changes size (hover expansion/shrink)
+    const navObserver = new ResizeObserver(() => {
       setActiveNav(currentViewName);
     });
+    navObserver.observe(mainNav);
   }
 
   // ------- Navigation + Glitch transitions
