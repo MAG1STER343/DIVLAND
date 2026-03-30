@@ -10,11 +10,15 @@
       "destination": "/api/index.js"
     },
     {
-      "source": "/(main|profile|diversi|discord)(.*)",
+      "source": "/(main|profile|dieversi|die-versi|discord|participants)(.*)",
       "destination": "/index.html"
     },
     {
       "source": "/u/(.*)",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/((?!api|auth|favicon.ico|assets|avatars|sounds|videos|_next|static).*)$",
       "destination": "/index.html"
     }
   ]
