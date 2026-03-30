@@ -183,8 +183,12 @@
       };
       
       const path = routeMap[viewName];
-      if (path && window.location.pathname !== path && !window.location.pathname.startsWith("/profile/")) {
-        window.history.pushState({ view: viewName }, "", path);
+      if (path && window.location.pathname !== path) {
+        // Drop the slug and navigate to base /profile if user actively clicked the nav button.
+        // During initial page load (originEl is null), keep the slug in URL.
+        if (!(viewName === "profile" && !originEl && window.location.pathname.startsWith("/profile/"))) {
+          window.history.pushState({ view: viewName }, "", path);
+        }
       }
 
       // Background zoom
@@ -548,7 +552,7 @@
   async function fetchPublicProfile(slug) {
     try {
       const data = await apiJson(`/api/profile/${slug}`);
-      const u = data.user;
+      const u = data.profile;
       if (!u) throw new Error("Пользователь не найден");
 
       const profileUsername = $("#profileUsername");
