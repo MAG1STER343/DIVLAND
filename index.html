@@ -1,402 +1,1194 @@
-<!doctype html>
-<html lang="ru">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <meta name="color-scheme" content="dark" />
-    <title>DIEVERSI</title>
-    <link rel="stylesheet" href="/styles.css" />
-  </head>
-  <body>
-    <canvas id="bg" aria-hidden="true"></canvas>
-    <div class="scanlines" aria-hidden="true"></div>
-    <div id="glitchOverlay" class="glitchOverlay" aria-hidden="true"></div>
-    <audio id="profileAudioBg" loop aria-hidden="true"></audio>
-
-    <div class="brandTicker glass glitchCard" id="brandTicker" aria-label="DIEVERSI brand">
-      <div class="glitchTitle" id="brandTickerText" data-text="UNVERSI">
-        <span class="glitchTitle__base">UNVERSI</span>
-      </div>
-    </div>
-
-    <header class="topbar">
-      <div class="header-container">
-        <button class="burgerBtn glass" id="burgerBtn" aria-label="Menu">
-          <span></span>
-          <span></span>
-          <span></span>
-        </button>
-        <nav class="nav glass" id="mainNav">
-          <div class="nav-indicator" id="navIndicator"></div>
-          <button class="navBtn is-active" type="button" data-nav="home">ГЛАВНАЯ</button>
-          <button class="navBtn" type="button" data-nav="participants">УЧАСТНИКИ</button>
-          <div class="navGroup" id="profileGroup">
-            <button class="navBtn" type="button" data-nav="profile" id="profileBtn">ПРОФИЛЬ</button>
-            <button class="navBtn navBtn--shop hidden" type="button" data-nav="shop" id="shopBtn">МАГАЗИН</button>
-          </div>
-          <button class="navBtn" type="button" data-nav="dieversi">DIEVERSI</button>
-          <button class="navBtn" type="button" data-nav="discord">DISCORD</button>
-          
-          <div class="headerUser hidden" id="headerUser">
-            <div class="headerAvatar" id="headerAvatar"></div>
-            <div class="headerInfo">
-              <span class="headerLogin mono" id="headerLogin">—</span>
-              <div class="headerBalance" id="headerBalance">
-                <span class="balanceValue mono" id="balanceValue">0 L</span>
-                <button class="btn primary minimal replenishBtn" id="replenishBtn">ПОПОЛНИТЬ</button>
-              </div>
-            </div>
-            <button class="btn ghost minimal" id="headerLogout">ВЫХОД</button>
-          </div>
-        </nav>
-      </div>
-    </header>
-
-    <main class="app" id="app">
-      <!-- Home View -->
-      <section class="view is-active" data-view="home">
-        <div class="homeLayout">
-          <article class="card glass dieversiInfo id-card glitchCard">
-            <div class="cardTitle">DIEVERSI</div>
-            <div class="cardValue">
-              Добро пожаловать в систему
-            </div>
-            <div class="cardHint muted">MAGISTER — DIEVERSI</div>
-            <div class="chipContainer">
-              <span class="chip">black/white</span>
-              <span class="chip">glass</span>
-              <span class="chip">glitch</span>
-            </div>
-          </article>
-        </div>
-      </section>
-
-      <!-- Participants View -->
-      <section class="view" data-view="participants">
-        <div class="centerStage">
-          <div class="glass-card full-card">
-            <div class="card-header">
-              <span class="card-label">СИСТЕМА — УЧАСТНИКИ</span>
-            </div>
-            <div id="participants-list" class="user-list">
-              <div class="loading">Получение данных...</div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <!-- Profile View -->
-      <section class="view" data-view="profile">
-        <div class="centerStage">
-          <article class="card glass authCard glitchCard" id="authCard">
-            <div class="authHeader">
-              <div class="glitchTitle glitch-on-hover" data-text="PROFILE">
-                <span class="glitchTitle__base">PROFILE</span>
-              </div>
-              <div class="muted">Страница “гликует” и останавливается на вводе данных.</div>
-            </div>
-
-            <div class="authBody">
-              <form class="authForm is-active" data-auth="login" autocomplete="off">
-                <label class="field">
-                  <span class="fieldLabel">Логин / Имя пользователя</span>
-                  <input class="input" name="login" inputmode="text" placeholder="например: dieversi" required />
-                </label>
-                <label class="field">
-                  <span class="fieldLabel">Пароль</span>
-                  <input class="input" name="password" type="password" placeholder="••••••••" required />
-                </label>
-                <button class="btn primary glitch-on-hover" type="submit">Войти</button>
-                <div class="switchRow muted">
-                  Нет профиля?
-                  <button class="linkBtn glitch-on-hover" type="button" data-switch-auth="register">
-                    Зарегистрироваться
-                  </button>
-                </div>
-              </form>
-
-              <form class="authForm" data-auth="register" autocomplete="off">
-                <label class="field">
-                  <span class="fieldLabel">Имя пользователя</span>
-                  <input class="input" name="username" inputmode="text" placeholder="ваше имя" required />
-                </label>
-                <label class="field">
-                  <span class="fieldLabel">Логин</span>
-                  <input class="input" name="login" inputmode="text" placeholder="например: dieversi" required />
-                </label>
-                <label class="field">
-                  <span class="fieldLabel">Пароль</span>
-                  <input class="input" name="password" type="password" placeholder="••••••••" required />
-                </label>
-                <button class="btn primary glitch-on-hover" type="submit">Создать профиль</button>
-                <div class="switchRow muted">
-                  Уже есть профиль?
-                  <button class="linkBtn glitch-on-hover" type="button" data-switch-auth="login">Войти</button>
-                </div>
-              </form>
-            </div>
-          </article>
-
-          <!-- Profile info widget (shown when logged in) -->
-          <article class="card glass wide glitchCard profileWidget hidden" id="profileStage">
-            <div class="profileHeader">
-              <div class="profileAvatarWrap" id="profileAvatarBtn">
-                <div class="profileAvatarEmpty">
-                  <svg viewBox="0 0 24 24" fill="none" class="pencilIcon"><path d="M18.36 5.64a2.828 2.828 0 10-4-4L3 13V17h4l11.36-11.36z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                </div>
-                <img id="profileAvatarImg" src="" hidden alt="Avatar" />
-                <button class="avatarDeleteBtn owner-only" id="removeAvatarBtn" type="button" title="Удалить аватар" hidden>×</button>
-                <input class="fileInput" id="avatarFile" type="file" accept="image/*" hidden />
-              </div>
-
-              <div class="profileInfoWrap">
-                <div class="row headerRow">
-                  <div class="glitchTitle" data-text="PROFILE" id="profileUsername">
-                    <span class="glitchTitle__base">PROFILE</span>
-                  </div>
-                  <button class="btn primary glitch-on-hover owner-only" type="button" id="createCaseBtn">Создать дело</button>
-                </div>
-                <div class="muted mono userSubText" id="profileLinkBox">u/—</div>
-                <div class="profileIntegrations" id="profileIntegrations">
-                  <!-- Integration icons will be rendered here -->
-                </div>
-              </div>
-            </div>
-
-            <div class="hr"></div>
-
-            <div class="caseDisplay" id="caseDisplay" hidden>
-              <!-- Renders user case text + emojis -->
-            </div>
-
-            <div class="owner-only">
-              <div class="cardTitle">Оформление</div>
-              <div class="colorPicker" id="colorPicker">
-                <!-- Data attributes define custom color themes via CSS vars -->
-                <button class="colorBtn active" data-color="default"></button>
-                <button class="colorBtn" data-color="pink"></button>
-                <button class="colorBtn" data-color="green"></button>
-                <button class="colorBtn" data-color="red"></button>
-                <button class="colorBtn" data-color="purple"></button>
-                <button class="colorBtn" data-color="blue"></button>
-              </div>
-
-              <div class="mediaControls row">
-                <button class="btn ghost" type="button" id="pickAudioBtn">Добавить музыку</button>
-                <button class="btn ghost" type="button" id="removeAudioBtn" hidden>Убрать музыку</button>
-                <input class="fileInput" id="audioFile" type="file" accept=".mp3" hidden />
-                <button class="btn ghost" type="button" id="openIntegrationsBtn">Интеграция</button>
-              </div>
-            </div>
-          </article>
-        </div>
-      </section>
-
-      <!-- Modals (Overlay views) -->
-      <div class="modal hidden" id="cropModal">
-        <div class="modalContent glass">
-          <div class="cardTitle">Обрезка аватара</div>
-          <div class="cropArea">
-            <canvas id="cropCanvas"></canvas>
-          </div>
-          <div class="row right">
-            <button class="btn ghost" id="cropResetBtn">Сброс</button>
-            <button class="btn primary" id="cropDoneBtn">Готово</button>
-          </div>
-        </div>
-      </div>
-
-      <!-- Integrations Modal -->
-      <div class="modal hidden" id="integrationsModal">
-        <div class="modalContent glass wide integrationsContent">
-          <div class="modalHeader row between">
-            <div class="cardTitle">Интеграции</div>
-            <button class="btn ghost minimal" id="closeIntegrationsBtn">×</button>
-          </div>
-          <div class="integrationsGrid">
-            <!-- Discord -->
-            <div class="integrationItem" data-service="discord">
-              <div class="integrationChip">
-                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.196.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.06.06 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.419 0 1.334-.947 2.419-2.157 2.419zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.419 0 1.334-.946 2.419-2.157 2.419z"/></svg>
-              </div>
-              <div class="integrationLabel">Discord</div>
-              <div class="integrationForm">
-                <input type="text" class="integrationInput" placeholder="username (no caps)" maxlength="32" id="input_discord_user" />
-              </div>
-            </div>
-            <!-- Telegram -->
-            <div class="integrationItem" data-service="telegram">
-              <div class="integrationChip">
-                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.894 8.221l-1.97 9.28c-.145.658-.537.818-1.084.508l-3-2.21-1.446 1.394c-.14.14-.24.24-.44.24l.197-2.97 5.46-4.937c.23-.204-.05-.316-.35-.115l-6.75 4.25-2.88-.9c-.626-.196-.64-.627.13-.927l11.272-4.346c.52-.196.974.116.821.821z"/></svg>
-              </div>
-              <div class="integrationLabel">Telegram</div>
-              <div class="integrationForm">
-                <input type="text" class="integrationInput" placeholder="username (no caps)" maxlength="32" id="input_telegram_user" />
-              </div>
-            </div>
-            <!-- Steam -->
-            <div class="integrationItem" data-service="steam">
-              <div class="integrationChip">
-                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M11.979 0C5.678 0 .511 4.86.022 11.037l6.432 2.654a3.755 3.755 0 0 1 3.52-.66l3.302-4.792a3.75 3.75 0 1 1 1.066.83l-3.324 4.824a3.75 3.75 0 0 1-5.748 4.23L.261 15.89c1.617 4.718 6.091 8.114 11.718 8.114 6.627 0 12-5.373 12-12S18.605 0 11.979 0zM7.544 14.825a1.125 1.125 0 1 0 0 2.25 1.125 1.125 0 0 0 0-2.25zM15 6.75a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3z"/></svg>
-              </div>
-              <div class="integrationLabel">Steam</div>
-              <div class="integrationForm">
-                <input type="text" class="integrationInput" placeholder="Steam Profile URL" id="input_steam_url" />
-              </div>
-            </div>
-            <!-- Faceit -->
-            <div class="integrationItem" data-service="faceit">
-              <div class="integrationChip">
-                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M23.908 4.96l-3.076-.118c-.066-.002-.132.046-.145.111l-.887 4.195c-.013.065.035.127.1.128l3.077.01c.065.001.125-.046.13-.111l.93-4.104c.015-.065-.034-.124-.13-.11l.001-.001zm-4.316 14.152l-3.077-.118c-.066-.002-.132.046-.145.11l-.887 4.196c-.013.065.035.127.1.128l3.077.01c.065.001.125-.046.13-.11l.93-4.103c.015-.066-.034-.124-.129-.111l-.001-.002zm-3.418-9.06l-3.076-.118c-.066-.002-.132.046-.145.111l-.887 4.195c-.013.065.035.127.1.128l3.077.01c.065.001.126-.046.131-.111l.923-4.076c.015-.065-.034-.124-.129-.11l.006-.029zM0 0v24h24v-24h-24zm12.35 15.65h-4.35v-1.3h3.05v-1h-3.05v-1.3h4.35v-1h-5.65v4.6h5.65v-1z"/></svg>
-              </div>
-              <div class="integrationLabel">Faceit</div>
-              <div class="integrationForm">
-                <input type="text" class="integrationInput" placeholder="Faceit Profile URL" id="input_faceit_url" />
-              </div>
-            </div>
-            <!-- Instagram -->
-            <div class="integrationItem" data-service="instagram">
-              <div class="integrationChip">
-                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C8.74 0 8.333.015 7.053.072 5.775.132 4.905.333 4.14.63c-.789.306-1.459.717-2.126 1.384S.935 3.35.63 4.14C.333 4.905.131 5.775.072 7.053.012 8.333 0 8.74 0 12s.012 3.667.072 4.947c.06 1.277.261 2.148.558 2.913.306.788.717 1.459 1.384 2.126.667.666 1.336 1.079 2.126 1.384.766.296 1.636.499 2.913.558C8.333 23.988 8.74 24 12 24s3.667-.012 4.947-.072c1.277-.06 2.148-.262 2.913-.558.788-.306 1.459-.718 2.126-1.384.666-.667 1.079-1.335 1.384-2.126.296-.765.499-1.636.558-2.913.06-1.28.072-1.687.072-4.947s-.015-3.333-.072-4.613c-.06-1.277-.262-2.147-.558-2.913-.306-.789-.718-1.459-1.384-2.126C21.334.935 20.665.522 19.875.217c-.765-.306-1.636-.499-2.913-.558C15.667.012 15.26 0 12 0zm0 2.16c3.203 0 3.584.016 4.85.071 1.17.055 1.805.249 2.227.415.562.217.96.477 1.382.896.419.42.679.819.896 1.381.164.422.36 1.057.413 2.227.057 1.266.07 1.646.07 4.85s-.015 3.584-.071 4.85c-.055 1.17-.249 1.805-.415 2.227-.217.562-.477.96-.896 1.382-.419.419-.818.679-1.381.896-.422.164-1.056.36-2.227.413-1.266.057-1.646.07-4.85.07s-3.584-.015-4.85-.071c-1.17-.055-1.805-.249-2.227-.415-.562-.217-.96-.477-1.382-.896-.419-.419-.679-.818-.896-1.381-.164-.422-.36-1.056-.413-2.227-.057-1.266-.07-1.646-.07-4.85s.015-3.584.071-4.85c.055-1.17.249-1.805.415-2.227.217-.562.477-.96.896-1.382.419-.419.818-.679 1.381-.896.422-.164 1.056-.36 2.227-.413 1.266-.057 1.646-.07 4.85-.07zM12 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/></svg>
-              </div>
-              <div class="integrationLabel">Instagram</div>
-              <div class="integrationForm">
-                <input type="text" class="integrationInput" placeholder="Instagram Profile URL" id="input_instagram_url" />
-              </div>
-            </div>
-            <!-- Twitch -->
-            <div class="integrationItem" data-service="twitch">
-              <div class="integrationChip">
-                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M11.571 4.714h1.715v5.143H11.57zm4.715 0H18v5.143h-1.714zM6 0L1.714 4.286v15.428h5.143V24l4.286-4.286h3.428L22.286 12V0zm14.571 11.143l-3.428 3.428h-3.429l-3 3v-3H6.857V1.714h13.714Z"/></svg>
-              </div>
-              <div class="integrationLabel">Twitch</div>
-              <div class="integrationForm">
-                <input type="text" class="integrationInput" placeholder="Twitch Profile URL" id="input_twitch_url" />
-              </div>
-            </div>
-          </div>
-          <div class="row center mt-20">
-            <button class="btn primary" id="saveIntegrationsBtn">Сохранить всё</button>
-          </div>
-        </div>
-      </div>
-
-      <div class="modal hidden" id="caseModal">
-        <div class="modalContent glass wide-modal">
-          <div class="cardTitle">Дело (Case)</div>
-          <div class="splitView">
-            <div class="splitCol">
-              <textarea class="input caseTextarea" id="caseInput" placeholder="Введите информацию..."></textarea>
-            </div>
-            <div class="splitCol">
-              <div class="casePreview" id="casePreview"></div>
-            </div>
-          </div>
-          <div class="row right mt-10">
-            <button class="btn ghost" id="emojiBtn">Эмодзи</button>
-            <button class="btn ghost" id="caseCancelBtn">Отмена</button>
-            <button class="btn primary" id="caseDoneBtn">Готово</button>
-          </div>
-        </div>
-      </div>
-
-      <div class="modal hidden" id="emojiModal">
-        <div class="modalContent glass">
-          <div class="cardTitle">Эмодзи</div>
-          <div class="emojiGrid" id="emojiGrid">
-            <!-- Populated by JS -->
-          </div>
-          <button class="btn primary mt-10" id="emojiCloseBtn" style="width: 100%;">Закрыть</button>
-        </div>
-      </div>
-
-      <section class="view" data-view="dieversi">
-        <div class="centerStage">
-          <article class="card glass wide glitchCard">
-            <div class="glitchTitle glitch-on-hover" data-text="DIEVERSI">
-              <span class="glitchTitle__base">DIEVERSI</span>
-            </div>
-            <div class="caseTop">
-              <button class="btn primary glitch-on-hover" type="button" id="openCaseBtn">Открыть дело</button>
-              <div class="muted mono" id="caseStatus">CASE: LOCKED</div>
-            </div>
-
-            <div class="hr"></div>
-
-            <div class="caseLayout">
-              <div class="caseImgWrap">
-                <img
-                  id="dieversiCaseImg"
-                  src="/assets/dieversi-case.png"
-                  alt="DIEVERSI case"
-                  class="caseImg glitch-on-hover"
-                />
-              </div>
-              <div class="caseTextWrap">
-                <pre class="caseText mono glitch-on-hover" id="caseOutput" aria-live="polite"></pre>
-                <div class="caseHint muted" id="caseHint">
-                  Нажми «Открыть дело», чтобы получить доступ к файлу.
-                </div>
-              </div>
-            </div>
-
-            <div class="hr"></div>
-            <div class="libraryBox" style="display: none !important;">
-              <div class="cardTitle">DIEVERSI / Library</div>
-              <div class="libraryRow">
-                <span class="muted">Sound:</span>
-                <span class="mono" id="librarySound">—</span>
-              </div>
-              <div class="libraryRow">
-                <span class="muted">Video:</span>
-                <span class="mono" id="libraryVideo">—</span>
-              </div>
-              <div class="cardHint muted">Первые файлы в `sounds/` и `videos/` считаются его.</div>
-            </div>
-          </article>
-        </div>
-      </section>
-
-      <!-- Shop View -->
-      <section class="view" data-view="shop">
-        <div class="centerStage">
-          <article class="card glass wide glitchCard">
-            <div class="card-header">
-              <div class="glitchTitle" data-text="МАГАЗИН">
-                <span class="glitchTitle__base">МАГАЗИН</span>
-              </div>
-            </div>
-            <div class="shopContent">
-              <div class="loading muted">Витрина загружается...</div>
-              <p class="muted">Раздел находится в разработке.</p>
-            </div>
-          </article>
-        </div>
-      </section>
-
-      <section class="view" data-view="discord">
-        <div class="centerStage">
-          <article class="card glass discord-card glitchCard">
-            <div class="card-header">
-              <div class="discord-logo-wrap">
-                <svg viewBox="0 0 24 24"><path d="M19.27 4.58C17.81 3.92 16.24 3.44 14.59 3.17.433 3.17.406 3.17.38 3.2c-.214.38-.45.865-.617 1.253-1.785-.267-3.553-.267-5.307 0-.167-.388-.41-.873-.63-1.253-.027-.03-.054-.03-.434-.03-1.65.27-3.216.75-4.673 1.41-.01.006-.02.013-.027.022-2.915 4.352-3.714 8.59-3.326 12.763 0 .01.006.02.013.026 1.947 1.426 3.83 2.29 5.688 2.86.014.004.028-.001.036-.013.438-.597.83-1.236 1.164-1.913.01-.02.001-.045-.02-.054-0.62-.234-1.208-.512-1.767-.83-.024-.014-.025-.048-.002-.064.126-.094.252-.193.37-.294.02-.016.05-.02.07-.01 3.73 1.71 7.78 1.71 11.46 0 .02-.01.05-.006.07.01.118.101.244.2.37.294.023.016.022.05-.002.064-.56.318-1.147.596-1.768.83-.02.01-.03.033-.02.054.334.677.726 1.316 1.164 1.913.008.012.022.017.036.013 1.865-.57 3.748-1.434 5.695-2.86.007-.006.013-.016.013-.026.46-4.908-.785-9.106-3.326-12.763-.007-.01-.017-.016-.027-.022zM8.14 14.3c-1.102 0-2.02-.916-2.02-2.037 0-1.12.898-2.037 2.02-2.037 1.13 0 2.037.917 2.037 2.037 0 1.12-.907 2.037-2.037 2.037zm7.72 0c-1.102 0-2.02-.916-2.02-2.037 0-1.12.898-2.037 2.02-2.037 1.13 0 2.037.917 2.037 2.037 0 1.12-.907 2.037-2.037 2.037z"/></svg>
-              </div>
-            </div>
-            <div class="discord-body">
-              <div class="discord-title mono">DIVI LAND</div>
-              <div class="discord-desc">Добро пожаловать в наше сообщество. Присоединяйся к нам в Discord для общения и новостей.</div>
-              <a href="https://discord.gg/hsqTkYYZ5w" target="_blank" class="invite-link-btn primary glitch-on-hover">Присоединиться</a>
-            </div>
-          </article>
-        </div>
-      </section>
-    </main>
-
-    <div class="toast glass" id="toast" role="status" aria-live="polite" aria-atomic="true">
-      <div class="toast__title mono">DIEVERSI</div>
-      <div class="toast__text" id="toastText">...</div>
-    </div>
-
-    <script src="/script.js"></script>
-  </body>
-</html>
+<!doctype html>
+
+
+<html lang="ru">
+
+
+  <head>
+
+
+    <meta charset="UTF-8" />
+
+
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+
+
+    <meta name="color-scheme" content="dark" />
+
+
+    <title>DIEVERSI</title>
+
+
+    <link rel="stylesheet" href="/styles.css" />
+
+
+  </head>
+
+
+  <body>
+
+
+    <canvas id="bg" aria-hidden="true"></canvas>
+
+
+    <div class="scanlines" aria-hidden="true"></div>
+
+
+    <div id="glitchOverlay" class="glitchOverlay" aria-hidden="true"></div>
+
+
+    <audio id="profileAudioBg" loop aria-hidden="true"></audio>
+
+
+
+
+
+    <div class="brandTicker glass glitchCard" id="brandTicker" aria-label="DIEVERSI brand">
+
+
+      <div class="glitchTitle" id="brandTickerText" data-text="UNVERSI">
+
+
+        <span class="glitchTitle__base">UNVERSI</span>
+
+
+      </div>
+
+
+    </div>
+
+
+
+
+
+    <header class="topbar">
+
+
+      <div class="header-container">
+
+
+        <button class="burgerBtn glass" id="burgerBtn" aria-label="Menu">
+
+
+          <span></span>
+
+
+          <span></span>
+
+
+          <span></span>
+
+
+        </button>
+
+
+        <nav class="nav glass" id="mainNav">
+
+
+          <div class="nav-indicator" id="navIndicator"></div>
+
+
+          <button class="navBtn is-active" type="button" data-nav="home">ГЛАВНАЯ</button>
+
+
+          <button class="navBtn" type="button" data-nav="participants">УЧАСТНИКИ</button>
+
+
+          <div class="navGroup" id="profileGroup">
+
+
+            <button class="navBtn" type="button" data-nav="profile" id="profileBtn">ПРОФИЛЬ</button>
+
+
+            <button class="navBtn navBtn--shop hidden" type="button" data-nav="shop" id="shopBtn">МАГАЗИН</button>
+
+
+          </div>
+
+
+          <button class="navBtn" type="button" data-nav="dieversi">DIEVERSI</button>
+
+
+          <button class="navBtn" type="button" data-nav="discord">DISCORD</button>
+
+
+          
+
+
+          <div class="headerUser hidden" id="headerUser">
+
+
+            <div class="headerAvatar" id="headerAvatar"></div>
+
+
+            <div class="headerInfo">
+
+
+              <span class="headerLogin mono" id="headerLogin">—</span>
+
+
+              <div class="headerBalance" id="headerBalance">
+
+
+                <span class="balanceValue mono" id="balanceValue">0 L</span>
+
+
+                <button class="btn primary minimal replenishBtn" id="replenishBtn">ПОПОЛНИТЬ</button>
+
+
+              </div>
+
+
+            </div>
+
+
+            <button class="btn ghost minimal" id="headerLogout">ВЫХОД</button>
+
+
+          </div>
+
+
+        </nav>
+
+
+      </div>
+
+
+    </header>
+
+
+
+
+
+    <main class="app" id="app">
+
+
+      <!-- Home View -->
+
+
+      <section class="view is-active" data-view="home">
+
+
+        <div class="homeLayout">
+
+
+          <article class="card glass dieversiInfo id-card glitchCard">
+
+
+            <div class="cardTitle">DIEVERSI</div>
+
+
+            <div class="cardValue">
+
+
+              Добро пожаловать в систему
+
+
+            </div>
+
+
+            <div class="cardHint muted">MAGISTER — DIEVERSI</div>
+
+
+            <div class="chipContainer">
+
+
+              <span class="chip">black/white</span>
+
+
+              <span class="chip">glass</span>
+
+
+              <span class="chip">glitch</span>
+
+
+            </div>
+
+
+          </article>
+
+
+        </div>
+
+
+      </section>
+
+
+
+
+
+      <!-- Participants View -->
+
+
+      <section class="view" data-view="participants">
+
+
+        <div class="centerStage">
+
+
+          <div class="glass-card full-card">
+
+
+            <div class="card-header">
+
+
+              <span class="card-label">СИСТЕМА — УЧАСТНИКИ</span>
+
+
+            </div>
+
+
+            <div id="participants-list" class="user-list">
+
+
+              <div class="loading">Получение данных...</div>
+
+
+            </div>
+
+
+          </div>
+
+
+        </div>
+
+
+      </section>
+
+
+
+
+
+      <!-- Profile View -->
+
+
+      <section class="view" data-view="profile">
+
+
+        <div class="centerStage">
+
+
+          <article class="card glass authCard glitchCard" id="authCard">
+
+
+            <div class="authHeader">
+
+
+              <div class="glitchTitle glitch-on-hover" data-text="PROFILE">
+
+
+                <span class="glitchTitle__base">PROFILE</span>
+
+
+              </div>
+
+
+              <div class="muted">Страница “гликует” и останавливается на вводе данных.</div>
+
+
+            </div>
+
+
+
+
+
+            <div class="authBody">
+
+
+              <form class="authForm is-active" data-auth="login" autocomplete="off">
+
+
+                <label class="field">
+
+
+                  <span class="fieldLabel">Логин / Имя пользователя</span>
+
+
+                  <input class="input" name="login" inputmode="text" placeholder="например: dieversi" required />
+
+
+                </label>
+
+
+                <label class="field">
+
+
+                  <span class="fieldLabel">Пароль</span>
+
+
+                  <input class="input" name="password" type="password" placeholder="••••••••" required />
+
+
+                </label>
+
+
+                <button class="btn primary glitch-on-hover" type="submit">Войти</button>
+
+
+                <div class="switchRow muted">
+
+
+                  Нет профиля?
+
+
+                  <button class="linkBtn glitch-on-hover" type="button" data-switch-auth="register">
+
+
+                    Зарегистрироваться
+
+
+                  </button>
+
+
+                </div>
+
+
+              </form>
+
+
+
+
+
+              <form class="authForm" data-auth="register" autocomplete="off">
+
+
+                <label class="field">
+
+
+                  <span class="fieldLabel">Имя пользователя</span>
+
+
+                  <input class="input" name="username" inputmode="text" placeholder="ваше имя" required />
+
+
+                </label>
+
+
+                <label class="field">
+
+
+                  <span class="fieldLabel">Логин</span>
+
+
+                  <input class="input" name="login" inputmode="text" placeholder="например: dieversi" required />
+
+
+                </label>
+
+
+                <label class="field">
+
+
+                  <span class="fieldLabel">Пароль</span>
+
+
+                  <input class="input" name="password" type="password" placeholder="••••••••" required />
+
+
+                </label>
+
+
+                <button class="btn primary glitch-on-hover" type="submit">Создать профиль</button>
+
+
+                <div class="switchRow muted">
+
+
+                  Уже есть профиль?
+
+
+                  <button class="linkBtn glitch-on-hover" type="button" data-switch-auth="login">Войти</button>
+
+
+                </div>
+
+
+              </form>
+
+
+            </div>
+
+
+          </article>
+
+
+
+
+
+          <!-- Profile info widget (shown when logged in) -->
+
+
+          <article class="card glass wide glitchCard profileWidget hidden" id="profileStage">
+
+
+            <div class="profileHeader">
+
+
+              <div class="profileAvatarWrap" id="profileAvatarBtn">
+
+
+                <div class="profileAvatarEmpty">
+
+
+                  <svg viewBox="0 0 24 24" fill="none" class="pencilIcon"><path d="M18.36 5.64a2.828 2.828 0 10-4-4L3 13V17h4l11.36-11.36z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+
+
+                </div>
+
+
+                <img id="profileAvatarImg" src="" hidden alt="Avatar" />
+
+
+                <button class="avatarDeleteBtn owner-only" id="removeAvatarBtn" type="button" title="Удалить аватар" hidden>×</button>
+
+
+                <input class="fileInput" id="avatarFile" type="file" accept="image/*" hidden />
+
+
+              </div>
+
+
+
+
+
+              <div class="profileInfoWrap">
+
+
+                <div class="row headerRow">
+
+
+                  <div class="glitchTitle" data-text="PROFILE" id="profileUsername">
+
+
+                    <span class="glitchTitle__base">PROFILE</span>
+
+
+                  </div>
+
+
+                  <button class="btn primary glitch-on-hover owner-only" type="button" id="createCaseBtn">Создать дело</button>
+
+
+                </div>
+
+
+                <div class="muted mono userSubText" id="profileLinkBox">u/—</div>
+
+
+                <div class="profileIntegrations" id="profileIntegrations">
+
+
+                  <!-- Integration icons will be rendered here -->
+
+
+                </div>
+
+
+              </div>
+
+
+            </div>
+
+
+
+
+
+            <div class="hr"></div>
+
+
+
+
+
+            <div class="caseDisplay" id="caseDisplay" hidden>
+
+
+              <!-- Renders user case text + emojis -->
+
+
+            </div>
+
+
+
+
+
+            <div class="owner-only">
+
+
+              <div class="cardTitle">Оформление</div>
+
+
+              <div class="colorPicker" id="colorPicker">
+
+
+                <!-- Data attributes define custom color themes via CSS vars -->
+
+
+                <button class="colorBtn active" data-color="default"></button>
+
+
+                <button class="colorBtn" data-color="pink"></button>
+
+
+                <button class="colorBtn" data-color="green"></button>
+
+
+                <button class="colorBtn" data-color="red"></button>
+
+
+                <button class="colorBtn" data-color="purple"></button>
+
+
+                <button class="colorBtn" data-color="blue"></button>
+
+
+              </div>
+
+
+
+
+
+              <div class="mediaControls row">
+
+
+                <button class="btn ghost" type="button" id="pickAudioBtn">Добавить музыку</button>
+
+
+                <button class="btn ghost" type="button" id="removeAudioBtn" hidden>Убрать музыку</button>
+
+
+                <input class="fileInput" id="audioFile" type="file" accept=".mp3" hidden />
+
+
+                <button class="btn ghost" type="button" id="openIntegrationsBtn">Интеграция</button>
+
+
+              </div>
+
+
+            </div>
+
+
+          </article>
+
+
+        </div>
+
+
+      </section>
+
+
+
+
+
+      <!-- Modals (Overlay views) -->
+
+
+      <div class="modal hidden" id="cropModal">
+
+
+        <div class="modalContent glass">
+
+
+          <div class="cardTitle">Обрезка аватара</div>
+
+
+          <div class="cropArea">
+
+
+            <canvas id="cropCanvas"></canvas>
+
+
+          </div>
+
+
+          <div class="row right">
+
+
+            <button class="btn ghost" id="cropResetBtn">Сброс</button>
+
+
+            <button class="btn primary" id="cropDoneBtn">Готово</button>
+
+
+          </div>
+
+
+        </div>
+
+
+      </div>
+
+
+
+
+
+      <!-- Integrations Modal -->
+
+
+      <div class="modal hidden" id="integrationsModal">
+
+
+        <div class="modalContent glass wide integrationsContent">
+
+
+          <div class="modalHeader row between">
+
+
+            <div class="cardTitle">Интеграции</div>
+
+
+            <button class="btn ghost minimal" id="closeIntegrationsBtn">×</button>
+
+
+          </div>
+
+
+          <div class="integrationsGrid">
+
+
+            <!-- Discord -->
+
+
+            <div class="integrationItem" data-service="discord">
+
+
+              <div class="integrationChip">
+
+
+                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.196.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.06.06 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.419 0 1.334-.947 2.419-2.157 2.419zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.419 0 1.334-.946 2.419-2.157 2.419z"/></svg>
+
+
+              </div>
+
+
+              <div class="integrationLabel">Discord</div>
+
+
+              <div class="integrationForm">
+
+
+                <input type="text" class="integrationInput" placeholder="username (no caps)" maxlength="32" id="input_discord_user" />
+
+
+              </div>
+
+
+            </div>
+
+
+            <!-- Telegram -->
+
+
+            <div class="integrationItem" data-service="telegram">
+
+
+              <div class="integrationChip">
+
+
+                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.894 8.221l-1.97 9.28c-.145.658-.537.818-1.084.508l-3-2.21-1.446 1.394c-.14.14-.24.24-.44.24l.197-2.97 5.46-4.937c.23-.204-.05-.316-.35-.115l-6.75 4.25-2.88-.9c-.626-.196-.64-.627.13-.927l11.272-4.346c.52-.196.974.116.821.821z"/></svg>
+
+
+              </div>
+
+
+              <div class="integrationLabel">Telegram</div>
+
+
+              <div class="integrationForm">
+
+
+                <input type="text" class="integrationInput" placeholder="username (no caps)" maxlength="32" id="input_telegram_user" />
+
+
+              </div>
+
+
+            </div>
+
+
+            <!-- Steam -->
+
+
+            <div class="integrationItem" data-service="steam">
+
+
+              <div class="integrationChip"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.373 0 0 5.373 0 12c0 1.25.19 2.45.54 3.58l6.43 2.65c.54-.37 1.2-.59 1.91-.59.06 0 .12 0 .18.01L11.93 13.5v-.01c0-2.495 2.028-4.524 4.524-4.524 2.494 0 4.524 2.031 4.524 4.527s-2.03 4.525-4.524 4.525h-.105l-4.076 2.911c0 .052.004.105.004.159 0 1.875-1.515 3.396-3.39 3.396-1.635 0-3.016-1.173-3.331-2.727L.436 15.27C1.862 20.307 6.486 24 11.979 24c6.627 0 11.999-5.373 11.999-12S18.605 0 11.979 0zM7.54 18.21l-1.473-.61c.262.543.714.999 1.314 1.25 1.297.539 2.793-.076 3.332-1.375.263-.63.264-1.319.005-1.949s-.75-1.121-1.377-1.383c-.624-.26-1.29-.249-1.878-.03l1.523.63c.956.4 1.409 1.5 1.009 2.455-.397.957-1.497 1.41-2.454 1.012H7.54zm11.415-9.303c0-1.662-1.353-3.015-3.015-3.015-1.665 0-3.015 1.353-3.015 3.015 0 1.665 1.35 3.015 3.015 3.015 1.663 0 3.015-1.35 3.015-3.015zm-5.273-.005c0-1.252 1.013-2.266 2.265-2.266 1.249 0 2.266 1.014 2.266 2.266 0 1.251-1.017 2.265-2.266 2.265-1.252 0-2.265-1.014-2.265-2.265z"/></svg></div>
+
+
+              <div class="integrationLabel">Steam</div>
+
+
+              <div class="integrationForm">
+
+
+                <input type="text" class="integrationInput" placeholder="Steam Profile URL" id="input_steam_url" />
+
+
+              </div>
+
+
+            </div>
+
+
+            <!-- Faceit -->
+
+
+            <div class="integrationItem" data-service="faceit">
+
+
+              <div class="integrationChip"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23.908 4.96l-3.076-.118c-.066-.002-.132.046-.145.111l-.887 4.195c-.013.065.035.127.1.128l3.077.01c.065.001.125-.046.13-.111l.93-4.104c.015-.065-.034-.124-.13-.11l.001-.001zm-4.316 14.152l-3.077-.118c-.066-.002-.132.046-.145.11l-.887 4.196c-.013.065.035.127.1.128l3.077.01c.065.001.125-.046.13-.11l.93-4.103c.015-.066-.034-.124-.129-.111l-.001-.002zM15.357 9.796l-3.076-.118c-.066-.002-.132.046-.145.111l-.887 4.195c-.013.065.035.127.1.128l3.077.01c.065.001.126-.046.131-.111l.923-4.076c.015-.065-.034-.124-.129-.11l.006-.029z"/></svg></div>
+
+
+              <div class="integrationLabel">Faceit</div>
+
+
+              <div class="integrationForm">
+
+
+                <input type="text" class="integrationInput" placeholder="Faceit Profile URL" id="input_faceit_url" />
+
+
+              </div>
+
+
+            </div>
+
+
+            <!-- Instagram -->
+
+
+            <div class="integrationItem" data-service="instagram">
+
+
+              <div class="integrationChip">
+
+
+                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C8.74 0 8.333.015 7.053.072 5.775.132 4.905.333 4.14.63c-.789.306-1.459.717-2.126 1.384S.935 3.35.63 4.14C.333 4.905.131 5.775.072 7.053.012 8.333 0 8.74 0 12s.012 3.667.072 4.947c.06 1.277.261 2.148.558 2.913.306.788.717 1.459 1.384 2.126.667.666 1.336 1.079 2.126 1.384.766.296 1.636.499 2.913.558C8.333 23.988 8.74 24 12 24s3.667-.012 4.947-.072c1.277-.06 2.148-.262 2.913-.558.788-.306 1.459-.718 2.126-1.384.666-.667 1.079-1.335 1.384-2.126.296-.765.499-1.636.558-2.913.06-1.28.072-1.687.072-4.947s-.015-3.333-.072-4.613c-.06-1.277-.262-2.147-.558-2.913-.306-.789-.718-1.459-1.384-2.126C21.334.935 20.665.522 19.875.217c-.765-.306-1.636-.499-2.913-.558C15.667.012 15.26 0 12 0zm0 2.16c3.203 0 3.584.016 4.85.071 1.17.055 1.805.249 2.227.415.562.217.96.477 1.382.896.419.42.679.819.896 1.381.164.422.36 1.057.413 2.227.057 1.266.07 1.646.07 4.85s-.015 3.584-.071 4.85c-.055 1.17-.249 1.805-.415 2.227-.217.562-.477.96-.896 1.382-.419.419-.818.679-1.381.896-.422.164-1.056.36-2.227.413-1.266.057-1.646.07-4.85.07s-3.584-.015-4.85-.071c-1.17-.055-1.805-.249-2.227-.415-.562-.217-.96-.477-1.382-.896-.419-.419-.679-.818-.896-1.381-.164-.422-.36-1.056-.413-2.227-.057-1.266-.07-1.646-.07-4.85s.015-3.584.071-4.85c.055-1.17.249-1.805.415-2.227.217-.562.477-.96.896-1.382.419-.419.818-.679 1.381-.896.422-.164 1.056-.36 2.227-.413 1.266-.057 1.646-.07 4.85-.07zM12 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/></svg>
+
+
+              </div>
+
+
+              <div class="integrationLabel">Instagram</div>
+
+
+              <div class="integrationForm">
+
+
+                <input type="text" class="integrationInput" placeholder="Instagram Profile URL" id="input_instagram_url" />
+
+
+              </div>
+
+
+            </div>
+
+
+            <!-- Twitch -->
+
+
+            <div class="integrationItem" data-service="twitch">
+
+
+              <div class="integrationChip">
+
+
+                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M11.571 4.714h1.715v5.143H11.57zm4.715 0H18v5.143h-1.714zM6 0L1.714 4.286v15.428h5.143V24l4.286-4.286h3.428L22.286 12V0zm14.571 11.143l-3.428 3.428h-3.429l-3 3v-3H6.857V1.714h13.714Z"/></svg>
+
+
+              </div>
+
+
+              <div class="integrationLabel">Twitch</div>
+
+
+              <div class="integrationForm">
+
+
+                <input type="text" class="integrationInput" placeholder="Twitch Profile URL" id="input_twitch_url" />
+
+
+              </div>
+
+
+            </div>
+
+
+          </div>
+
+
+          <div class="row center mt-20">
+
+
+            <button class="btn primary" id="saveIntegrationsBtn">Сохранить всё</button>
+
+
+          </div>
+
+
+        </div>
+
+
+      </div>
+
+
+
+
+
+      <div class="modal hidden" id="caseModal">
+
+
+        <div class="modalContent glass wide-modal">
+
+
+          <div class="cardTitle">Дело (Case)</div>
+
+
+          <div class="splitView">
+
+
+            <div class="splitCol">
+
+
+              <textarea class="input caseTextarea" id="caseInput" placeholder="Введите информацию..."></textarea>
+
+
+            </div>
+
+
+            <div class="splitCol">
+
+
+              <div class="casePreview" id="casePreview"></div>
+
+
+            </div>
+
+
+          </div>
+
+
+          <div class="row right mt-10">
+
+
+            <button class="btn ghost" id="emojiBtn">Эмодзи</button>
+
+
+            <button class="btn ghost" id="caseCancelBtn">Отмена</button>
+
+
+            <button class="btn primary" id="caseDoneBtn">Готово</button>
+
+
+          </div>
+
+
+        </div>
+
+
+      </div>
+
+
+
+
+
+      <div class="modal hidden" id="emojiModal">
+
+
+        <div class="modalContent glass">
+
+
+          <div class="cardTitle">Эмодзи</div>
+
+
+          <div class="emojiGrid" id="emojiGrid">
+
+
+            <!-- Populated by JS -->
+
+
+          </div>
+
+
+          <button class="btn primary mt-10" id="emojiCloseBtn" style="width: 100%;">Закрыть</button>
+
+
+        </div>
+
+
+      </div>
+
+
+
+
+
+      <section class="view" data-view="dieversi">
+
+
+        <div class="centerStage">
+
+
+          <article class="card glass wide glitchCard">
+
+
+            <div class="glitchTitle glitch-on-hover" data-text="DIEVERSI">
+
+
+              <span class="glitchTitle__base">DIEVERSI</span>
+
+
+            </div>
+
+
+            <div class="caseTop">
+
+
+              <button class="btn primary glitch-on-hover" type="button" id="openCaseBtn">Открыть дело</button>
+
+
+              <div class="muted mono" id="caseStatus">CASE: LOCKED</div>
+
+
+            </div>
+
+
+
+
+
+            <div class="hr"></div>
+
+
+
+
+
+            <div class="caseLayout">
+
+
+              <div class="caseImgWrap">
+
+
+                <img
+
+
+                  id="dieversiCaseImg"
+
+
+                  src="/assets/dieversi-case.png"
+
+
+                  alt="DIEVERSI case"
+
+
+                  class="caseImg glitch-on-hover"
+
+
+                />
+
+
+              </div>
+
+
+              <div class="caseTextWrap">
+
+
+                <pre class="caseText mono glitch-on-hover" id="caseOutput" aria-live="polite"></pre>
+
+
+                <div class="caseHint muted" id="caseHint">
+
+
+                  Нажми «Открыть дело», чтобы получить доступ к файлу.
+
+
+                </div>
+
+
+              </div>
+
+
+            </div>
+
+
+
+
+
+            <div class="hr"></div>
+
+
+            <div class="libraryBox" style="display: none !important;">
+
+
+              <div class="cardTitle">DIEVERSI / Library</div>
+
+
+              <div class="libraryRow">
+
+
+                <span class="muted">Sound:</span>
+
+
+                <span class="mono" id="librarySound">—</span>
+
+
+              </div>
+
+
+              <div class="libraryRow">
+
+
+                <span class="muted">Video:</span>
+
+
+                <span class="mono" id="libraryVideo">—</span>
+
+
+              </div>
+
+
+              <div class="cardHint muted">Первые файлы в `sounds/` и `videos/` считаются его.</div>
+
+
+            </div>
+
+
+          </article>
+
+
+        </div>
+
+
+      </section>
+
+
+
+
+
+      <!-- Shop View -->
+
+
+      <section class="view" data-view="shop">
+
+
+        <div class="centerStage">
+
+
+          <article class="card glass wide glitchCard">
+
+
+            <div class="card-header">
+
+
+              <div class="glitchTitle" data-text="МАГАЗИН">
+
+
+                <span class="glitchTitle__base">МАГАЗИН</span>
+
+
+              </div>
+
+
+            </div>
+
+
+            <div class="shopContent">
+
+
+              <div class="loading muted">Витрина загружается...</div>
+
+
+              <p class="muted">Раздел находится в разработке.</p>
+
+
+            </div>
+
+
+          </article>
+
+
+        </div>
+
+
+      </section>
+
+
+
+
+
+      <section class="view" data-view="discord">
+
+
+        <div class="centerStage">
+
+
+          <article class="card glass discord-card glitchCard">
+
+
+            <div class="card-header">
+
+
+              <div class="discord-logo-wrap">
+
+
+                <svg viewBox="0 0 24 24"><path d="M19.27 4.58C17.81 3.92 16.24 3.44 14.59 3.17.433 3.17.406 3.17.38 3.2c-.214.38-.45.865-.617 1.253-1.785-.267-3.553-.267-5.307 0-.167-.388-.41-.873-.63-1.253-.027-.03-.054-.03-.434-.03-1.65.27-3.216.75-4.673 1.41-.01.006-.02.013-.027.022-2.915 4.352-3.714 8.59-3.326 12.763 0 .01.006.02.013.026 1.947 1.426 3.83 2.29 5.688 2.86.014.004.028-.001.036-.013.438-.597.83-1.236 1.164-1.913.01-.02.001-.045-.02-.054-0.62-.234-1.208-.512-1.767-.83-.024-.014-.025-.048-.002-.064.126-.094.252-.193.37-.294.02-.016.05-.02.07-.01 3.73 1.71 7.78 1.71 11.46 0 .02-.01.05-.006.07.01.118.101.244.2.37.294.023.016.022.05-.002.064-.56.318-1.147.596-1.768.83-.02.01-.03.033-.02.054.334.677.726 1.316 1.164 1.913.008.012.022.017.036.013 1.865-.57 3.748-1.434 5.695-2.86.007-.006.013-.016.013-.026.46-4.908-.785-9.106-3.326-12.763-.007-.01-.017-.016-.027-.022zM8.14 14.3c-1.102 0-2.02-.916-2.02-2.037 0-1.12.898-2.037 2.02-2.037 1.13 0 2.037.917 2.037 2.037 0 1.12-.907 2.037-2.037 2.037zm7.72 0c-1.102 0-2.02-.916-2.02-2.037 0-1.12.898-2.037 2.02-2.037 1.13 0 2.037.917 2.037 2.037 0 1.12-.907 2.037-2.037 2.037z"/></svg>
+
+
+              </div>
+
+
+            </div>
+
+
+            <div class="discord-body">
+
+
+              <div class="discord-title mono">DIVI LAND</div>
+
+
+              <div class="discord-desc">Добро пожаловать в наше сообщество. Присоединяйся к нам в Discord для общения и новостей.</div>
+
+
+              <a href="https://discord.gg/hsqTkYYZ5w" target="_blank" class="invite-link-btn primary glitch-on-hover">Присоединиться</a>
+
+
+            </div>
+
+
+          </article>
+
+
+        </div>
+
+
+      </section>
+
+
+    </main>
+
+
+
+
+
+    <div class="toast glass" id="toast" role="status" aria-live="polite" aria-atomic="true">
+
+
+      <div class="toast__title mono">DIEVERSI</div>
+
+
+      <div class="toast__text" id="toastText">...</div>
+
+
+    </div>
+
+
+
+
+
+    <script src="/script.js"></script>
+
+
+  </body>
+
+
+</html>
+
+
