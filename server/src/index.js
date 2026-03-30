@@ -287,19 +287,22 @@ app.get("/api/me", requireAuth, async (req, res) => {
 async function uploadToDb(file, type, userId) {
   try {
     const buffer = file.buffer || (file.path ? fs.readFileSync(file.path) : null);
-    if (!buffer) throw new Error("File content is missing.");
+    if (!buffer) throw new Error("File content is missing or empty.");
     
+    // Ensure the byte length is reasonable for DB storage
+    if (buffer.length > 2 * 1024 * 1024) throw new Error("File exceeds 2MB limit for bytea storage.");
+
     // Save to DB (as bytea)
     if (type === 'avatar') {
-      await db.run("UPDATE users SET avatar_blob = $1, avatar_path = $2 WHERE id = $3", 
-        [buffer, `/api/media/render/avatar/${userId}`, userId]);
+      const sql = "UPDATE users SET avatar_blob = $1, avatar_path = $2 WHERE id = $3";
+      await db.run(sql, [buffer, `/api/media/render/avatar/${userId}`, userId]);
     } else if (type === 'audio') {
-      await db.run("UPDATE users SET audio_blob = $1, audio_path = $2 WHERE id = $3", 
-        [buffer, `/api/media/render/audio/${userId}`, userId]);
+      const sql = "UPDATE users SET audio_blob = $1, audio_path = $2 WHERE id = $3";
+      await db.run(sql, [buffer, `/api/media/render/audio/${userId}`, userId]);
     }
     return true;
   } catch (err) {
-    console.error("DB Upload error:", err);
+    console.error(`DB Upload (${type}) error:`, err);
     throw err;
   }
 }

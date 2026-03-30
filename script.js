@@ -211,6 +211,11 @@
         } catch(_) {}
       }
 
+      // Reset theme to user's personal theme when NOT viewing a public profile
+      if (viewName !== "profile") {
+        applyThemeFromUser(me);
+      }
+
       // Show correct stage when entering profile tab
       if (viewName === "profile") {
         const authCard_ = $("#authCard");
