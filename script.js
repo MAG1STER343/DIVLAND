@@ -109,20 +109,61 @@
 
   function showView(viewName, { withGlitch = true, originEl = null } = {}) {
     const doIt = () => {
+      let rect = null;
+      if (originEl) {
+        rect = originEl.getBoundingClientRect();
+      }
+
       views.forEach((v) => {
         const isActive = v.dataset.view === viewName;
         v.classList.toggle("is-active", isActive);
         
         if (isActive) {
-          if (originEl) {
-            const rect = originEl.getBoundingClientRect();
+          if (rect) {
             const x = rect.left + rect.width / 2;
             const y = rect.top + rect.height / 2;
             v.style.setProperty("--reveal-x", x + "px");
             v.style.setProperty("--reveal-y", y + "px");
+
+            // --- Widget Stagger Animation ---
+            const widgets = v.querySelectorAll(".card, .glitchCard, .glass-card, .discord-card, .user-item, .profileWidget, .customDock__card, .customPanel, .dieversiInfo, .id-card, .authCard, .participant-grid");
+            
+            // Initial reset and setup
+            widgets.forEach((w) => {
+              w.classList.add("widget-animated");
+              w.classList.remove("is-visible");
+              
+              const wRect = w.getBoundingClientRect();
+              const wX = wRect.left + wRect.width / 2;
+              const wY = wRect.top + wRect.height / 2;
+              
+              // Delta to ensure they start at the button's position
+              const dx = rect.left - wRect.left;
+              const dy = rect.top - wRect.top;
+              
+              w.style.setProperty("--dx", `${dx}px`);
+              w.style.setProperty("--dy", `${dy}px`);
+            });
+
+            // Trigger stagger in next frames
+            requestAnimationFrame(() => {
+              widgets.forEach((w, i) => {
+                setTimeout(() => {
+                  w.classList.add("is-visible");
+                }, i * 65); // 65ms stagger
+              });
+            });
+
           } else {
             v.style.setProperty("--reveal-x", "50%");
             v.style.setProperty("--reveal-y", "0%");
+            
+            // Simple show if no origin provided
+            const widgets = v.querySelectorAll(".card, .glitchCard, .glass-card, .discord-card, .user-item, .profileWidget, .customDock__card, .customPanel, .dieversiInfo, .id-card, .authCard, .participant-grid");
+            widgets.forEach(w => {
+              w.classList.remove("widget-animated");
+              w.classList.add("is-visible");
+            });
           }
         }
       });
