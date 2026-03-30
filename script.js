@@ -153,7 +153,7 @@
               widgets.forEach((w, i) => {
                 setTimeout(() => {
                   w.classList.add("is-visible");
-                }, i * 75); // Slightly slower stagger for better top-to-bottom read
+                }, i * 150); // Slower stagger for deliberate top-to-bottom effect
               });
             });
 

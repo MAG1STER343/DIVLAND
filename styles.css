@@ -1,4 +1,4 @@
-﻿.hidden { display: none !important; }
+.hidden { display: none !important; }
 
 :root {
   --bg: #050505;
@@ -1837,9 +1837,9 @@ body[data-theme="default"], body { --theme-glow: 255, 255, 255; }
   transform: scale(0.4) translate3d(var(--dx, 0), var(--dy, 0), 0) !important;
   filter: blur(15px) !important;
   transition: 
-    opacity 650ms cubic-bezier(0.16, 1, 0.3, 1), 
-    transform 850ms cubic-bezier(0.16, 1, 0.3, 1), 
-    filter 650ms ease;
+    opacity 900ms cubic-bezier(0.16, 1, 0.3, 1), 
+    transform 1300ms cubic-bezier(0.2, 0.9, 0.3, 1), 
+    filter 900ms ease;
   will-change: transform, opacity, filter;
   pointer-events: none;
 }
