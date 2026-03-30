@@ -345,12 +345,12 @@
     return data;
   }
 
-  async function apiUpload(url, file) {
+  async function apiUpload(url, file, fieldName = "file") {
     if (isFileProtocol) {
       throw new Error("Откройте сайт через сервер (например: http://localhost:3000), а не file://");
     }
     const fd = new FormData();
-    fd.append("file", file);
+    fd.append(fieldName, file);
     const res = await fetch(url, { method: "POST", body: fd, credentials: "include" });
     const data = await res.json().catch(() => null);
     if (!res.ok || !data || data.ok === false) {
@@ -591,7 +591,8 @@
     const pickAvatar = $("#profileAvatarBtn");
     const pickAudio = $("#pickAudioBtn");
 
-    if (pickAvatar && avatarInput) {
+    if (pickAvatar && avatarInput && !pickAvatar.dataset.initialized) {
+      pickAvatar.dataset.initialized = "true";
       pickAvatar.addEventListener("click", (e) => {
         // Prevent click if clicking the delete button specifically
         if (e.target.closest("#removeAvatarBtn")) return;
@@ -599,41 +600,48 @@
       });
     }
 
-    if (avatarInput) avatarInput.addEventListener("change", async () => {
-      try {
-        if (!avatarInput.files[0]) return;
-        showToast("Загрузка аватара...");
-        const data = await apiUpload("/api/media/avatar", avatarInput.files[0]);
-        showToast("Аватар сохранен!");
-        if (me) {
-          me.avatar_path = data.avatar_url;
-          updateProfileAvatarView(me.avatar_url);
-          updateMediaResetButtons(me, true);
-        }
-      } catch (err) {
-        showToast(String(err.message || err));
-      } finally { avatarInput.value = ""; }
-    });
+    if (avatarInput && !avatarInput.dataset.initialized) {
+      avatarInput.dataset.initialized = "true";
+      avatarInput.addEventListener("change", async () => {
+        try {
+          if (!avatarInput.files[0]) return;
+          showToast("Загрузка аватара...");
+          const data = await apiUpload("/api/media/avatar", avatarInput.files[0], "avatar");
+          showToast("Аватар сохранен!");
+          if (me) {
+            me.avatar_path = data.avatar_url;
+            updateProfileAvatarView(me.avatar_url);
+            updateMediaResetButtons(me, true);
+          }
+        } catch (err) {
+          showToast(String(err.message || err));
+        } finally { avatarInput.value = ""; }
+      });
+    }
 
-    if (pickAudio && audioInput) {
+    if (pickAudio && audioInput && !pickAudio.dataset.initialized) {
+      pickAudio.dataset.initialized = "true";
       pickAudio.addEventListener("click", () => audioInput.click());
     }
 
-    if (audioInput) audioInput.addEventListener("change", async () => {
-      try {
-        if (!audioInput.files[0]) return;
-        showToast("Загрузка музыки...");
-        const data = await apiUpload("/api/media/audio", audioInput.files[0]);
-        showToast("Звук сохранен.");
-        if (me) {
-          me.audio_path = data.audio_url;
-          setMediaBackground({ audioUrl: me.audio_path });
-          updateMediaResetButtons(me, true);
-        }
-      } catch (err) {
-        showToast(String(err.message || err));
-      } finally { audioInput.value = ""; }
-    });
+    if (audioInput && !audioInput.dataset.initialized) {
+      audioInput.dataset.initialized = "true";
+      audioInput.addEventListener("change", async () => {
+        try {
+          if (!audioInput.files[0]) return;
+          showToast("Загрузка музыки...");
+          const data = await apiUpload("/api/media/audio", audioInput.files[0], "audio");
+          showToast("Звук сохранен.");
+          if (me) {
+            me.audio_path = data.audio_url;
+            setMediaBackground({ audioUrl: me.audio_path });
+            updateMediaResetButtons(me, true);
+          }
+        } catch (err) {
+          showToast(String(err.message || err));
+        } finally { audioInput.value = ""; }
+      });
+    }
 
     // --- Removal Logic moved to updateMediaResetButtons helper ---
 
@@ -824,7 +832,7 @@
         finalCanvas.toBlob(async (blob) => {
           if(!blob) return;
           try {
-             const data = await apiUpload("/api/media/avatar", blob);
+             const data = await apiUpload("/api/media/avatar", blob, "avatar");
              me.avatar_path = data.avatarUrl;
              updateProfileAvatarView(data.avatarUrl);
              updateMediaResetButtons(me, true);
