@@ -33,6 +33,9 @@
   const authForms = $$("[data-auth]", authCard);
   const navIndicator = $("#navIndicator");
 
+  const avatarInput = $("#avatarFile");
+  const audioInput = $("#audioFile");
+
   // ------- Toast
   let toastTimer = 0;
   function showToast(text) {
@@ -580,7 +583,37 @@
   }
 
   function setupCustomization() {
+    const pickAvatar = $("#profileAvatarBtn");
     const pickAudio = $("#pickAudioBtn");
+
+    if (pickAvatar && avatarInput) {
+      pickAvatar.addEventListener("click", (e) => {
+        // Prevent click if clicking the delete button specifically
+        if (e.target.closest("#removeAvatarBtn")) return;
+        avatarInput.click();
+      });
+    }
+
+    if (avatarInput) avatarInput.addEventListener("change", async () => {
+      try {
+        if (!avatarInput.files[0]) return;
+        showToast("Загрузка аватара...");
+        const data = await apiUpload("/api/media/avatar", avatarInput.files[0]);
+        showToast("Аватар сохранен!");
+        if (me) {
+          me.avatar_path = data.avatar_url;
+          updateProfileAvatarView(me.avatar_url);
+          updateMediaResetButtons(me, true);
+        }
+      } catch (err) {
+        showToast(String(err.message || err));
+      } finally { avatarInput.value = ""; }
+    });
+
+    if (pickAudio && audioInput) {
+      pickAudio.addEventListener("click", () => audioInput.click());
+    }
+
     if (audioInput) audioInput.addEventListener("change", async () => {
       try {
         if (!audioInput.files[0]) return;
@@ -588,7 +621,7 @@
         const data = await apiUpload("/api/media/audio", audioInput.files[0]);
         showToast("Звук сохранен.");
         if (me) {
-          me.audio_path = data.audioUrl;
+          me.audio_path = data.audio_url;
           setMediaBackground({ audioUrl: me.audio_path });
           updateMediaResetButtons(me, true);
         }
