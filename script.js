@@ -488,7 +488,7 @@
       }
 
       document.body.classList.add("is-owner");
-      updateProfileAvatarView(me.avatarUrl || me.avatarPath);
+      updateProfileAvatarView(me.avatarUrl || me.avatar_path);
       updateProfileCase(me.caseText);
         
       const authStage = document.querySelector(".authStage") || document.querySelector("#authCard");
@@ -576,10 +576,10 @@
       const oldBtn = $("#resetAvatarBtn");
       if (oldBtn) oldBtn.remove();
 
-      updateProfileAvatarView(u.avatar_path);
-      updateProfileCase(u.case_text);
-      applyThemeFromUser({ bgColor: u.bg_color });
-      setMediaBackground({ audioUrl: u.audio_path });
+      updateProfileAvatarView(u.avatarUrl || u.avatar_path);
+      updateProfileCase(u.caseText);
+      applyThemeFromUser({ bgColor: u.bgColor });
+      setMediaBackground({ audioUrl: u.audioUrl || u.audio_path });
       updateMediaResetButtons(u, false); // No resets on public view
     } catch (err) {
       showToast("Ошибка загрузки профиля");
