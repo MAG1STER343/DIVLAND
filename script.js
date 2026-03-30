@@ -126,31 +126,34 @@
             v.style.setProperty("--reveal-y", y + "px");
 
             // --- Widget Stagger Animation ---
-            const widgets = v.querySelectorAll(".card, .glitchCard, .glass-card, .discord-card, .user-item, .profileWidget, .customDock__card, .customPanel, .dieversiInfo, .id-card, .authCard, .participant-grid");
+            let widgets = Array.from(v.querySelectorAll(".card, .glitchCard, .glass-card, .discord-card, .user-item, .profileWidget, .customDock__card, .customPanel, .dieversiInfo, .id-card, .authCard, .participant-grid"));
             
-            // Initial reset and setup
+            // Initial setup and calculate origin distances
             widgets.forEach((w) => {
               w.classList.add("widget-animated");
               w.classList.remove("is-visible");
               
               const wRect = w.getBoundingClientRect();
-              const wX = wRect.left + wRect.width / 2;
-              const wY = wRect.top + wRect.height / 2;
               
-              // Delta to ensure they start at the button's position
-              const dx = rect.left - wRect.left;
-              const dy = rect.top - wRect.top;
+              // Delta to ensure they start perfectly at the button's position
+              // We calculate difference between widget center and button center
+              const dx = (rect.left + rect.width / 2) - (wRect.left + wRect.width / 2);
+              const dy = (rect.top + rect.height / 2) - (wRect.top + wRect.height / 2);
               
               w.style.setProperty("--dx", `${dx}px`);
               w.style.setProperty("--dy", `${dy}px`);
+              w.dataset.topPos = wRect.top; // Save for sorting
             });
+
+            // Sort top-to-bottom to create a vertical waterfall effect
+            widgets.sort((a, b) => parseFloat(a.dataset.topPos) - parseFloat(b.dataset.topPos));
 
             // Trigger stagger in next frames
             requestAnimationFrame(() => {
               widgets.forEach((w, i) => {
                 setTimeout(() => {
                   w.classList.add("is-visible");
-                }, i * 65); // 65ms stagger
+                }, i * 75); // Slightly slower stagger for better top-to-bottom read
               });
             });
 
