@@ -870,13 +870,13 @@
       const paginated = currentParticipants.slice(startIdx, endIdx);
       
       const grid = document.createElement("div");
-      grid.className = "participant-grid";
+      grid.className = "participant-grid widget-animated";
       
       paginated.forEach(u => {
         const item = document.createElement("div");
         item.className = "participantCard";
         
-        let avatarHtml = `<div class="user-avatar">${u.username.slice(0,1)}</div>`;
+        let avatarHtml = `<div class="user-avatar">${u.username.slice(0,1).toUpperCase()}</div>`;
         if (u.avatar_path) {
           avatarHtml = `<img src="${u.avatar_path}" class="avatar-img" alt="${u.username}">`;
         }
@@ -910,6 +910,11 @@
       });
       
       list.appendChild(grid);
+      
+      // Trigger animation for the newly added grid
+      requestAnimationFrame(() => {
+        grid.classList.add("is-visible");
+      });
       
       // Pagination controls
       if (currentParticipants.length > PARTICIPANTS_PER_PAGE) {
