@@ -30,13 +30,22 @@
           <div class="nav-indicator" id="navIndicator"></div>
           <button class="navBtn is-active" type="button" data-nav="home">ГЛАВНАЯ</button>
           <button class="navBtn" type="button" data-nav="participants">УЧАСТНИКИ</button>
-          <button class="navBtn" type="button" data-nav="profile">ПРОФИЛЬ</button>
+          <div class="navGroup" id="profileGroup">
+            <button class="navBtn" type="button" data-nav="profile" id="profileBtn">ПРОФИЛЬ</button>
+            <button class="navBtn navBtn--shop hidden" type="button" data-nav="shop" id="shopBtn">МАГАЗИН</button>
+          </div>
           <button class="navBtn" type="button" data-nav="dieversi">DIEVERSI</button>
           <button class="navBtn" type="button" data-nav="discord">DISCORD</button>
           
           <div class="headerUser hidden" id="headerUser">
             <div class="headerAvatar" id="headerAvatar"></div>
-            <span class="headerLogin mono" id="headerLogin">—</span>
+            <div class="headerInfo">
+              <span class="headerLogin mono" id="headerLogin">—</span>
+              <div class="headerBalance" id="headerBalance">
+                <span class="balanceValue mono" id="balanceValue">0 L</span>
+                <button class="btn primary minimal replenishBtn" id="replenishBtn">ПОПОЛНИТЬ</button>
+              </div>
+            </div>
             <button class="btn ghost minimal" id="headerLogout">ВЫХОД</button>
           </div>
         </nav>
@@ -265,6 +274,23 @@
                 <span class="mono" id="libraryVideo">—</span>
               </div>
               <div class="cardHint muted">Первые файлы в `sounds/` и `videos/` считаются его.</div>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <!-- Shop View -->
+      <section class="view" data-view="shop">
+        <div class="centerStage">
+          <article class="card glass wide glitchCard">
+            <div class="card-header">
+              <div class="glitchTitle" data-text="МАГАЗИН">
+                <span class="glitchTitle__base">МАГАЗИН</span>
+              </div>
+            </div>
+            <div class="shopContent">
+              <div class="loading muted">Витрина загружается...</div>
+              <p class="muted">Раздел находится в разработке.</p>
             </div>
           </article>
         </div>

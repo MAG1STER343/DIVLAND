@@ -945,6 +945,71 @@ a {
   color: rgba(255,255,255,0.8);
 }
 
+.headerInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.headerBalance {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  position: relative;
+  height: 18px; /* Fixed height to prevent layout shift */
+}
+
+.balanceValue {
+  font-size: 11px;
+  color: #fff;
+  opacity: 0.85;
+  cursor: default;
+}
+
+.replenishBtn {
+  opacity: 0;
+  transform: translateX(-10px) scale(0.8);
+  pointer-events: none;
+  transition: all 250ms cubic-bezier(0.16, 1, 0.3, 1);
+  background: rgba(255, 255, 255, 0.15) !important;
+  border-color: rgba(255, 255, 255, 0.2) !important;
+  font-size: 9px !important;
+  padding: 2px 6px !important;
+}
+
+.headerBalance:hover .replenishBtn {
+  opacity: 1;
+  transform: translateX(0) scale(1);
+  pointer-events: auto;
+}
+
+.navGroup {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+}
+
+.navBtn--shop {
+  max-height: 0;
+  opacity: 0;
+  margin-top: 0;
+  overflow: hidden;
+  transition: max-height 500ms cubic-bezier(0.4, 0, 0.2, 1), 
+              opacity 300ms ease, 
+              margin-top 500ms cubic-bezier(0.4, 0, 0.2, 1);
+  font-size: 11px !important;
+  padding: 6px 10px !important;
+  background: rgba(255, 255, 255, 0.04) !important;
+  border-style: dashed !important;
+}
+
+.navBtn--shop.is-revealed {
+  max-height: 40px;
+  opacity: 1;
+  margin-top: 4px;
+}
+
 .minimal {
   padding: 4px 8px;
   font-size: 10px;

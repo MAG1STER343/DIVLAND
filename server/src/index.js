@@ -261,7 +261,7 @@ app.post("/api/auth/logout", requireAuth, async (req, res) => {
 // --- Auth: current user
 app.get("/api/me", requireAuth, async (req, res) => {
   try {
-    const u = await db.get("SELECT username, login, slug, audio_path, video_path, avatar_path, bg_color, case_text FROM users WHERE id = $1 LIMIT 1", [
+    const u = await db.get("SELECT username, login, slug, audio_path, video_path, avatar_path, bg_color, case_text, balance_l FROM users WHERE id = $1 LIMIT 1", [
       req.user.id,
     ]);
     if (!u) return bad(res, 404, "Пользователь не найден");
@@ -276,6 +276,7 @@ app.get("/api/me", requireAuth, async (req, res) => {
         avatarUrl: u.avatar_path || null,
         bgColor: u.bg_color || "default",
         caseText: u.case_text || null,
+        balanceL: u.balance_l || 0,
       },
     });
   } catch (e) {

@@ -181,6 +181,7 @@
         home: "/",
         participants: "/participants",
         profile: "/profile",
+        shop: "/shop",
         dieversi: "/dieversi",
         discord: "/discord"
       };
@@ -265,6 +266,20 @@
 
       if (viewName === "dieversi") {
         applyDieversiMediaIfPossible();
+      }
+
+      // Shop tab reveal logic
+      const shopBtn = $("#shopBtn");
+      if (shopBtn) {
+        if (viewName === "profile" || viewName === "shop") {
+          shopBtn.classList.remove("hidden");
+          requestAnimationFrame(() => shopBtn.classList.add("is-revealed"));
+        } else {
+          shopBtn.classList.remove("is-revealed");
+          setTimeout(() => {
+            if (!shopBtn.classList.contains("is-revealed")) shopBtn.classList.add("hidden");
+          }, 500);
+        }
       }
     };
 
@@ -472,6 +487,8 @@
           av.style.backgroundImage = (me.avatarUrl || me.avatar_path) ? `url(${me.avatarUrl || me.avatar_path})` : 'none';
         }
         if (lg) lg.textContent = me.login;
+        const bal = headerUser.querySelector("#balanceValue");
+        if (bal) bal.textContent = `${me.balanceL || 0} L`;
       }
       
       setMediaBackground({ videoUrl: me.videoUrl, audioUrl: me.audioUrl });
@@ -1154,7 +1171,7 @@
   window.addEventListener("pointerleave", () => background && background.setPointer && background.setPointer(-9999, -9999));
 
   window.addEventListener("popstate", (e) => {
-    const view = (e.state && e.state.view) || viewMap[window.location.pathname] || "home";
+    const view = (e.state && e.state.view) || viewMap[window.location.pathname] || (window.location.pathname === "/shop" ? "shop" : "home");
     showView(view, { withGlitch: true });
   });
 

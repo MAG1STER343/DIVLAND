@@ -93,7 +93,8 @@ async function migrate(db) {
       bg_color TEXT NULL,
       case_text TEXT NULL,
       avatar_blob BYTEA NULL,
-      audio_blob BYTEA NULL
+      audio_blob BYTEA NULL,
+      balance_l INTEGER DEFAULT 0
     );
 
     CREATE TABLE IF NOT EXISTS sessions (
@@ -108,6 +109,7 @@ async function migrate(db) {
   // Safe ALTER TABLE to update existing Vercel databases
   try { await db.exec("ALTER TABLE users ADD COLUMN avatar_blob BYTEA NULL"); } catch(e) {}
   try { await db.exec("ALTER TABLE users ADD COLUMN audio_blob BYTEA NULL"); } catch(e) {}
+  try { await db.exec("ALTER TABLE users ADD COLUMN balance_l INTEGER DEFAULT 0"); } catch(e) {}
 
   // Email verifications table is mentioned in previous code, let's keep it schema-ready
   await db.exec(`
