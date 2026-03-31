@@ -601,6 +601,42 @@ app.post("/api/shop/buy", requireAuth, async (req, res) => {
       return res.json({ ok: true, message: "Фон Flowers куплен!" });
     }
 
+    if (itemId === "NEXUS") {
+      const price = 2500;
+      if (owned.includes("NEXUS")) return bad(res, 400, "У вас уже есть этот фон");
+      if (user.balance_l < price) return bad(res, 400, "Недостаточно L валюты");
+      owned.push("NEXUS");
+      await db.run("UPDATE users SET balance_l = balance_l - $1, owned_backgrounds = $2 WHERE id = $3", [price, JSON.stringify(owned), req.user.id]);
+      return res.json({ ok: true, message: "Фон Nexus куплен!" });
+    }
+
+    if (itemId === "NEBULA") {
+      const price = 4000;
+      if (owned.includes("NEBULA")) return bad(res, 400, "У вас уже есть этот фон");
+      if (user.balance_l < price) return bad(res, 400, "Недостаточно L валюты");
+      owned.push("NEBULA");
+      await db.run("UPDATE users SET balance_l = balance_l - $1, owned_backgrounds = $2 WHERE id = $3", [price, JSON.stringify(owned), req.user.id]);
+      return res.json({ ok: true, message: "Фон Nebula куплен!" });
+    }
+
+    if (itemId === "CONSTELLATION") {
+      const price = 6500;
+      if (owned.includes("CONSTELLATION")) return bad(res, 400, "У вас уже есть этот фон");
+      if (user.balance_l < price) return bad(res, 400, "Недостаточно L валюты");
+      owned.push("CONSTELLATION");
+      await db.run("UPDATE users SET balance_l = balance_l - $1, owned_backgrounds = $2 WHERE id = $3", [price, JSON.stringify(owned), req.user.id]);
+      return res.json({ ok: true, message: "Фон Constellation куплен!" });
+    }
+
+    if (itemId === "PULSE") {
+      const price = 8000;
+      if (owned.includes("PULSE")) return bad(res, 400, "У вас уже есть этот фон");
+      if (user.balance_l < price) return bad(res, 400, "Недостаточно L валюты");
+      owned.push("PULSE");
+      await db.run("UPDATE users SET balance_l = balance_l - $1, owned_backgrounds = $2 WHERE id = $3", [price, JSON.stringify(owned), req.user.id]);
+      return res.json({ ok: true, message: "Фон Pulse куплен!" });
+    }
+
     return bad(res, 400, "Предмет не найден в магазине");
   } catch (e) {
     console.error(e);

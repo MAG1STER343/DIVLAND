@@ -164,7 +164,11 @@
     list.innerHTML = "";
     const items = [
       { id: "BLACK_HOLE", name: "Black Hole Theme", price: 1500, desc: "A premium singularity background with particle physics." },
-      { id: "FLOWERS", name: "Flowers Theme", price: 5000, desc: "Digital garden in the horizon with vertical falling petals." }
+      { id: "FLOWERS", name: "Flowers Theme", price: 5000, desc: "Digital garden in the horizon with vertical falling petals." },
+      { id: "NEXUS", name: "Nexus Theme", price: 2500, desc: "Vertical streams of digital data rain." },
+      { id: "NEBULA", name: "Nebula Theme", price: 4000, desc: "Fluid plasma clouds reacting to your presence." },
+      { id: "CONSTELLATION", name: "Constellation Theme", price: 6500, desc: "A hidden star network revealed by your touch." },
+      { id: "PULSE", name: "Pulse Theme", price: 8000, desc: "Rhythmic geometric shockwaves radiating outwards." }
     ];
     items.forEach(item => {
       const card = document.createElement("div");
@@ -242,7 +246,11 @@
          const allBgs = [
            { id: "HOLO", name: "Голограф (HOLO)", desc: "Стандартный фон с летающими фигурами" },
            { id: "BLACK_HOLE", name: "Черная Дыра (BLACK HOLE)", desc: "Цифровая сингулярность, втягивающая материю" },
-           { id: "FLOWERS", name: "Цветы (FLOWERS)", desc: "Цифровой сад с вертикальным падением частиц" }
+           { id: "FLOWERS", name: "Цветы (FLOWERS)", desc: "Цифровой сад с вертикальным падением частиц" },
+           { id: "NEXUS", name: "Нексус (NEXUS)", desc: "Потоки цифровых данных" },
+           { id: "NEBULA", name: "Туманность (NEBULA)", desc: "Плазменные облака" },
+           { id: "CONSTELLATION", name: "Созвездие (CONSTELLATION)", desc: "Скрытая сеть связей" },
+           { id: "PULSE", name: "Пульс (PULSE)", desc: "Ритмичные шоковые волны" }
          ];
 
          allBgs.forEach(bg => {
@@ -304,7 +312,7 @@
     setTimeout(() => {
        modal.classList.add("hidden");
        modal.classList.remove("is-closing");
-    }, 400); // Wait for exit animation
+    }, 350); // Matches CSS transition duration
   }
 
   function showView(viewName, { withGlitch = true, originEl = null } = {}) {
@@ -963,7 +971,12 @@
             const start = caseInp.selectionStart;
             const end = caseInp.selectionEnd;
             const text = caseInp.value;
-            caseInp.value = text.substring(0, start) + `[EMOJI_${i}]` + text.substring(end);
+            const emojiTag = `[EMOJI_${i}]`;
+            caseInp.value = text.substring(0, start) + emojiTag + text.substring(end);
+            
+            // Set cursor position after inserted emoji
+            caseInp.selectionStart = caseInp.selectionEnd = start + emojiTag.length;
+            
             caseInp.dispatchEvent(new Event("input"));
             caseInp.focus();
           }
@@ -974,7 +987,8 @@
     }
     
     $("#emojiBtn")?.addEventListener("click", () => emojiM.classList.remove("hidden"));
-    $("#emojiCloseBtn")?.addEventListener("click", () => hideModal("emojiModal"));
+    $("#emojiCloseXBtn")?.addEventListener("click", () => hideModal("emojiModal"));
+    $("#emojiCloseBtnBig")?.addEventListener("click", () => hideModal("emojiModal"));
 
     // Avatar Crop logic
     const avBtn = $("#profileAvatarBtn");
@@ -1576,8 +1590,49 @@ function createNetworkBackground({ canvas, reducedMotion }) {
     targetBhAlpha: 0,
     flowerAlpha: 0,
     targetFlowerAlpha: 0,
-    flowers: []
+    nexusAlpha: 0,
+    targetNexusAlpha: 0,
+    nebulaAlpha: 0,
+    targetNebulaAlpha: 0,
+    constAlpha: 0,
+    targetConstAlpha: 0,
+    pulseAlpha: 0,
+    targetPulseAlpha: 0,
+    flowers: [],
+    nexusStreams: [],
+    nebulaClouds: [],
+    pulses: []
   };
+
+  // Generate NEXUS data
+  function initNexus() {
+    state.nexusStreams = [];
+    for (let i = 0; i < 40; i++) {
+      state.nexusStreams.push({
+        x: Math.random() * window.innerWidth,
+        y: Math.random() * window.innerHeight,
+        len: 5 + Math.random() * 15,
+        speed: 2 + Math.random() * 8,
+        chars: []
+      });
+    }
+  }
+  initNexus();
+
+  // Generate NEBULA data
+  function initNebula() {
+    state.nebulaClouds = [];
+    for (let i = 0; i < 8; i++) {
+        state.nebulaClouds.push({
+            x: Math.random() * window.innerWidth,
+            y: Math.random() * window.innerHeight,
+            size: 400 + Math.random() * 600,
+            vx: (Math.random()-0.5) * 0.5,
+            vy: (Math.random()-0.5) * 0.5
+        });
+    }
+  }
+  initNebula();
 
   // Generate Digital Garden structures once
   function generateFlowers() {
@@ -1772,15 +1827,22 @@ function createNetworkBackground({ canvas, reducedMotion }) {
     const isSlow = now < state.slowUntil;
     const speedK = isSlow ? 0.4 : 1.0;
 
-    // Target Alpha for Black Hole (smooth transition)
     // Target Alphas (smooth transitions)
     const activeBg = document.body.getAttribute('data-background');
     state.targetBhAlpha = (activeBg === 'BLACK_HOLE') ? 1 : 0;
     state.targetFlowerAlpha = (activeBg === 'FLOWERS') ? 1 : 0;
+    state.targetNexusAlpha = (activeBg === 'NEXUS') ? 1 : 0;
+    state.targetNebulaAlpha = (activeBg === 'NEBULA') ? 1 : 0;
+    state.targetConstAlpha = (activeBg === 'CONSTELLATION') ? 1 : 0;
+    state.targetPulseAlpha = (activeBg === 'PULSE') ? 1 : 0;
     
     state.zoom += (state.targetZoom - state.zoom) * 0.08 * dt;
     state.bhAlpha += (state.targetBhAlpha - state.bhAlpha) * 0.08 * dt;
     state.flowerAlpha += (state.targetFlowerAlpha - state.flowerAlpha) * 0.08 * dt;
+    state.nexusAlpha += (state.targetNexusAlpha - state.nexusAlpha) * 0.08 * dt;
+    state.nebulaAlpha += (state.targetNebulaAlpha - state.nebulaAlpha) * 0.08 * dt;
+    state.constAlpha += (state.targetConstAlpha - state.constAlpha) * 0.08 * dt;
+    state.pulseAlpha += (state.targetPulseAlpha - state.pulseAlpha) * 0.08 * dt;
 
     // Position of the Black Hole - Left side (30% width)
     cfg.blackHoleCenter.x = state.w * 0.28;
@@ -1888,15 +1950,29 @@ function createNetworkBackground({ canvas, reducedMotion }) {
     ctx.lineWidth = 0.5;
     for (let i = 0; i < state.particles.length; i++) {
        for (let j = i + 1; j < state.particles.length; j++) {
-         const p1 = state.particles[i], p2 = state.particles[j];
-         const d = Math.hypot(p1.x-p2.x, p1.y-p2.y, p1.z-p2.z);
-         if (d < cfg.linkDist) {
-           ctx.strokeStyle = `rgba(${state.themeRGB},${(1 - d/cfg.linkDist) * 0.15})`;
-           ctx.beginPath();
-           ctx.moveTo(projected[i].x, projected[i].y);
-           ctx.lineTo(projected[j].x, projected[j].y);
-           ctx.stroke();
-         }
+          const p1 = state.particles[i], p2 = state.particles[j];
+          const d = Math.hypot(p1.x-p2.x, p1.y-p2.y, p1.z-p2.z);
+          if (d < cfg.linkDist) {
+            let lineAlpha = (1 - d/cfg.linkDist) * 0.15;
+            
+            // CONSTELLATION MODE: Lines only near cursor
+            if (activeBg === 'CONSTELLATION') {
+               const midX = (projected[i].x + projected[j].x) / 2;
+               const midY = (projected[i].y + projected[j].y) / 2;
+               const distToMouse = Math.hypot(midX - state.mx, midY - state.my);
+               const radius = 250;
+               if (distToMouse < radius) lineAlpha *= (1 - distToMouse/radius);
+               else lineAlpha = 0;
+            }
+
+            if (lineAlpha > 0.005) {
+              ctx.strokeStyle = `rgba(${state.themeRGB},${lineAlpha})`;
+              ctx.beginPath();
+              ctx.moveTo(projected[i].x, projected[i].y);
+              ctx.lineTo(projected[j].x, projected[j].y);
+              ctx.stroke();
+            }
+          }
        }
     }
 
@@ -1988,6 +2064,70 @@ function createNetworkBackground({ canvas, reducedMotion }) {
                 ctx.arc(pr.x, pr.y, 2 * pr.s, 0, Math.PI * 2);
                 ctx.fill();
             });
+        });
+        ctx.restore();
+    }
+
+    // DRAW NEXUS (DIGITAL RAIN)
+    if (state.nexusAlpha > 0.01) {
+        ctx.save();
+        ctx.globalAlpha = state.nexusAlpha;
+        ctx.font = "14px monospace";
+        ctx.fillStyle = `rgb(${state.themeRGB})`;
+        state.nexusStreams.forEach(s => {
+          s.y += s.speed * dt;
+          if (s.y > state.h) { s.y = -200; s.x = Math.random() * state.w; }
+          const dist = Math.hypot(s.x - state.mx, s.y - state.my);
+          const isGlitch = dist < 120;
+          for (let i = 0; i < s.len; i++) {
+            const char = (isGlitch || Math.random() < 0.05) ? "0123456789ABCDEF".charAt(Math.random() * 16) : (Math.random() > 0.5 ? "1" : "0");
+            ctx.fillText(char, s.x, s.y - i * 18);
+          }
+        });
+        ctx.restore();
+    }
+
+    // DRAW NEBULA (PLASMA CLOUDS)
+    if (state.nebulaAlpha > 0.01) {
+        ctx.save();
+        ctx.globalAlpha = state.nebulaAlpha;
+        state.nebulaClouds.forEach(c => {
+            c.x += c.vx * dt; c.y += c.vy * dt;
+            if (c.x < -c.size) c.x = state.w + c.size; if (c.x > state.w + c.size) c.x = -c.size;
+            if (c.y < -c.size) c.y = state.h + c.size; if (c.y > state.h + c.size) c.y = -c.size;
+            
+            const dx = state.mx - c.x; const dy = state.my - c.y;
+            const d = Math.hypot(dx, dy);
+            if (d < 300) { c.vx += dx * 0.0001; c.vy += dy * 0.0001; }
+            
+            const grd = ctx.createRadialGradient(c.x, c.y, 0, c.x, c.y, c.size);
+            grd.addColorStop(0, `rgba(${state.themeRGB}, 0.08)`);
+            grd.addColorStop(1, `rgba(${state.themeRGB}, 0)`);
+            ctx.fillStyle = grd;
+            ctx.fillRect(0, 0, state.w, state.h);
+        });
+        ctx.restore();
+    }
+
+    // DRAW PULSE (SHOCKWAVES)
+    if (state.pulseAlpha > 0.01) {
+        if (Math.random() < 0.02 * dt) {
+            state.pulses.push({ x: Math.random() * state.w, y: Math.random() * state.h, r: 0, max: 200 + Math.random() * 400 });
+        }
+        ctx.save();
+        ctx.globalAlpha = state.pulseAlpha;
+        state.pulses.forEach((p, i) => {
+            p.r += 4 * dt;
+            const alpha = 1 - (p.r / p.max);
+            if (alpha <= 0) { state.pulses.splice(i, 1); return; }
+            ctx.strokeStyle = `rgba(${state.themeRGB}, ${alpha * 0.3})`;
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.rect(p.x - p.r/2, p.y - p.r/2, p.r, p.r);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.r * 0.7, 0, Math.PI * 2);
+            ctx.stroke();
         });
         ctx.restore();
     }
