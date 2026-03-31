@@ -358,8 +358,13 @@ a {
 
 .cardValue {
   margin-top: 10px;
-  font-size: 22px;
-  letter-spacing: 0.6px;
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+  color: rgb(var(--theme-glow));
+  text-shadow: 0 0 15px rgba(var(--theme-glow), 0.4);
+  animation: majesticFlicker 3s infinite ease-in-out;
+  text-transform: uppercase;
 }
 
 .cardHint {
@@ -2246,12 +2251,13 @@ body[data-theme="default"], body { --theme-glow: 255, 255, 255; }
   font-family: 'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
   font-size: 32px;
   font-weight: 700;
-  color: #fff;
-  text-shadow: 0 0 15px rgba(var(--theme-glow), 0.6);
+  color: rgb(var(--theme-glow));
+  text-shadow: 0 0 20px rgba(var(--theme-glow), 0.7);
   letter-spacing: 4px;
   margin: 12px 0;
   user-select: all;
   position: relative;
+  animation: majesticFlicker 4s infinite ease-in-out 0.5s;
 }
 
 .promo-timer {
@@ -2287,4 +2293,11 @@ body[data-theme="default"], body { --theme-glow: 255, 255, 255; }
 @keyframes pulse {
   0%, 100% { opacity: 0; }
   50% { opacity: 1; }
+}
+
+@keyframes majesticFlicker {
+  0%, 100% { opacity: 1; text-shadow: 0 0 20px rgba(var(--theme-glow), 0.6); }
+  50% { opacity: 0.85; text-shadow: 0 0 10px rgba(var(--theme-glow), 0.3); }
+  52% { opacity: 1; text-shadow: 0 0 25px rgba(var(--theme-glow), 0.8); }
+  54% { opacity: 0.9; text-shadow: 0 0 15px rgba(var(--theme-glow), 0.5); }
 }
