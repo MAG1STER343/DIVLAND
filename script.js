@@ -1536,6 +1536,31 @@ function createNetworkBackground({ canvas, reducedMotion }) {
   }
 
   function drawShape(p, pr) {
+    const isHover = p.hover > 0.1;
+    const alpha = (0.2 + (p.z + 600) / 1200 * 0.6) * (isHover ? 1 : 0.8);
+    
+    let stroke = isHover ? `rgba(${state.themeRGB},${0.4 + p.hover * 0.6})` : `rgba(${state.themeRGB},${alpha})`;
+    if (p.isGlitchy) {
+      const flicker = Math.random() > 0.5 ? 1 : 0.2;
+      stroke = `rgba(255, 255, 255, ${flicker * 0.8})`;
+    }
+
+    const models = {
+      cube: {
+        v: [[-1,-1,-1],[1,-1,-1],[1,1,-1],[-1,1,-1],[-1,-1,1],[1,-1,1],[1,1,1],[-1,1,1]],
+        e: [[0,1],[1,2],[2,3],[3,0],[4,5],[5,6],[6,7],[7,4],[0,4],[1,5],[2,6],[3,7]]
+      },
+      pyramid: {
+        v: [[0,-1,0],[-1,1,-1],[1,1,-1],[0,1,1]],
+        e: [[0,1],[0,2],[0,3],[1,2],[2,3],[3,1]]
+      },
+      octa: {
+        v: [[0,1,0],[0,-1,0],[1,0,0],[-1,0,0],[0,0,1],[0,0,-1]],
+        e: [[0,2],[0,3],[0,4],[0,5],[1,2],[1,3],[1,4],[1,5],[2,4],[4,3],[3,5],[5,2]]
+      }
+    };
+    const m = models[p.kind];
+
     ctx.strokeStyle = stroke;
     ctx.lineWidth = (isHover ? 2 : 1) * pr.s;
 
@@ -1555,7 +1580,6 @@ function createNetworkBackground({ canvas, reducedMotion }) {
     m.e.forEach(e => {
       ctx.beginPath();
       const p1raw = m.v[e[0]], p2raw = m.v[e[1]];
-      
       const transform = (v) => {
         let x = v[0], y = v[1], z = v[2];
         const rx = p.rotX, ry = p.rotY, rz = p.rotZ;
@@ -1567,16 +1591,12 @@ function createNetworkBackground({ canvas, reducedMotion }) {
         y = x * Math.sin(rz) + y * Math.cos(rz); x = t;
         return { x: pr.x + x * finalSize, y: pr.y + y * finalSize };
       };
-
       let p1 = transform(p1raw), p2 = transform(p2raw);
-      
       if (p.isGlitchy && Math.random() < 0.15) {
         const jitter = (Math.random() - 0.5) * 15;
         p1 = { x: p1.x + jitter, y: p1.y + jitter };
       }
-      
-      ctx.moveTo(p1.x, p1.y);
-      ctx.lineTo(p2.x, p2.y);
+      ctx.moveTo(p1.x, p1.y); ctx.lineTo(p2.x, p2.y);
       ctx.stroke();
     });
     ctx.globalAlpha = 1;
@@ -1690,39 +1710,48 @@ function createNetworkBackground({ canvas, reducedMotion }) {
 
     // DRAW BLACK HOLE (CINEMATIC ACCRETION DISK)
     if (state.bhAlpha > 0.01) {
-      cfg.bhRotation += 0.02 * dt;
+      cfg.bhRotation += 0.015 * dt;
       ctx.save();
       ctx.translate(cfg.blackHoleCenter.x, cfg.blackHoleCenter.y);
       ctx.globalAlpha = state.bhAlpha;
 
-      // 1. Gravitational Lensing (Outer Distorted Ring)
+      // 1. Light Bending (Vertical Arc behind and over singularity)
+      ctx.save();
+      ctx.rotate(cfg.bhRotation * 0.1);
+      const lensingGrd = ctx.createLinearGradient(0, -cfg.bhRadius * 1.5, 0, cfg.bhRadius * 1.5);
+      lensingGrd.addColorStop(0, 'transparent');
+      lensingGrd.addColorStop(0.5, `rgba(${state.themeRGB}, 0.2)`);
+      lensingGrd.addColorStop(1, 'transparent');
       ctx.beginPath();
-      ctx.ellipse(0, 0, cfg.bhRadius * 2.8, cfg.bhRadius * 0.8, cfg.bhRotation * 0.2, 0, Math.PI * 2);
-      ctx.strokeStyle = `rgba(${state.themeRGB}, 0.1)`;
-      ctx.lineWidth = 2;
+      ctx.ellipse(0, 0, cfg.bhRadius * 1.2, cfg.bhRadius * 2.5, 0, 0, Math.PI * 2);
+      ctx.strokeStyle = lensingGrd;
+      ctx.lineWidth = 15;
       ctx.stroke();
+      ctx.restore();
 
-      // 2. Accretion Disk (Glow)
-      const diskGrd = ctx.createRadialGradient(0, 0, cfg.bhRadius * 0.8, 0, 0, cfg.bhRadius * 3.5);
-      diskGrd.addColorStop(0, `rgba(${state.themeRGB}, 0.8)`);
-      diskGrd.addColorStop(0.2, `rgba(${state.themeRGB}, 0.4)`);
+      // 2. Accretion Disk (Primary Horizontal Glow)
+      const diskGrd = ctx.createRadialGradient(0, 0, cfg.bhRadius * 0.9, 0, 0, cfg.bhRadius * 4.5);
+      diskGrd.addColorStop(0, `rgba(${state.themeRGB}, 0.9)`);
+      diskGrd.addColorStop(0.1, `rgba(${state.themeRGB}, 0.6)`); // Warmer inner
+      diskGrd.addColorStop(0.4, `rgba(${state.themeRGB}, 0.2)`);
       diskGrd.addColorStop(1, 'transparent');
       
+      ctx.save();
       ctx.rotate(cfg.bhRotation);
-      ctx.scale(1, 0.25); // Flatten for disk perspective
+      ctx.scale(1, 0.2); // Flattened perspective
       ctx.fillStyle = diskGrd;
       ctx.beginPath();
-      ctx.arc(0, 0, cfg.bhRadius * 3.5, 0, Math.PI * 2);
+      ctx.arc(0, 0, cfg.bhRadius * 4.5, 0, Math.PI * 2);
       ctx.fill();
-      ctx.setTransform(state.dpr, 0, 0, state.dpr, cfg.blackHoleCenter.x * state.dpr, cfg.blackHoleCenter.y * state.dpr);
+      ctx.restore();
 
-      // 3. Photon Sphere (Bright Inner Edge)
+      // 3. Photon Sphere (Intense glowing edge)
       ctx.beginPath();
       ctx.arc(0, 0, cfg.bhRadius * 1.05, 0, Math.PI * 2);
       ctx.strokeStyle = "#fff";
-      ctx.lineWidth = 4;
-      ctx.shadowBlur = 20;
-      ctx.shadowColor = "#fff";
+      ctx.lineWidth = 3;
+      ctx.shadowBlur = 30;
+      ctx.shadowColor = `rgba(${state.themeRGB}, 1)`;
       ctx.stroke();
       ctx.shadowBlur = 0;
 
@@ -1732,17 +1761,16 @@ function createNetworkBackground({ canvas, reducedMotion }) {
       ctx.fillStyle = "#000";
       ctx.fill();
 
-      // 5. Digital Artifacts (Lines and Dots inside)
-      ctx.rotate(-cfg.bhRotation * 1.5);
-      ctx.strokeStyle = `rgba(${state.themeRGB}, 0.5)`;
+      // 5. Digital Core (Minimalistic rotation)
+      ctx.rotate(-cfg.bhRotation * 0.5);
+      ctx.strokeStyle = `rgba(${state.themeRGB}, 0.3)`;
       ctx.lineWidth = 1;
-      for (let i = 0; i < 6; i++) {
-         const ang = (i / 6) * Math.PI * 2;
+      for (let i = 0; i < 4; i++) {
+         const ang = (i / 4) * Math.PI * 2;
          ctx.beginPath();
-         ctx.moveTo(Math.cos(ang) * cfg.bhRadius * 0.5, Math.sin(ang) * cfg.bhRadius * 0.5);
-         ctx.lineTo(Math.cos(ang) * cfg.bhRadius * 0.9, Math.sin(ang) * cfg.bhRadius * 0.9);
+         ctx.moveTo(Math.cos(ang) * cfg.bhRadius * 0.6, Math.sin(ang) * cfg.bhRadius * 0.6);
+         ctx.lineTo(Math.cos(ang) * cfg.bhRadius * 0.95, Math.sin(ang) * cfg.bhRadius * 0.95);
          ctx.stroke();
-         ctx.fillRect(Math.cos(ang) * cfg.bhRadius * 0.9 - 1, Math.sin(ang) * cfg.bhRadius * 0.9 - 1, 2, 2);
       }
 
       ctx.restore();
