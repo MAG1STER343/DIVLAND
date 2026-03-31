@@ -175,19 +175,8 @@
           <button class="btn primary minimal buyBtn" ${isOwned ? 'disabled' : ''}>${isOwned ? 'КУПЛЕНО' : 'КУПИТЬ'}</button>
         </div>`;
       
-      card.onmouseenter = () => {
-        if (background) {
-          document.body.setAttribute('data-background', item.id);
-          card.classList.add("is-hovered");
-        }
-      };
-      
-      card.onmouseleave = () => {
-        if (background && me) {
-          document.body.setAttribute('data-background', me.activeBackground || 'HOLO');
-          card.classList.remove("is-hovered");
-        }
-      };
+      card.onmouseenter = () => { if (background) document.body.setAttribute('data-background', item.id); };
+      card.onmouseleave = () => { if (background) document.body.setAttribute('data-background', me ? (me.activeBackground || 'HOLO') : 'HOLO'); };
       
       const btn = card.querySelector(".buyBtn");
       if (btn && !isOwned) {
@@ -1638,6 +1627,7 @@ function createNetworkBackground({ canvas, reducedMotion }) {
     });
 
     // Physics & Projection
+    const speedK_bh = state.bhAlpha > 0.1 ? 0.4 : 1.0; // Slow down particles in BH mode
     const projected = state.particles.map(p => {
       // Black hole attraction (only if bhAlpha > 0)
       if (state.bhAlpha > 0.01) {
@@ -1646,31 +1636,30 @@ function createNetworkBackground({ canvas, reducedMotion }) {
         const dist = Math.sqrt(dx*dx + dy*dy);
         
         if (dist < 800) {
-           const force = state.bhAlpha * (800 - dist) / 5000;
-           p.vx += dx * force * 0.25;
-           p.vy += dy * force * 0.25;
+           const force = state.bhAlpha * (800 - dist) / 4000;
+           // Sucking + Spiralling orbit
+           const orbitX = -dy * 0.015 * state.bhAlpha;
+           const orbitY = dx * 0.015 * state.bhAlpha;
            
-           // "Sucking in" effect: Scale down p.size near center
+           p.vx += (dx * force * 0.2 + orbitX);
+           p.vy += (dy * force * 0.2 + orbitY);
+           
+           // "Sucking in" effect
            const horizon = 60;
            if (dist < 200) {
               const suckFactor = Math.max(0, (dist - horizon) / 140);
-              p.hover = - (1 - suckFactor); // Use negative hover to represent shrinking in drawShape
+              p.hover = - (1 - suckFactor);
               if (dist < horizon + 5) {
-                // Re-spawn far away
                 p.x = (Math.random()-0.5)*2000; p.y = (Math.random()-0.5)*2000;
                 p.vx *= 0.5; p.vy *= 0.5;
                 p.hover = 0;
               }
-           } else {
-              p.hover = Math.max(0, p.hover);
-           }
+           } else { p.hover = Math.max(0, p.hover); }
         }
-      } else {
-         p.hover = Math.max(0, p.hover);
-      }
+      } else { p.hover = Math.max(0, p.hover); }
       
-      p.x += p.vx * dt * speedK;
-      p.y += p.vy * dt * speedK;
+      p.x += p.vx * dt * speedK * speedK_bh;
+      p.y += p.vy * dt * speedK * speedK_bh;
       p.z += p.vz * dt * speedK;
       if (p.x < -1000) p.x = 1000; if (p.x > 1000) p.x = -1000;
       if (p.y < -1000) p.y = 1000; if (p.y > 1000) p.y = -1000;
@@ -1708,70 +1697,57 @@ function createNetworkBackground({ canvas, reducedMotion }) {
     // Draw shapes
     state.particles.forEach((p, i) => drawShape(p, projected[i]));
 
-    // DRAW BLACK HOLE (CINEMATIC ACCRETION DISK)
+    // DRAW BLACK HOLE (LINE VORTEX)
     if (state.bhAlpha > 0.01) {
       cfg.bhRotation += 0.015 * dt;
       ctx.save();
       ctx.translate(cfg.blackHoleCenter.x, cfg.blackHoleCenter.y);
       ctx.globalAlpha = state.bhAlpha;
 
-      // 1. Light Bending (Vertical Arc behind and over singularity)
-      ctx.save();
-      ctx.rotate(cfg.bhRotation * 0.1);
-      const lensingGrd = ctx.createLinearGradient(0, -cfg.bhRadius * 1.5, 0, cfg.bhRadius * 1.5);
-      lensingGrd.addColorStop(0, 'transparent');
-      lensingGrd.addColorStop(0.5, `rgba(${state.themeRGB}, 0.2)`);
-      lensingGrd.addColorStop(1, 'transparent');
-      ctx.beginPath();
-      ctx.ellipse(0, 0, cfg.bhRadius * 1.2, cfg.bhRadius * 2.5, 0, 0, Math.PI * 2);
-      ctx.strokeStyle = lensingGrd;
-      ctx.lineWidth = 15;
-      ctx.stroke();
-      ctx.restore();
-
-      // 2. Accretion Disk (Primary Horizontal Glow)
-      const diskGrd = ctx.createRadialGradient(0, 0, cfg.bhRadius * 0.9, 0, 0, cfg.bhRadius * 4.5);
-      diskGrd.addColorStop(0, `rgba(${state.themeRGB}, 0.9)`);
-      diskGrd.addColorStop(0.1, `rgba(${state.themeRGB}, 0.6)`); // Warmer inner
-      diskGrd.addColorStop(0.4, `rgba(${state.themeRGB}, 0.2)`);
-      diskGrd.addColorStop(1, 'transparent');
-      
-      ctx.save();
-      ctx.rotate(cfg.bhRotation);
-      ctx.scale(1, 0.2); // Flattened perspective
-      ctx.fillStyle = diskGrd;
-      ctx.beginPath();
-      ctx.arc(0, 0, cfg.bhRadius * 4.5, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.restore();
-
-      // 3. Photon Sphere (Intense glowing edge)
-      ctx.beginPath();
-      ctx.arc(0, 0, cfg.bhRadius * 1.05, 0, Math.PI * 2);
-      ctx.strokeStyle = "#fff";
-      ctx.lineWidth = 3;
-      ctx.shadowBlur = 30;
-      ctx.shadowColor = `rgba(${state.themeRGB}, 1)`;
-      ctx.stroke();
+      // Draw vortex of lines (based on reference image)
+      ctx.rotate(cfg.bhRotation * 0.2);
       ctx.shadowBlur = 0;
+      for (let i = 0; i < 120; i++) {
+        const angle = (i / 120) * Math.PI * 2 + (cfg.bhRotation * (0.5 + Math.random() * 0.5));
+        const dist = cfg.bhRadius * (1.1 + Math.sin(i * 0.5 + cfg.bhRotation) * 0.5 + i / 30);
+        const nextDist = dist + 15 + Math.random() * 20;
+        
+        ctx.beginPath();
+        ctx.strokeStyle = `rgba(${state.themeRGB}, ${0.1 + Math.random() * 0.4})`;
+        ctx.lineWidth = 1;
+        ctx.moveTo(Math.cos(angle) * dist, Math.sin(angle) * dist);
+        ctx.lineTo(Math.cos(angle + 0.1) * nextDist, Math.sin(angle + 0.1) * nextDist);
+        ctx.stroke();
+        
+        // Random dots in vortex
+        if (i % 4 === 0) {
+          ctx.fillStyle = "#fff";
+          ctx.fillRect(Math.cos(angle) * dist - 0.5, Math.sin(angle) * dist - 0.5, 1, 1);
+        }
+      }
 
-      // 4. THE SINGULARITY (Black Void)
+      // Gravitational lensing circles (faint)
+      ctx.lineWidth = 0.5;
+      for (let r = 1; r <= 4; r++) {
+         ctx.beginPath();
+         ctx.arc(0, 0, cfg.bhRadius * (1 + r * 0.4), 0, Math.PI * 2);
+         ctx.strokeStyle = `rgba(${state.themeRGB}, 0.05)`;
+         ctx.stroke();
+      }
+
+      // THE SINGULARITY (Black Void)
       ctx.beginPath();
       ctx.arc(0, 0, cfg.bhRadius, 0, Math.PI * 2);
       ctx.fillStyle = "#000";
       ctx.fill();
-
-      // 5. Digital Core (Minimalistic rotation)
-      ctx.rotate(-cfg.bhRotation * 0.5);
-      ctx.strokeStyle = `rgba(${state.themeRGB}, 0.3)`;
-      ctx.lineWidth = 1;
-      for (let i = 0; i < 4; i++) {
-         const ang = (i / 4) * Math.PI * 2;
-         ctx.beginPath();
-         ctx.moveTo(Math.cos(ang) * cfg.bhRadius * 0.6, Math.sin(ang) * cfg.bhRadius * 0.6);
-         ctx.lineTo(Math.cos(ang) * cfg.bhRadius * 0.95, Math.sin(ang) * cfg.bhRadius * 0.95);
-         ctx.stroke();
-      }
+      
+      // Central Glow Shadow
+      const coreGrd = ctx.createRadialGradient(0, 0, cfg.bhRadius * 0.8, 0, 0, cfg.bhRadius * 1.1);
+      coreGrd.addColorStop(0, 'black');
+      coreGrd.addColorStop(1, `rgba(${state.themeRGB}, 0.6)`);
+      ctx.strokeStyle = coreGrd;
+      ctx.lineWidth = 4;
+      ctx.stroke();
 
       ctx.restore();
       ctx.globalAlpha = 1;
