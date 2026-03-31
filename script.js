@@ -462,6 +462,10 @@
         applyDieversiMediaIfPossible();
       }
 
+      if (viewName === "shop") {
+        renderShop();
+      }
+
       // Shop tab reveal logic
       const shopBtn = $("#shopBtn");
       if (shopBtn) {
