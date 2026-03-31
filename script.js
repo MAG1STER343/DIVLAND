@@ -1659,7 +1659,7 @@ function createNetworkBackground({ canvas, reducedMotion }) {
     });
 
     // Physics & Projection
-    const speedK_bh = state.bhAlpha > 0.1 ? 0.012 : 1.0; // Saturn's Rings Slowdown
+    const speedK_bh = state.bhAlpha > 0.1 ? 0.002 : 1.0; // Near-Frozen (0.2x of previous)
     const projected = state.particles.map(p => {
       // Black hole attraction (only if bhAlpha > 0)
       if (state.bhAlpha > 0.01) {
@@ -1667,21 +1667,21 @@ function createNetworkBackground({ canvas, reducedMotion }) {
         const dy = cfg.blackHoleCenter.y - (state.h/2 + p.y);
         const dist = Math.sqrt(dx*dx + dy*dy);
         
-        // GLOBAL GRAVITY (Saturn's Rings - Flattening + Radial)
+        // GLOBAL GRAVITY (Extreme Clumping - Flattening + Radial)
         const globalForce = 0.00015 * state.bhAlpha;
         p.vx += dx * globalForce;
         
-        // Vertical Compression (Flattening into a disk)
+        // Horizontal Compression (Extremely thin disk)
         const targetY = cfg.blackHoleCenter.y - state.h/2;
-        p.vy += (targetY - p.y) * 0.012 * state.bhAlpha;
+        p.vy += (targetY - p.y) * 0.08 * state.bhAlpha;
 
         if (dist < 1200) {
-           // Radial Force (Stable at ~240px)
-           const stableRadius = 240;
-           const force = state.bhAlpha * (stableRadius - dist) / 8000;
+           // Radial Force (Stable at ~210px - Tighter Clumping)
+           const stableRadius = 210;
+           const force = state.bhAlpha * (stableRadius - dist) / 4000;
            
            // Tangential Force (Orbital spin)
-           const orbitSpeed = 0.004 * state.bhAlpha;
+           const orbitSpeed = 0.003 * state.bhAlpha;
            const orbitX = -dy * orbitSpeed;
            const orbitY = dx * orbitSpeed;
            
@@ -1690,14 +1690,14 @@ function createNetworkBackground({ canvas, reducedMotion }) {
            
            // "Sucking in" effect (Inward spiral - ONLY if very close)
            const horizon = cfg.bhRadius;
-           if (dist < 320) {
-              const suckFactor = Math.max(0, (dist - horizon) / 280);
+           if (dist < 280) {
+              const suckFactor = Math.max(0, (dist - horizon) / 240);
               p.hover = - (1 - suckFactor);
               if (dist < horizon + 10) {
-                // RESPAWN AT EDGES
+                // RESPAWN AT EDGES - Very Tight Y
                 const side = Math.random();
-                if (side < 0.25) { p.x = -1000; p.y = targetY + (Math.random()-0.5)*400; }
-                else if (side < 0.5) { p.x = 1000; p.y = targetY + (Math.random()-0.5)*400; }
+                if (side < 0.25) { p.x = -1000; p.y = targetY + (Math.random()-0.5)*150; }
+                else if (side < 0.5) { p.x = 1000; p.y = targetY + (Math.random()-0.5)*150; }
                 else if (side < 0.75) { p.y = -1000; p.x = (Math.random()-0.5)*2000; }
                 else { p.y = 1000; p.x = (Math.random()-0.5)*2000; }
                 
