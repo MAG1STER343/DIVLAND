@@ -1452,7 +1452,9 @@ function createNetworkBackground({ canvas, reducedMotion }) {
     lastNow: performance.now(),
     zoom: 1.0,
     targetZoom: 1.0,
-    themeRGB: "255, 255, 255"
+    themeRGB: "255, 255, 255",
+    bhAlpha: 0,
+    targetBhAlpha: 0
   };
 
   const cfg = {
@@ -1534,50 +1536,17 @@ function createNetworkBackground({ canvas, reducedMotion }) {
   }
 
   function drawShape(p, pr) {
-    const size = p.size * pr.s;
-    const isHover = p.hover > 0.1;
-    const alpha = (0.2 + (p.z + 600) / 1200 * 0.6) * (isHover ? 1 : 0.8);
-
-    const models = {
-      cube: {
-        v: [[-1,-1,-1],[1,-1,-1],[1,1,-1],[-1,1,-1],[-1,-1,1],[1,-1,1],[1,1,1],[-1,1,1]],
-        e: [[0,1],[1,2],[2,3],[3,0],[4,5],[5,6],[6,7],[7,4],[0,4],[1,5],[2,6],[3,7]]
-      },
-      pyramid: {
-        v: [[0,-1,0],[-1,1,-1],[1,1,-1],[0,1,1]],
-        e: [[0,1],[0,2],[0,3],[1,2],[2,3],[3,1]]
-      },
-      octa: {
-        v: [[0,1,0],[0,-1,0],[1,0,0],[-1,0,0],[0,0,1],[0,0,-1]],
-        e: [[0,2],[0,3],[0,4],[0,5],[1,2],[1,3],[1,4],[1,5],[2,4],[4,3],[3,5],[5,2]]
-      }
-    };
-
-    const m = models[p.kind];
-    const pts = m.v.map(v => {
-      let x = v[0], y = v[1], z = v[2];
-      const rx = p.rotX, ry = p.rotY, rz = p.rotZ;
-      // Rot X
-      let t = y * Math.cos(rx) - z * Math.sin(rx);
-      z = y * Math.sin(rx) + z * Math.cos(rx); y = t;
-      // Rot Y
-      t = x * Math.cos(ry) + z * Math.sin(ry);
-      z = -x * Math.sin(ry) + z * Math.cos(ry); x = t;
-      // Rot Z
-      t = x * Math.cos(rz) - y * Math.sin(rz);
-      y = x * Math.sin(rz) + y * Math.cos(rz); x = t;
-
-      return { x: pr.x + x * size, y: pr.y + y * size };
-    });
-
-    let stroke = isHover ? `rgba(${state.themeRGB},${0.4 + p.hover * 0.6})` : `rgba(${state.themeRGB},${alpha})`;
-    if (p.isGlitchy) {
-      // 10% special effect: white flickering
-      const flicker = Math.random() > 0.5 ? 1 : 0.2;
-      stroke = `rgba(255, 255, 255, ${flicker * 0.8})`;
-    }
     ctx.strokeStyle = stroke;
     ctx.lineWidth = (isHover ? 2 : 1) * pr.s;
+
+    // Apply shrinking effect from Black Hole sucking (p.hover < 0)
+    let finalS = pr.s;
+    if (p.hover < 0) {
+       finalS *= (1 + p.hover); // p.hover is -1 to 0
+       ctx.globalAlpha = Math.max(0, 1 + p.hover);
+    }
+    const finalSize = p.size * finalS;
+
     if (isHover || p.isGlitchy) {
       ctx.shadowBlur = (isHover ? 15 * p.hover : 8);
       ctx.shadowColor = "white";
@@ -1585,10 +1554,23 @@ function createNetworkBackground({ canvas, reducedMotion }) {
 
     m.e.forEach(e => {
       ctx.beginPath();
-      let p1 = pts[e[0]], p2 = pts[e[1]];
+      const p1raw = m.v[e[0]], p2raw = m.v[e[1]];
+      
+      const transform = (v) => {
+        let x = v[0], y = v[1], z = v[2];
+        const rx = p.rotX, ry = p.rotY, rz = p.rotZ;
+        let t = y * Math.cos(rx) - z * Math.sin(rx);
+        z = y * Math.sin(rx) + z * Math.cos(rx); y = t;
+        t = x * Math.cos(ry) + z * Math.sin(ry);
+        z = -x * Math.sin(ry) + z * Math.cos(ry); x = t;
+        t = x * Math.cos(rz) - y * Math.sin(rz);
+        y = x * Math.sin(rz) + y * Math.cos(rz); x = t;
+        return { x: pr.x + x * finalSize, y: pr.y + y * finalSize };
+      };
+
+      let p1 = transform(p1raw), p2 = transform(p2raw);
       
       if (p.isGlitchy && Math.random() < 0.15) {
-        // "Some parts falling off and reattaching" - jitter vertex position
         const jitter = (Math.random() - 0.5) * 15;
         p1 = { x: p1.x + jitter, y: p1.y + jitter };
       }
@@ -1597,6 +1579,7 @@ function createNetworkBackground({ canvas, reducedMotion }) {
       ctx.lineTo(p2.x, p2.y);
       ctx.stroke();
     });
+    ctx.globalAlpha = 1;
     ctx.shadowBlur = 0;
   }
 
@@ -1608,13 +1591,16 @@ function createNetworkBackground({ canvas, reducedMotion }) {
     const isSlow = now < state.slowUntil;
     const speedK = isSlow ? 0.4 : 1.0;
 
-    // Zoom interpolation
-    state.zoom += (state.targetZoom - state.zoom) * 0.05 * dt;
+    // Target Alpha for Black Hole (smooth transition)
+    const activeBg = document.body.getAttribute('data-background');
+    state.targetBhAlpha = (activeBg === 'BLACK_HOLE') ? 1 : 0;
+    state.bhAlpha += (state.targetBhAlpha - state.bhAlpha) * 0.08 * dt;
+
     // Position of the Black Hole - Left side (30% width)
     cfg.blackHoleCenter.x = state.w * 0.28;
     cfg.blackHoleCenter.y = state.h * 0.45;
-    cfg.isBlackHole = document.body.getAttribute('data-background') === 'BLACK_HOLE';
-ctx.clearRect(0, 0, state.w, state.h);
+    
+    ctx.clearRect(0, 0, state.w, state.h);
 
     // DRAW WHITE GLOW CLUMPS
     state.glows.forEach(g => {
@@ -1633,18 +1619,36 @@ ctx.clearRect(0, 0, state.w, state.h);
 
     // Physics & Projection
     const projected = state.particles.map(p => {
-      // Black hole attraction
-      if (cfg.isBlackHole) {
+      // Black hole attraction (only if bhAlpha > 0)
+      if (state.bhAlpha > 0.01) {
         const dx = cfg.blackHoleCenter.x - (state.w/2 + p.x);
         const dy = cfg.blackHoleCenter.y - (state.h/2 + p.y);
         const dist = Math.sqrt(dx*dx + dy*dy);
+        
         if (dist < 800) {
-           const force = (800 - dist) / 5000;
-           p.vx += dx * force * 0.15;
-           p.vy += dy * force * 0.15;
-           if (dist < 40) { p.x = (Math.random()-0.5)*2000; p.y = (Math.random()-0.5)*2000; }
+           const force = state.bhAlpha * (800 - dist) / 5000;
+           p.vx += dx * force * 0.25;
+           p.vy += dy * force * 0.25;
+           
+           // "Sucking in" effect: Scale down p.size near center
+           const horizon = 60;
+           if (dist < 200) {
+              const suckFactor = Math.max(0, (dist - horizon) / 140);
+              p.hover = - (1 - suckFactor); // Use negative hover to represent shrinking in drawShape
+              if (dist < horizon + 5) {
+                // Re-spawn far away
+                p.x = (Math.random()-0.5)*2000; p.y = (Math.random()-0.5)*2000;
+                p.vx *= 0.5; p.vy *= 0.5;
+                p.hover = 0;
+              }
+           } else {
+              p.hover = Math.max(0, p.hover);
+           }
         }
+      } else {
+         p.hover = Math.max(0, p.hover);
       }
+      
       p.x += p.vx * dt * speedK;
       p.y += p.vy * dt * speedK;
       p.z += p.vz * dt * speedK;
@@ -1684,58 +1688,65 @@ ctx.clearRect(0, 0, state.w, state.h);
     // Draw shapes
     state.particles.forEach((p, i) => drawShape(p, projected[i]));
 
-    // DRAW BLACK HOLE (DIGITAL SINGULARITY)
-    if (cfg.isBlackHole) {
-      cfg.bhRotation += 0.015 * dt;
+    // DRAW BLACK HOLE (CINEMATIC ACCRETION DISK)
+    if (state.bhAlpha > 0.01) {
+      cfg.bhRotation += 0.02 * dt;
       ctx.save();
       ctx.translate(cfg.blackHoleCenter.x, cfg.blackHoleCenter.y);
-      ctx.rotate(cfg.bhRotation);
-      
-      const themeColor = `rgba(${state.themeRGB}, 0.8)`;
-      ctx.shadowBlur = 25;
-      ctx.shadowColor = themeColor;
-      
-      // Event Horizon - concentric wireframe rings
-      for (let r = 1; r <= 3; r++) {
-          const currentRadius = cfg.bhRadius * (r / 3) * (0.95 + Math.sin(now / 500) * 0.05);
-          ctx.beginPath();
-          ctx.setLineDash(r === 1 ? [] : [5, 5]); // Inner ring solid, outer dashed
-          ctx.arc(0, 0, currentRadius, 0, Math.PI * 2);
-          ctx.strokeStyle = `rgba(${state.themeRGB}, ${0.8 - r * 0.2})`;
-          ctx.lineWidth = 1;
-          ctx.stroke();
-      }
-      ctx.setLineDash([]);
+      ctx.globalAlpha = state.bhAlpha;
 
-      // Singularity core - dots and spinning lines
-      ctx.rotate(cfg.bhRotation * 2);
+      // 1. Gravitational Lensing (Outer Distorted Ring)
       ctx.beginPath();
-      for (let i = 0; i < 8; i++) {
-          const angle = (i / 8) * Math.PI * 2;
-          const x1 = Math.cos(angle) * (cfg.bhRadius * 0.4);
-          const y1 = Math.sin(angle) * (cfg.bhRadius * 0.4);
-          const x2 = Math.cos(angle) * (cfg.bhRadius * 0.8);
-          const y2 = Math.sin(angle) * (cfg.bhRadius * 0.8);
-          
-          ctx.moveTo(x1, y1);
-          ctx.lineTo(x2, y2);
-          
-          // Tiny dots at vertices
-          ctx.fillRect(x1-1, y1-1, 2, 2);
-      }
-      ctx.strokeStyle = themeColor;
+      ctx.ellipse(0, 0, cfg.bhRadius * 2.8, cfg.bhRadius * 0.8, cfg.bhRotation * 0.2, 0, Math.PI * 2);
+      ctx.strokeStyle = `rgba(${state.themeRGB}, 0.1)`;
       ctx.lineWidth = 2;
       ctx.stroke();
 
-      // Pulsating central point
-      const pulse = 2 + Math.abs(Math.sin(now / 150)) * 5;
+      // 2. Accretion Disk (Glow)
+      const diskGrd = ctx.createRadialGradient(0, 0, cfg.bhRadius * 0.8, 0, 0, cfg.bhRadius * 3.5);
+      diskGrd.addColorStop(0, `rgba(${state.themeRGB}, 0.8)`);
+      diskGrd.addColorStop(0.2, `rgba(${state.themeRGB}, 0.4)`);
+      diskGrd.addColorStop(1, 'transparent');
+      
+      ctx.rotate(cfg.bhRotation);
+      ctx.scale(1, 0.25); // Flatten for disk perspective
+      ctx.fillStyle = diskGrd;
       ctx.beginPath();
-      ctx.arc(0, 0, pulse, 0, Math.PI * 2);
-      ctx.fillStyle = "#fff";
+      ctx.arc(0, 0, cfg.bhRadius * 3.5, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.setTransform(state.dpr, 0, 0, state.dpr, cfg.blackHoleCenter.x * state.dpr, cfg.blackHoleCenter.y * state.dpr);
+
+      // 3. Photon Sphere (Bright Inner Edge)
+      ctx.beginPath();
+      ctx.arc(0, 0, cfg.bhRadius * 1.05, 0, Math.PI * 2);
+      ctx.strokeStyle = "#fff";
+      ctx.lineWidth = 4;
+      ctx.shadowBlur = 20;
+      ctx.shadowColor = "#fff";
+      ctx.stroke();
+      ctx.shadowBlur = 0;
+
+      // 4. THE SINGULARITY (Black Void)
+      ctx.beginPath();
+      ctx.arc(0, 0, cfg.bhRadius, 0, Math.PI * 2);
+      ctx.fillStyle = "#000";
       ctx.fill();
 
+      // 5. Digital Artifacts (Lines and Dots inside)
+      ctx.rotate(-cfg.bhRotation * 1.5);
+      ctx.strokeStyle = `rgba(${state.themeRGB}, 0.5)`;
+      ctx.lineWidth = 1;
+      for (let i = 0; i < 6; i++) {
+         const ang = (i / 6) * Math.PI * 2;
+         ctx.beginPath();
+         ctx.moveTo(Math.cos(ang) * cfg.bhRadius * 0.5, Math.sin(ang) * cfg.bhRadius * 0.5);
+         ctx.lineTo(Math.cos(ang) * cfg.bhRadius * 0.9, Math.sin(ang) * cfg.bhRadius * 0.9);
+         ctx.stroke();
+         ctx.fillRect(Math.cos(ang) * cfg.bhRadius * 0.9 - 1, Math.sin(ang) * cfg.bhRadius * 0.9 - 1, 2, 2);
+      }
+
       ctx.restore();
-      ctx.shadowBlur = 0;
+      ctx.globalAlpha = 1;
     }
 
     requestAnimationFrame(draw);
