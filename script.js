@@ -223,29 +223,51 @@
     const bgSettingsBtn = $("#bgSettingsBtn");
     if (bgSettingsBtn) {
        bgSettingsBtn.onclick = () => {
-         if (!me) return;
+         if (!me) {
+           showToast("Войдите в профиль");
+           return;
+         }
+         const modal = $("#bgModal");
          const list = $("#ownedBgList");
-         if (!list) return;
+         if (!modal || !list) return;
+         
          list.innerHTML = "";
          const owned = me.ownedBackgrounds || ["HOLO"];
-         const bgs = [{id:"HOLO", name:"Holograph"}, {id:"BLACK_HOLE", name:"Black Hole"}];
-         bgs.forEach(bg => {
+         const allBgs = [
+           { id: "HOLO", name: "Голограф (HOLO)", desc: "Стандартный фон с летающими фигурами" },
+           { id: "BLACK_HOLE", name: "Черная Дыра (BLACK HOLE)", desc: "Цифровая сингулярность, втягивающая материю" }
+         ];
+
+         allBgs.forEach(bg => {
            if (!owned.includes(bg.id)) return;
-           const div = document.createElement("div");
-           div.className = `bgItem ${ (me.activeBackground || "HOLO") === bg.id ? "active" : "" }`;
-           div.textContent = bg.name;
-           div.onclick = async () => {
-             try {
-               await apiJson("/api/background/set", { method: "POST", body: { backgroundId: bg.id } });
-               showToast("Фон обновлен");
-               $("#bgModal")?.classList.add("hidden");
-               location.reload();
-             } catch(e) { showToast(e.message); }
-           };
-           list.appendChild(div);
+           
+           const item = document.createElement("div");
+           item.className = "bgListItem " + (me.activeBackground === bg.id ? "is-active" : "");
+           item.innerHTML = `
+             <div class="bgInfo">
+               <div class="bgName mono">${bg.name}</div>
+               <div class="bgDesc muted">${bg.desc}</div>
+             </div>
+             <button class="btn primary minimal selectBgBtn">${me.activeBackground === bg.id ? 'ВЫБРАНО' : 'ВЫБРАТЬ'}</button>
+           `;
+           
+           const btn = item.querySelector(".selectBgBtn");
+           if (btn && me.activeBackground !== bg.id) {
+             btn.onclick = async () => {
+               try {
+                 await apiJson("/api/background/set", { method: "POST", body: { backgroundId: bg.id } });
+                 showToast("Фон обновлен");
+                 me.activeBackground = bg.id;
+                 document.body.setAttribute('data-background', bg.id);
+                 modal.classList.add("hidden");
+                 // Refresh UI if needed or just let the background script react to data-background
+               } catch(e) { showToast(e.message); }
+             };
+           }
+           list.appendChild(item);
          });
-         $("#bgModal")?.classList.remove("hidden");
-       }
+         modal.classList.remove("hidden");
+       };
     }
   }
   initGlobalUI();
@@ -609,54 +631,7 @@
     }
   }
 
-  // No play buttons: audio will attempt autoplay; if blocked, it unlocks on next click.
-
-  
-  
-
-  
-
-
-  
-          }
-          const lg = headerUser.querySelector("#headerLogin");
-          if (lg) lg.textContent = me.login;
-          const bal = headerUser.querySelector("#balanceValue");
-          if (bal) bal.textContent = `${me.balance_l || 0} 
-        }
-        
-        $("#shopBtn")?.classList.remove("hidden");
-        if (currentViewName === 'shop') renderShop();
-        
-        if (currentViewName === 'profile' || currentViewName === 'home') {
-          updateProfileAvatarView(me.avatarUrl || me.avatar_path);
-          updateProfileCase(me.caseText);
-          const myLink = $("#profileLinkBox");
-          if (myLink) myLink.textContent = `u/${me.slug}`;
-          const myUsername = $("#profileUsername");
-          if (myUsername && myUsername.querySelector(".glitchTitle__base")) {
-            myUsername.dataset.text = me.username;
-            myUsername.querySelector(".glitchTitle__base").textContent = me.username;
-          }
-          document.body.classList.add("is-owner");
-          const authCard = $("#authCard") || document.querySelector(".authStage");
-          if (authCard) authCard.classList.add("hidden");
-          const profileStage = $("#profileStage");
-          if (profileStage) profileStage.classList.remove("hidden");
-          
-          updateMediaResetButtons(me, true);
-          if (!customizationReady) {
-            customizationReady = true;
-            setupCustomization();
-          }
-        }
-      } else {
-        $("#headerUser")?.classList.add("hidden");
-        $("#shopBtn")?.classList.add("hidden");
-      }
-    } catch(e) { me = null; }
-  }
-\n  let customEmojisHtml = `
+  let customEmojisHtml = `
     <svg class="emojiSVG anim-spin" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/></svg>
     <svg class="emojiSVG anim-jitter" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
     <svg class="emojiSVG anim-glitchDash" viewBox="0 0 24 24"><path d="M4 4l16 16M4 20L20 4"/></svg>
@@ -675,36 +650,6 @@
     try { localStorage.setItem('dv_theme', theme); } catch(_){}
   }
 
-  
-  ];
-    items.forEach(item => {
-      const card = document.createElement("div");
-      card.className = "card glass shopItem widget-animated";
-      const isOwned = me && me.ownedBackgrounds && me.ownedBackgrounds.includes(item.id);
-      card.innerHTML = `
-        <div class="cardTitle" style="font-size: 14px;">${item.name}</div>
-        <div class="muted mono mb-10" style="font-size: 11px;">${item.desc}</div>
-        <div class="row between">
-          <span class="mono">${item.price} L</span>
-          <button class="btn primary minimal buyBtn" ${isOwned ? 'disabled' : ''}>${isOwned ? 'КУПЛЕНО' : 'КУПИТЬ'}</button>
-        </div>`;
-      card.onmouseenter = () => { if (background) document.body.setAttribute('data-background', item.id); };
-      card.onmouseleave = () => { if (background && me) document.body.setAttribute('data-background', me.activeBackground || 'HOLO'); };
-      const btn = card.querySelector(".buyBtn");
-      if (btn && !isOwned) {
-        btn.onclick = async () => {
-          try {
-            await apiJson("/api/shop/buy", { method: "POST", body: { itemId: item.id } });
-            showToast("Приобретено!");
-            await loadMeAndShowDock();
-            renderShop();
-          } catch(e) { showToast(e.message); }
-        };
-      }
-      list.appendChild(card);
-      requestAnimationFrame(() => card.classList.add("is-visible"));
-    });
-  }
   function updateProfileAvatarView(path) {
     const empty = $(".profileAvatarEmpty");
     const img = $("#profileAvatarImg");
@@ -719,8 +664,8 @@
     }
     
     // update header
-    const av = $("#headerUser").querySelector(".headerAvatar");
-    if (av) av.style.backgroundImage = path ? `url(${path}
+    const av = $("#headerUser")?.querySelector(".headerAvatar");
+    if (av) av.style.backgroundImage = path ? `url(${path})` : 'none';
   }
 
   function renderEmojisInText(text) {
@@ -1304,8 +1249,7 @@
     "Остальная информация засекречена.",
     "",
     "Ваш профиль может быть оформлен так же!",
-  ].join("
-");
+  ].join("\n");
 
   let caseTyping = { running: false, raf: 0, i: 0 };
   const diversipapa = new Audio("./sounds/diversipapa.mp3");
@@ -1466,22 +1410,6 @@
     } catch (err) {
       console.error("Startup error:", err);
     }
-  
-  ];
-    items.forEach(item => {
-      const card = document.createElement("div");
-      card.className = "card glass shopItem widget-animated";
-      const isOwned = me && me.ownedBackgrounds && me.ownedBackgrounds.includes(item.id);
-      card.innerHTML = `
-        <div class="cardTitle" style="font-size: 14px;">${item.name}</div>
-        <div class="muted mono mb-10" style="font-size: 11px;">${item.desc}</div>
-        <div class="row between">
-          <span class="mono">${item.price} L</span>
-          <button class="btn primary minimal buyBtn" ${isOwned ? 'disabled' : ''}>${isOwned ? 'КУПЛЕНО' : 'КУПИТЬ'}</button>
-        </div>`;
-      card.onmouseenter = () => { if (background) document.body.setAttribute('data-background', item.id); };
-      card.onmouseleave = () => { if (background && me) document.body.setAttribute('data-background', me.activeBackground || 'HOLO'); };
-      const btn = card.querySelector(".buyBtn");
       if (btn && !isOwned) {
         btn.onclick = async () => {
           try {
@@ -1686,8 +1614,9 @@ function createNetworkBackground({ canvas, reducedMotion }) {
 
     // Zoom interpolation
     state.zoom += (state.targetZoom - state.zoom) * 0.05 * dt;
-    cfg.blackHoleCenter.x = state.w * 0.3;
-    cfg.blackHoleCenter.y = state.h * 0.5;
+    // Position of the Black Hole - Left side (30% width)
+    cfg.blackHoleCenter.x = state.w * 0.28;
+    cfg.blackHoleCenter.y = state.h * 0.45;
     cfg.isBlackHole = document.body.getAttribute('data-background') === 'BLACK_HOLE';
 ctx.clearRect(0, 0, state.w, state.h);
 
@@ -1759,38 +1688,58 @@ ctx.clearRect(0, 0, state.w, state.h);
     // Draw shapes
     state.particles.forEach((p, i) => drawShape(p, projected[i]));
 
-    // Draw black hole singularity if active
+    // DRAW BLACK HOLE (DIGITAL SINGULARITY)
     if (cfg.isBlackHole) {
-      cfg.bhRotation += 0.02;
+      cfg.bhRotation += 0.015 * dt;
       ctx.save();
       ctx.translate(cfg.blackHoleCenter.x, cfg.blackHoleCenter.y);
       ctx.rotate(cfg.bhRotation);
       
-      const bhColor = `rgba(${state.themeRGB}, 0.8)`;
-      ctx.strokeStyle = bhColor;
-      ctx.shadowBlur = 20;
-      ctx.shadowColor = bhColor;
-      ctx.lineWidth = 1;
-
-      // Draw wireframe hexagon/singularity
-      ctx.beginPath();
-      for(let i=0; i<6; i++) {
-        const ang = (i / 6) * Math.PI * 2;
-        const rx = cfg.bhRadius * Math.cos(ang);
-        const ry = cfg.bhRadius * Math.sin(ang);
-        if(i===0) ctx.moveTo(rx, ry); else ctx.lineTo(rx, ry);
+      const themeColor = `rgba(${state.themeRGB}, 0.8)`;
+      ctx.shadowBlur = 25;
+      ctx.shadowColor = themeColor;
+      
+      // Event Horizon - concentric wireframe rings
+      for (let r = 1; r <= 3; r++) {
+          const currentRadius = cfg.bhRadius * (r / 3) * (0.95 + Math.sin(now / 500) * 0.05);
+          ctx.beginPath();
+          ctx.setLineDash(r === 1 ? [] : [5, 5]); // Inner ring solid, outer dashed
+          ctx.arc(0, 0, currentRadius, 0, Math.PI * 2);
+          ctx.strokeStyle = `rgba(${state.themeRGB}, ${0.8 - r * 0.2})`;
+          ctx.lineWidth = 1;
+          ctx.stroke();
       }
-      ctx.closePath();
+      ctx.setLineDash([]);
+
+      // Singularity core - dots and spinning lines
+      ctx.rotate(cfg.bhRotation * 2);
+      ctx.beginPath();
+      for (let i = 0; i < 8; i++) {
+          const angle = (i / 8) * Math.PI * 2;
+          const x1 = Math.cos(angle) * (cfg.bhRadius * 0.4);
+          const y1 = Math.sin(angle) * (cfg.bhRadius * 0.4);
+          const x2 = Math.cos(angle) * (cfg.bhRadius * 0.8);
+          const y2 = Math.sin(angle) * (cfg.bhRadius * 0.8);
+          
+          ctx.moveTo(x1, y1);
+          ctx.lineTo(x2, y2);
+          
+          // Tiny dots at vertices
+          ctx.fillRect(x1-1, y1-1, 2, 2);
+      }
+      ctx.strokeStyle = themeColor;
+      ctx.lineWidth = 2;
       ctx.stroke();
 
-      // Inner pulsating core
-      const pulseSize = cfg.bhRadius * (0.8 + Math.sin(now/200)*0.1);
+      // Pulsating central point
+      const pulse = 2 + Math.abs(Math.sin(now / 150)) * 5;
       ctx.beginPath();
-      ctx.arc(0,0, pulseSize*0.5, 0, Math.PI*2);
-      ctx.fillStyle = `rgba(${state.themeRGB}, 0.1)`;
+      ctx.arc(0, 0, pulse, 0, Math.PI * 2);
+      ctx.fillStyle = "#fff";
       ctx.fill();
-      
+
       ctx.restore();
+      ctx.shadowBlur = 0;
     }
 
     requestAnimationFrame(draw);
@@ -1802,42 +1751,4 @@ ctx.clearRect(0, 0, state.w, state.h);
 
   return { setPointer, freezeFor, pulseGlitch, setZoom, setThemeColor };
 }
-
-  ];
-    items.forEach(item => {
-      const card = document.createElement("div");
-      card.className = "card glass shopItem widget-animated";
-      const isOwned = me && me.ownedBackgrounds && me.ownedBackgrounds.includes(item.id);
-      card.innerHTML = `
-        <div class="cardTitle" style="font-size: 14px;">${item.name}</div>
-        <div class="muted mono mb-10" style="font-size: 11px;">${item.desc}</div>
-        <div class="row between">
-          <span class="mono">${item.price} L</span>
-          <button class="btn primary minimal buyBtn" ${isOwned ? 'disabled' : ''}>${isOwned ? 'КУПЛЕНО' : 'КУПИТЬ'}</button>
-        </div>`;
-      card.onmouseenter = () => { if (background) document.body.setAttribute('data-background', item.id); };
-      card.onmouseleave = () => { if (background && me) document.body.setAttribute('data-background', me.activeBackground || 'HOLO'); };
-      const btn = card.querySelector(".buyBtn");
-      if (btn && !isOwned) {
-        btn.onclick = async () => {
-          try {
-            await apiJson("/api/shop/buy", { method: "POST", body: { itemId: item.id } });
-            showToast("Приобретено!");
-            await loadMeAndShowDock();
-            renderShop();
-          } catch(e) { showToast(e.message); }
-        };
-      }
-      list.appendChild(card);
-      requestAnimationFrame(() => card.classList.add("is-visible"));
-    });
-  }
-
-  ;
-
-  
-\n  \n
-  ;
-
-  
-\n  \n})();
+})();

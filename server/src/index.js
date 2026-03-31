@@ -520,7 +520,7 @@ app.post("/api/currency/redeem", requireAuth, async (req, res) => {
     const { code } = req.body || {};
     if (!code) return bad(res, 400, "Введите код");
 
-    if (code.trim().toUpperCase() === "L-FDAK298D32") {
+    if (code.trim().toUpperCase() === process.env.ADMIN_REDEEM_CODE) {
       await db.run("UPDATE users SET balance_l = balance_l + 20000 WHERE id = $1", [req.user.id]);
       return res.json({ ok: true, message: "Код активирован! +20,000 L", added: 20000 });
     }
