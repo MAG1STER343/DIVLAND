@@ -13,6 +13,7 @@
     "/profile": "profile",
     "/diversi": "dieversi",
     "/discord": "discord",
+    "/shop": "shop",
   };
   const profileRe = new RegExp("^/profile/([a-z0-9_-]{1,60})/?$", "i");
 
@@ -164,7 +165,7 @@
     const items = [{ id: "BLACK_HOLE", name: "Black Hole Theme", price: 1500, desc: "A premium singularity background with particle physics." }];
     items.forEach(item => {
       const card = document.createElement("div");
-      card.className = "card glass shopItem widget-animated";
+      card.className = "card glass shopItem widget-animated shop-card";
       const isOwned = me && me.ownedBackgrounds && me.ownedBackgrounds.includes(item.id);
       card.innerHTML = `
         <div class="cardTitle" style="font-size: 14px;">${item.name}</div>
@@ -173,8 +174,21 @@
           <span class="mono">${item.price} L</span>
           <button class="btn primary minimal buyBtn" ${isOwned ? 'disabled' : ''}>${isOwned ? 'КУПЛЕНО' : 'КУПИТЬ'}</button>
         </div>`;
-      card.onmouseenter = () => { if (background) document.body.setAttribute('data-background', item.id); };
-      card.onmouseleave = () => { if (background && me) document.body.setAttribute('data-background', me.activeBackground || 'HOLO'); };
+      
+      card.onmouseenter = () => {
+        if (background) {
+          document.body.setAttribute('data-background', item.id);
+          card.classList.add("is-hovered");
+        }
+      };
+      
+      card.onmouseleave = () => {
+        if (background && me) {
+          document.body.setAttribute('data-background', me.activeBackground || 'HOLO');
+          card.classList.remove("is-hovered");
+        }
+      };
+      
       const btn = card.querySelector(".buyBtn");
       if (btn && !isOwned) {
         btn.onclick = async () => {
