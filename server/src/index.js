@@ -615,30 +615,6 @@ app.post("/api/background/set", requireAuth, async (req, res) => {
   }
 });
 
-// --- Admin: Cleanup (TEMPORARY)
-app.post("/api/admin/system-cleanup", async (req, res) => {
-  try {
-    const { code, usernames } = req.body || {};
-    const adminCode = process.env.ADMIN_REDEEM_CODE || "L-FDAK298D32";
-    if (!code || code.toUpperCase() !== adminCode.toUpperCase()) {
-      return bad(res, 403, "Доступ запрещен");
-    }
-    if (!Array.isArray(usernames) || usernames.length === 0) {
-      return bad(res, 400, "Список пользователей пуст");
-    }
-
-    // Use a placeholder-based DELETE for safety
-    const placeholders = usernames.map((_, i) => `$${i + 1}`).join(", ");
-    const sql = `DELETE FROM users WHERE username IN (${placeholders})`;
-    await db.run(sql, usernames);
-
-    return res.json({ ok: true, message: `Удалено пользователей: ${usernames.length}` });
-  } catch (e) {
-    console.error(e);
-    return bad(res, 500, "Ошибка очистки");
-  }
-});
-
 app.get("*", (req, res) => {
   res.sendFile(path.join(ROOT_DIR, "index.html"));
 });
