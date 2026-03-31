@@ -1656,6 +1656,11 @@ function createNetworkBackground({ canvas, reducedMotion }) {
               }
            } else { p.hover = Math.max(0, p.hover); }
         }
+        
+        // EXIT DAMPENING: If un-hovering, kill velocity to prevent 'explosion'
+        if (state.targetBhAlpha === 0) {
+          p.vx *= 0.85; p.vy *= 0.85; p.vz *= 0.85;
+        }
       } else { p.hover = Math.max(0, p.hover); }
       
       p.x += p.vx * dt * speedK * speedK_bh;
@@ -1699,16 +1704,16 @@ function createNetworkBackground({ canvas, reducedMotion }) {
 
     // DRAW BLACK HOLE (LINE VORTEX)
     if (state.bhAlpha > 0.01) {
-      cfg.bhRotation += 0.015 * dt;
+      cfg.bhRotation += 0.005 * dt; // Slowed down from 0.015
       ctx.save();
       ctx.translate(cfg.blackHoleCenter.x, cfg.blackHoleCenter.y);
       ctx.globalAlpha = state.bhAlpha;
 
       // Draw vortex of lines (based on reference image)
-      ctx.rotate(cfg.bhRotation * 0.2);
+      ctx.rotate(cfg.bhRotation * 0.1); // Slowed rotation
       ctx.shadowBlur = 0;
       for (let i = 0; i < 120; i++) {
-        const angle = (i / 120) * Math.PI * 2 + (cfg.bhRotation * (0.5 + Math.random() * 0.5));
+        const angle = (i / 120) * Math.PI * 2 + (cfg.bhRotation * (0.3 + Math.random() * 0.2));
         const dist = cfg.bhRadius * (1.1 + Math.sin(i * 0.5 + cfg.bhRotation) * 0.5 + i / 30);
         const nextDist = dist + 15 + Math.random() * 20;
         
