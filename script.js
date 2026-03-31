@@ -1410,29 +1410,7 @@
     } catch (err) {
       console.error("Startup error:", err);
     }
-      if (btn && !isOwned) {
-        btn.onclick = async () => {
-          try {
-            await apiJson("/api/shop/buy", { method: "POST", body: { itemId: item.id } });
-            showToast("Приобретено!");
-            await loadMeAndShowDock();
-            renderShop();
-          } catch(e) { showToast(e.message); }
-        };
-      }
-      list.appendChild(card);
-      requestAnimationFrame(() => card.classList.add("is-visible"));
-    });
-  }
-
-  ;
-
-  
-\n  \n
-  ;
-
-  
-\n  \n})();
+  })();
 
 function createNetworkBackground({ canvas, reducedMotion }) {
   if (!canvas) return null;
