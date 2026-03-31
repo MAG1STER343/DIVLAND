@@ -1635,23 +1635,35 @@ function createNetworkBackground({ canvas, reducedMotion }) {
         const dy = cfg.blackHoleCenter.y - (state.h/2 + p.y);
         const dist = Math.sqrt(dx*dx + dy*dy);
         
-        if (dist < 800) {
-           const force = state.bhAlpha * (800 - dist) / 5000;
-           // Sucking + Spiralling orbit (Reduced for smoothness)
-           const orbitX = -dy * 0.008 * state.bhAlpha;
-           const orbitY = dx * 0.008 * state.bhAlpha;
+        // GLOBAL GRAVITY (All particles feel the pull)
+        const globalForce = 0.0003 * state.bhAlpha;
+        p.vx += dx * globalForce;
+        p.vy += dy * globalForce;
+
+        if (dist < 1200) {
+           const force = state.bhAlpha * (1200 - dist) / 6000;
+           // Sucking (Radial) + Spiralling (Tangential)
+           // More Radial = More 'Sucking', More Tangential = More 'Orbiting'
+           const orbitX = -dy * 0.005 * state.bhAlpha;
+           const orbitY = dx * 0.005 * state.bhAlpha;
            
-           p.vx += (dx * force * 0.15 + orbitX);
-           p.vy += (dy * force * 0.15 + orbitY);
+           p.vx += (dx * force * 0.3 + orbitX);
+           p.vy += (dy * force * 0.3 + orbitY);
            
-           // "Sucking in" effect
+           // "Sucking in" effect (Inward spiral)
            const horizon = cfg.bhRadius;
-           if (dist < 280) {
-              const suckFactor = Math.max(0, (dist - horizon) / 220);
+           if (dist < 400) {
+              const suckFactor = Math.max(0, (dist - horizon) / 340);
               p.hover = - (1 - suckFactor);
-              if (dist < horizon + 5) {
-                p.x = (Math.random()-0.5)*2000; p.y = (Math.random()-0.5)*2000;
-                p.vx *= 0.3; p.vy *= 0.3;
+              if (dist < horizon + 10) {
+                // RESPAWN AT EDGES (To look like new matter coming in)
+                const side = Math.random();
+                if (side < 0.25) { p.x = -1000; p.y = (Math.random()-0.5)*2000; }
+                else if (side < 0.5) { p.x = 1000; p.y = (Math.random()-0.5)*2000; }
+                else if (side < 0.75) { p.y = -1000; p.x = (Math.random()-0.5)*2000; }
+                else { p.y = 1000; p.x = (Math.random()-0.5)*2000; }
+                
+                p.vx *= 0.1; p.vy *= 0.1;
                 p.hover = 0;
               }
            } else { p.hover = Math.max(0, p.hover); }
