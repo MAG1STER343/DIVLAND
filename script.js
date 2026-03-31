@@ -162,7 +162,10 @@
     const list = $("#shop-list");
     if (!list) return;
     list.innerHTML = "";
-    const items = [{ id: "BLACK_HOLE", name: "Black Hole Theme", price: 1500, desc: "A premium singularity background with particle physics." }];
+    const items = [
+      { id: "BLACK_HOLE", name: "Black Hole Theme", price: 1500, desc: "A premium singularity background with particle physics." },
+      { id: "FLOWERS", name: "Flowers Theme", price: 5000, desc: "Digital garden in the horizon with vertical falling petals." }
+    ];
     items.forEach(item => {
       const card = document.createElement("div");
       card.className = "card glass shopItem widget-animated shop-card";
@@ -238,7 +241,8 @@
          const owned = me.ownedBackgrounds || ["HOLO"];
          const allBgs = [
            { id: "HOLO", name: "Голограф (HOLO)", desc: "Стандартный фон с летающими фигурами" },
-           { id: "BLACK_HOLE", name: "Черная Дыра (BLACK HOLE)", desc: "Цифровая сингулярность, втягивающая материю" }
+           { id: "BLACK_HOLE", name: "Черная Дыра (BLACK HOLE)", desc: "Цифровая сингулярность, втягивающая материю" },
+           { id: "FLOWERS", name: "Цветы (FLOWERS)", desc: "Цифровой сад с вертикальным падением частиц" }
          ];
 
          allBgs.forEach(bg => {
@@ -1559,8 +1563,50 @@ function createNetworkBackground({ canvas, reducedMotion }) {
     targetZoom: 1.0,
     themeRGB: "255, 255, 255",
     bhAlpha: 0,
-    targetBhAlpha: 0
+    targetBhAlpha: 0,
+    flowerAlpha: 0,
+    targetFlowerAlpha: 0,
+    flowers: []
   };
+
+  // Generate Digital Garden structures once
+  function generateFlowers() {
+    state.flowers = [];
+    const numFlowers = 6;
+    for (let i = 0; i < numFlowers; i++) {
+        // Position in bottom-right zone
+        const baseX = 800 + Math.random() * 600;
+        const baseY = 800 + Math.random() * 400;
+        const height = 150 + Math.random() * 200;
+        
+        const vertices = [];
+        const edges = [];
+        
+        // Stem
+        vertices.push({ x: baseX, y: baseY, z: 0 }); // Bottom
+        vertices.push({ x: baseX + (Math.random()-0.5)*100, y: baseY - height, z: (Math.random()-0.5)*100 }); // Top
+        edges.push([0, 1]);
+        
+        // Petal/Head nodes
+        const center = vertices[1];
+        const numNodes = 5 + Math.floor(Math.random()*4);
+        for (let j = 0; j < numNodes; j++) {
+            const angle = (j / numNodes) * Math.PI * 2;
+            const r = 40 + Math.random() * 40;
+            vertices.push({
+                x: center.x + Math.cos(angle) * r,
+                y: center.y + Math.sin(angle) * r,
+                z: center.z + (Math.random()-0.5) * 40
+            });
+            edges.push([1, vertices.length - 1]);
+            if (j > 0) edges.push([vertices.length - 2, vertices.length - 1]);
+            if (j === numNodes - 1) edges.push([vertices.length - 1, 2]);
+        }
+        
+        state.flowers.push({ vertices, edges, phase: Math.random() * Math.PI * 2 });
+    }
+  }
+  generateFlowers();
 
   const cfg = {
     numParticles: reducedMotion ? 35 : 70,
@@ -1717,10 +1763,14 @@ function createNetworkBackground({ canvas, reducedMotion }) {
     const speedK = isSlow ? 0.4 : 1.0;
 
     // Target Alpha for Black Hole (smooth transition)
+    // Target Alphas (smooth transitions)
     const activeBg = document.body.getAttribute('data-background');
     state.targetBhAlpha = (activeBg === 'BLACK_HOLE') ? 1 : 0;
-    state.zoom += (state.targetZoom - state.zoom) * 0.08 * dt; // Faster snap
+    state.targetFlowerAlpha = (activeBg === 'FLOWERS') ? 1 : 0;
+    
+    state.zoom += (state.targetZoom - state.zoom) * 0.08 * dt;
     state.bhAlpha += (state.targetBhAlpha - state.bhAlpha) * 0.08 * dt;
+    state.flowerAlpha += (state.targetFlowerAlpha - state.flowerAlpha) * 0.08 * dt;
 
     // Position of the Black Hole - Left side (30% width)
     cfg.blackHoleCenter.x = state.w * 0.28;
@@ -1799,7 +1849,13 @@ function createNetworkBackground({ canvas, reducedMotion }) {
       } else { p.hover = Math.max(0, p.hover); }
       
       p.x += p.vx * dt * speedK * speedK_bh;
-      p.y += p.vy * dt * speedK * speedK_bh;
+      if (state.flowerAlpha > 0.01) {
+          // Vertical fall physics
+          p.y += (1.5 + Math.random() * 0.5) * dt * state.flowerAlpha;
+          p.vx *= 0.95; // Dampen horizontal wander
+      } else {
+          p.y += p.vy * dt * speedK * speedK_bh;
+      }
       p.z += p.vz * dt * speedK;
       if (p.x < -1000) p.x = 1000; if (p.x > 1000) p.x = -1000;
       if (p.y < -1000) p.y = 1000; if (p.y > 1000) p.y = -1000;
@@ -1875,6 +1931,55 @@ function createNetworkBackground({ canvas, reducedMotion }) {
 
       ctx.restore();
       ctx.globalAlpha = 1;
+    }
+
+    // DRAW FLOWERS (DIGITAL GARDEN)
+    if (state.flowerAlpha > 0.01) {
+        ctx.save();
+        ctx.globalAlpha = state.flowerAlpha;
+        const sway = Math.sin(now / 1500) * 15;
+        
+        state.flowers.forEach(f => {
+            const swayX = Math.sin(now / 2000 + f.phase) * 10;
+            ctx.strokeStyle = `rgba(${state.themeRGB}, 0.25)`;
+            ctx.lineWidth = 1;
+            
+            f.edges.forEach(e => {
+                const v1 = f.vertices[e[0]];
+                const v2 = f.vertices[e[1]];
+                
+                // Project garden coordinates (base 0,0 center relative)
+                const pr1 = project({ 
+                    x: v1.x + (e[0] > 0 ? swayX : 0), 
+                    y: v1.y, 
+                    z: v1.z 
+                });
+                const pr2 = project({ 
+                    x: v2.x + (e[1] > 0 ? swayX : 0), 
+                    y: v2.y, 
+                    z: v2.z 
+                });
+                
+                ctx.beginPath();
+                ctx.moveTo(pr1.x, pr1.y);
+                ctx.lineTo(pr2.x, pr2.y);
+                ctx.stroke();
+            });
+            
+            // Draw vertices as dots
+            ctx.fillStyle = `rgba(${state.themeRGB}, 0.6)`;
+            f.vertices.forEach((v, idx) => {
+                const pr = project({ 
+                    x: v.x + (idx > 0 ? swayX : 0), 
+                    y: v.y, 
+                    z: v.z 
+                });
+                ctx.beginPath();
+                ctx.arc(pr.x, pr.y, 2 * pr.s, 0, Math.PI * 2);
+                ctx.fill();
+            });
+        });
+        ctx.restore();
     }
 
     requestAnimationFrame(draw);

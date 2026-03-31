@@ -589,6 +589,18 @@ app.post("/api/shop/buy", requireAuth, async (req, res) => {
       return res.json({ ok: true, message: "Фон Black Hole куплен!" });
     }
 
+    if (itemId === "FLOWERS") {
+      const price = 5000;
+      if (owned.includes("FLOWERS")) return bad(res, 400, "У вас уже есть этот фон");
+      if (user.balance_l < price) return bad(res, 400, "Недостаточно L валюты");
+
+      owned.push("FLOWERS");
+      await db.run("UPDATE users SET balance_l = balance_l - $1, owned_backgrounds = $2 WHERE id = $3", [
+        price, JSON.stringify(owned), req.user.id
+      ]);
+      return res.json({ ok: true, message: "Фон Flowers куплен!" });
+    }
+
     return bad(res, 400, "Предмет не найден в магазине");
   } catch (e) {
     console.error(e);
