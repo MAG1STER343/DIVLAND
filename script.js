@@ -1634,7 +1634,7 @@ function createNetworkBackground({ canvas, reducedMotion }) {
     // Target Alpha for Black Hole (smooth transition)
     const activeBg = document.body.getAttribute('data-background');
     state.targetBhAlpha = (activeBg === 'BLACK_HOLE') ? 1 : 0;
-    state.zoom += (state.targetZoom - state.zoom) * 0.02 * dt; // Smoother zoom
+    state.zoom += (state.targetZoom - state.zoom) * 0.08 * dt; // Faster snap
     state.bhAlpha += (state.targetBhAlpha - state.bhAlpha) * 0.08 * dt;
 
     // Position of the Black Hole - Left side (30% width)
@@ -1659,7 +1659,7 @@ function createNetworkBackground({ canvas, reducedMotion }) {
     });
 
     // Physics & Projection
-    const speedK_bh = state.bhAlpha > 0.1 ? 0.06 : 1.0; // Ultra slow Black Hole
+    const speedK_bh = state.bhAlpha > 0.1 ? 0.025 : 1.0; // Deepest slowdown
     const projected = state.particles.map(p => {
       // Black hole attraction (only if bhAlpha > 0)
       if (state.bhAlpha > 0.01) {
@@ -1746,9 +1746,9 @@ function createNetworkBackground({ canvas, reducedMotion }) {
     // Draw shapes
     state.particles.forEach((p, i) => drawShape(p, projected[i]));
 
-    // DRAW BLACK HOLE (LINE VORTEX)
+    // DRAW BLACK HOLE (PURIFIED)
     if (state.bhAlpha > 0.01) {
-      cfg.bhRotation += 0.0035 * dt; // Even slower rotation
+      cfg.bhRotation += 0.0035 * dt; 
       ctx.save();
       ctx.translate(cfg.blackHoleCenter.x, cfg.blackHoleCenter.y);
       ctx.globalAlpha = state.bhAlpha;
@@ -1756,33 +1756,7 @@ function createNetworkBackground({ canvas, reducedMotion }) {
       const glitch = Math.random() < 0.04 ? 1 : 0;
       const flicker = Math.random() < 0.08 ? 30 : 15;
 
-      // Draw vortex of lines (based on reference image)
-      ctx.rotate(cfg.bhRotation * 0.08); // Even slower swirl
-      ctx.shadowBlur = flicker;
-      ctx.shadowColor = `rgba(${state.themeRGB}, 0.8)`;
-      
-      for (let i = 0; i < 140; i++) {
-        const offsetAng = (i / 140) * Math.PI * 2;
-        const angle = offsetAng + (cfg.bhRotation * (0.2 + Math.random() * 0.15));
-        const distBase = cfg.bhRadius * (1 + Math.sin(i * 0.3 + cfg.bhRotation) * 0.3);
-        const dist = distBase + i / 10;
-        const nextDist = dist + 10 + Math.random() * 15;
-        
-        ctx.beginPath();
-        const lineAlpha = (0.05 + Math.random() * 0.25) * (glitch ? 2 : 1);
-        ctx.strokeStyle = `rgba(${state.themeRGB}, ${lineAlpha})`;
-        ctx.lineWidth = 1;
-        ctx.moveTo(Math.cos(angle) * dist, Math.sin(angle) * dist);
-        ctx.lineTo(Math.cos(angle + 0.05) * nextDist, Math.sin(angle + 0.05) * nextDist);
-        ctx.stroke();
-        
-        // Random dots in vortex
-        if (i % 3 === 0) {
-          ctx.fillStyle = glitch ? "#fff" : `rgba(${state.themeRGB}, 0.8)`;
-          ctx.fillRect(Math.cos(angle) * dist - 0.5, Math.sin(angle) * dist - 0.5, 1, 1);
-        }
-      }
-      ctx.shadowBlur = 0;
+      // Vortex Lines REMOVED for clean minimal Look
 
       // Gravitational lensing circles (faint)
       ctx.lineWidth = 0.5;
