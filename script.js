@@ -209,10 +209,7 @@
         if (modal) modal.classList.remove("hidden");
       };
     }
-    const rechargeCloseX = $("#rechargeCloseX");
-    if (rechargeCloseX) rechargeCloseX.onclick = () => hideModal("rechargeModal");
-    const bgCloseX = $("#bgCloseX");
-    if (bgCloseX) bgCloseX.onclick = () => hideModal("bgModal");
+    // Close buttons handled via onclick in HTML
     
     const redeemBtn = $("#redeemCodeBtn");
     if (redeemBtn) {
@@ -312,8 +309,9 @@
     setTimeout(() => {
        modal.classList.add("hidden");
        modal.classList.remove("is-closing");
-    }, 350); // Matches CSS transition duration
+    }, 350); 
   }
+  window.hideModal = hideModal;
 
   function showView(viewName, { withGlitch = true, originEl = null } = {}) {
     const doIt = () => {
@@ -987,8 +985,7 @@
     }
     
     $("#emojiBtn")?.addEventListener("click", () => emojiM.classList.remove("hidden"));
-    $("#emojiCloseXBtn")?.addEventListener("click", () => hideModal("emojiModal"));
-    $("#emojiCloseBtnBig")?.addEventListener("click", () => hideModal("emojiModal"));
+    // Close buttons handled via onclick in HTML
 
     // Avatar Crop logic
     const avBtn = $("#profileAvatarBtn");

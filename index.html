@@ -689,12 +689,12 @@
 
       <div class="modal hidden" id="emojiModal">
         <div class="modalContent glass">
-          <button class="close-x" id="emojiCloseXBtn">×</button>
+          <button class="close-x" onclick="hideModal('emojiModal')">×</button>
           <div class="cardTitle">Эмодзи</div>
           <div class="emojiGrid" id="emojiGrid">
             <!-- Populated by JS -->
           </div>
-          <button class="btn primary mt-20" id="emojiCloseBtnBig" style="width: 100%;">Закрыть</button>
+          <button class="btn primary mt-20" onclick="hideModal('emojiModal')" style="width: 100%;">Закрыть</button>
         </div>
       </div>
 
@@ -950,7 +950,7 @@
     <!-- Recharge Modal -->
     <div class="modal hidden" id="rechargeModal">
       <div class="modalContent glass glitchCard">
-        <button class="close-x" id="rechargeCloseX">×</button>
+        <button class="close-x" onclick="hideModal('rechargeModal')">×</button>
         <div class="cardTitle">ПОПОЛНЕНИЕ</div>
         <p class="muted mono mb-10">Введите L-CODE для получения валюты</p>
         <div class="field">
@@ -962,7 +962,7 @@
     <!-- Background Settings Modal -->
     <div class="modal hidden" id="bgModal">
       <div class="modalContent glass glitchCard">
-        <button class="close-x" id="bgCloseX">×</button>
+        <button class="close-x" onclick="hideModal('bgModal')">×</button>
         <div class="cardTitle">НАСТРОЙКА ФОНА</div>
         <div class="bgList" id="ownedBgList"></div>
         <button class="btn primary glitch-on-hover mt-10" style="width: 100%;" id="saveBgBtn">СОХРАНИТЬ</button>
