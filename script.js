@@ -1455,7 +1455,7 @@ function createNetworkBackground({ canvas, reducedMotion }) {
     fieldRadius: 280,
     blackHoleCenter: { x: 0, y: 0 },
     isBlackHole: false,
-    bhRadius: 60,
+    bhRadius: 90,
     bhRotation: 0,
   };
 
@@ -1627,7 +1627,7 @@ function createNetworkBackground({ canvas, reducedMotion }) {
     });
 
     // Physics & Projection
-    const speedK_bh = state.bhAlpha > 0.1 ? 0.4 : 1.0; // Slow down particles in BH mode
+    const speedK_bh = state.bhAlpha > 0.1 ? 0.18 : 1.0; // Slow down particles in BH mode
     const projected = state.particles.map(p => {
       // Black hole attraction (only if bhAlpha > 0)
       if (state.bhAlpha > 0.01) {
@@ -1636,22 +1636,22 @@ function createNetworkBackground({ canvas, reducedMotion }) {
         const dist = Math.sqrt(dx*dx + dy*dy);
         
         if (dist < 800) {
-           const force = state.bhAlpha * (800 - dist) / 4000;
-           // Sucking + Spiralling orbit
-           const orbitX = -dy * 0.015 * state.bhAlpha;
-           const orbitY = dx * 0.015 * state.bhAlpha;
+           const force = state.bhAlpha * (800 - dist) / 5000;
+           // Sucking + Spiralling orbit (Reduced for smoothness)
+           const orbitX = -dy * 0.008 * state.bhAlpha;
+           const orbitY = dx * 0.008 * state.bhAlpha;
            
-           p.vx += (dx * force * 0.2 + orbitX);
-           p.vy += (dy * force * 0.2 + orbitY);
+           p.vx += (dx * force * 0.15 + orbitX);
+           p.vy += (dy * force * 0.15 + orbitY);
            
            // "Sucking in" effect
-           const horizon = 60;
-           if (dist < 200) {
-              const suckFactor = Math.max(0, (dist - horizon) / 140);
+           const horizon = cfg.bhRadius;
+           if (dist < 280) {
+              const suckFactor = Math.max(0, (dist - horizon) / 220);
               p.hover = - (1 - suckFactor);
               if (dist < horizon + 5) {
                 p.x = (Math.random()-0.5)*2000; p.y = (Math.random()-0.5)*2000;
-                p.vx *= 0.5; p.vy *= 0.5;
+                p.vx *= 0.3; p.vy *= 0.3;
                 p.hover = 0;
               }
            } else { p.hover = Math.max(0, p.hover); }
@@ -1704,39 +1704,48 @@ function createNetworkBackground({ canvas, reducedMotion }) {
 
     // DRAW BLACK HOLE (LINE VORTEX)
     if (state.bhAlpha > 0.01) {
-      cfg.bhRotation += 0.005 * dt; // Slowed down from 0.015
+      cfg.bhRotation += 0.0035 * dt; // Even slower rotation
       ctx.save();
       ctx.translate(cfg.blackHoleCenter.x, cfg.blackHoleCenter.y);
       ctx.globalAlpha = state.bhAlpha;
 
+      const glitch = Math.random() < 0.04 ? 1 : 0;
+      const flicker = Math.random() < 0.08 ? 30 : 15;
+
       // Draw vortex of lines (based on reference image)
-      ctx.rotate(cfg.bhRotation * 0.1); // Slowed rotation
-      ctx.shadowBlur = 0;
-      for (let i = 0; i < 120; i++) {
-        const angle = (i / 120) * Math.PI * 2 + (cfg.bhRotation * (0.3 + Math.random() * 0.2));
-        const dist = cfg.bhRadius * (1.1 + Math.sin(i * 0.5 + cfg.bhRotation) * 0.5 + i / 30);
-        const nextDist = dist + 15 + Math.random() * 20;
+      ctx.rotate(cfg.bhRotation * 0.08); // Even slower swirl
+      ctx.shadowBlur = flicker;
+      ctx.shadowColor = `rgba(${state.themeRGB}, 0.8)`;
+      
+      for (let i = 0; i < 140; i++) {
+        const offsetAng = (i / 140) * Math.PI * 2;
+        const angle = offsetAng + (cfg.bhRotation * (0.2 + Math.random() * 0.15));
+        const distBase = cfg.bhRadius * (1 + Math.sin(i * 0.3 + cfg.bhRotation) * 0.3);
+        const dist = distBase + i / 10;
+        const nextDist = dist + 10 + Math.random() * 15;
         
         ctx.beginPath();
-        ctx.strokeStyle = `rgba(${state.themeRGB}, ${0.1 + Math.random() * 0.4})`;
+        const lineAlpha = (0.05 + Math.random() * 0.25) * (glitch ? 2 : 1);
+        ctx.strokeStyle = `rgba(${state.themeRGB}, ${lineAlpha})`;
         ctx.lineWidth = 1;
         ctx.moveTo(Math.cos(angle) * dist, Math.sin(angle) * dist);
-        ctx.lineTo(Math.cos(angle + 0.1) * nextDist, Math.sin(angle + 0.1) * nextDist);
+        ctx.lineTo(Math.cos(angle + 0.05) * nextDist, Math.sin(angle + 0.05) * nextDist);
         ctx.stroke();
         
         // Random dots in vortex
-        if (i % 4 === 0) {
-          ctx.fillStyle = "#fff";
+        if (i % 3 === 0) {
+          ctx.fillStyle = glitch ? "#fff" : `rgba(${state.themeRGB}, 0.8)`;
           ctx.fillRect(Math.cos(angle) * dist - 0.5, Math.sin(angle) * dist - 0.5, 1, 1);
         }
       }
+      ctx.shadowBlur = 0;
 
       // Gravitational lensing circles (faint)
       ctx.lineWidth = 0.5;
-      for (let r = 1; r <= 4; r++) {
+      for (let r = 1; r <= 5; r++) {
          ctx.beginPath();
-         ctx.arc(0, 0, cfg.bhRadius * (1 + r * 0.4), 0, Math.PI * 2);
-         ctx.strokeStyle = `rgba(${state.themeRGB}, 0.05)`;
+         ctx.arc(0, 0, cfg.bhRadius * (1 + r * 0.35 + Math.sin(cfg.bhRotation + r) * 0.02), 0, Math.PI * 2);
+         ctx.strokeStyle = `rgba(${state.themeRGB}, 0.08)`;
          ctx.stroke();
       }
 
@@ -1746,12 +1755,13 @@ function createNetworkBackground({ canvas, reducedMotion }) {
       ctx.fillStyle = "#000";
       ctx.fill();
       
-      // Central Glow Shadow
-      const coreGrd = ctx.createRadialGradient(0, 0, cfg.bhRadius * 0.8, 0, 0, cfg.bhRadius * 1.1);
+      // Central Glow Shadow (Pulsing)
+      const pulse = 1 + Math.sin(cfg.bhRotation * 5) * 0.1;
+      const coreGrd = ctx.createRadialGradient(0, 0, cfg.bhRadius * 0.7 * pulse, 0, 0, cfg.bhRadius * 1.2);
       coreGrd.addColorStop(0, 'black');
-      coreGrd.addColorStop(1, `rgba(${state.themeRGB}, 0.6)`);
+      coreGrd.addColorStop(1, `rgba(${state.themeRGB}, ${0.4 + (glitch ? 0.4 : 0)})`);
       ctx.strokeStyle = coreGrd;
-      ctx.lineWidth = 4;
+      ctx.lineWidth = 6 + (glitch ? 4 : 0);
       ctx.stroke();
 
       ctx.restore();
