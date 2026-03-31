@@ -1659,7 +1659,7 @@ function createNetworkBackground({ canvas, reducedMotion }) {
     });
 
     // Physics & Projection
-    const speedK_bh = state.bhAlpha > 0.1 ? 0.025 : 1.0; // Deepest slowdown
+    const speedK_bh = state.bhAlpha > 0.1 ? 0.012 : 1.0; // Saturn's Rings Slowdown
     const projected = state.particles.map(p => {
       // Black hole attraction (only if bhAlpha > 0)
       if (state.bhAlpha > 0.01) {
@@ -1667,26 +1667,37 @@ function createNetworkBackground({ canvas, reducedMotion }) {
         const dy = cfg.blackHoleCenter.y - (state.h/2 + p.y);
         const dist = Math.sqrt(dx*dx + dy*dy);
         
-        // GLOBAL GRAVITY (Horizontal ONLY)
+        // GLOBAL GRAVITY (Saturn's Rings - Flattening + Radial)
         const globalForce = 0.00015 * state.bhAlpha;
         p.vx += dx * globalForce;
-        // p.vy is NOT affected by vertical gravity
+        
+        // Vertical Compression (Flattening into a disk)
+        const targetY = cfg.blackHoleCenter.y - state.h/2;
+        p.vy += (targetY - p.y) * 0.012 * state.bhAlpha;
 
         if (dist < 1200) {
-           const force = state.bhAlpha * (1200 - dist) / 7000;
-           // Sucking (Radial - Horizontal Only)
-           p.vx += (dx * force * 0.4);
+           // Radial Force (Stable at ~240px)
+           const stableRadius = 240;
+           const force = state.bhAlpha * (stableRadius - dist) / 8000;
            
-           // "Sucking in" effect (Inward spiral - Horizontal focus)
+           // Tangential Force (Orbital spin)
+           const orbitSpeed = 0.004 * state.bhAlpha;
+           const orbitX = -dy * orbitSpeed;
+           const orbitY = dx * orbitSpeed;
+           
+           p.vx += (dx * force + orbitX);
+           p.vy += (dy * force + orbitY);
+           
+           // "Sucking in" effect (Inward spiral - ONLY if very close)
            const horizon = cfg.bhRadius;
-           if (Math.abs(dx) < 150 && dist < 400) {
-              const suckFactor = Math.max(0, (dist - horizon) / 340);
+           if (dist < 320) {
+              const suckFactor = Math.max(0, (dist - horizon) / 280);
               p.hover = - (1 - suckFactor);
               if (dist < horizon + 10) {
-                // RESPAWN AT EDGES (To look like new matter coming in)
+                // RESPAWN AT EDGES
                 const side = Math.random();
-                if (side < 0.25) { p.x = -1000; p.y = (Math.random()-0.5)*2000; }
-                else if (side < 0.5) { p.x = 1000; p.y = (Math.random()-0.5)*2000; }
+                if (side < 0.25) { p.x = -1000; p.y = targetY + (Math.random()-0.5)*400; }
+                else if (side < 0.5) { p.x = 1000; p.y = targetY + (Math.random()-0.5)*400; }
                 else if (side < 0.75) { p.y = -1000; p.x = (Math.random()-0.5)*2000; }
                 else { p.y = 1000; p.x = (Math.random()-0.5)*2000; }
                 
