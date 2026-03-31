@@ -2350,3 +2350,20 @@ body[data-theme="default"], body { --theme-glow: 255, 255, 255; }
   52% { opacity: 1; text-shadow: 0 0 25px rgba(var(--theme-glow), 0.8); }
   54% { opacity: 0.9; text-shadow: 0 0 15px rgba(var(--theme-glow), 0.5); }
 }
+
+/* Profile Theme Sync */
+.glitchTitle {
+  color: rgb(var(--theme-glow)) !important;
+  text-shadow: 0 0 15px rgba(var(--theme-glow), 0.4);
+  animation: majesticFlicker 5s infinite ease-in-out;
+}
+
+.caseDisplay {
+  color: rgb(var(--theme-glow)) !important;
+  text-shadow: 0 0 10px rgba(var(--theme-glow), 0.2);
+  border-color: rgba(var(--theme-glow), 0.2) !important;
+}
+
+.caseDisplay .inline-emoji {
+  filter: drop-shadow(0 0 5px rgba(var(--theme-glow), 0.6));
+}
