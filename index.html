@@ -585,6 +585,7 @@
 
       <div class="modal hidden" id="cropModal">
         <div class="modalContent glass">
+          <button class="close-x" onclick="hideModal('cropModal')">×</button>
           <div class="cardTitle">Обрезка аватара</div>
           <div class="cropArea">
             <canvas id="cropCanvas"></canvas>
@@ -599,9 +600,9 @@
       <!-- Integrations Modal -->
       <div class="modal hidden" id="integrationsModal">
         <div class="modalContent glass wide integrationsContent">
+          <button class="close-x" onclick="hideModal('integrationsModal')">×</button>
           <div class="modalHeader row between">
             <div class="cardTitle">Интеграции</div>
-            <button class="btn ghost minimal" id="closeIntegrationsBtn">×</button>
           </div>
           <div class="integrationsGrid">
             <div class="integrationItem" data-service="discord">
@@ -663,6 +664,7 @@
 
       <div class="modal hidden" id="caseModal">
         <div class="modalContent glass wide-modal">
+          <button class="close-x" onclick="hideModal('caseModal')">×</button>
           <div class="cardTitle">Обо мне</div>
           <div class="splitView">
             <div class="splitCol">
@@ -691,6 +693,7 @@
         <div class="modalContent glass">
 
 
+          <button class="close-x" id="emojiCloseBtn">×</button>
           <div class="cardTitle">Эмодзи</div>
 
 
@@ -962,8 +965,8 @@
 
     <!-- Recharge Modal -->
     <div class="modal hidden" id="rechargeModal">
-      <div class="modal-content glass glitchCard">
-        <button class="modal-close" id="rechargeCloseX">&times;</button>
+      <div class="modalContent glass glitchCard">
+        <button class="close-x" id="rechargeCloseX">×</button>
         <div class="cardTitle">ПОПОЛНЕНИЕ</div>
         <p class="muted mono mb-10">Введите L-CODE для получения валюты</p>
         <div class="field">
@@ -974,8 +977,8 @@
     </div>
     <!-- Background Settings Modal -->
     <div class="modal hidden" id="bgModal">
-      <div class="modal-content glass glitchCard">
-        <button class="modal-close" id="bgCloseX">&times;</button>
+      <div class="modalContent glass glitchCard">
+        <button class="close-x" id="bgCloseX">×</button>
         <div class="cardTitle">НАСТРОЙКА ФОНА</div>
         <div class="bgList" id="ownedBgList"></div>
         <button class="btn primary glitch-on-hover mt-10" style="width: 100%;" id="saveBgBtn">СОХРАНИТЬ</button>

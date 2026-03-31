@@ -169,7 +169,7 @@
     items.forEach(item => {
       const card = document.createElement("div");
       card.className = "card glass shopItem widget-animated shop-card";
-      const isOwned = me && me.ownedBackgrounds && me.ownedBackgrounds.includes(item.id);
+      const isOwned = me && me.owned_backgrounds && me.owned_backgrounds.includes(item.id);
       card.innerHTML = `
         <div class="cardTitle" style="font-size: 14px;">${item.name}</div>
         <div class="muted mono mb-10" style="font-size: 11px;">${item.desc}</div>
@@ -206,9 +206,9 @@
       };
     }
     const rechargeCloseX = $("#rechargeCloseX");
-    if (rechargeCloseX) rechargeCloseX.onclick = () => $("#rechargeModal")?.classList.add("hidden");
+    if (rechargeCloseX) rechargeCloseX.onclick = () => hideModal("rechargeModal");
     const bgCloseX = $("#bgCloseX");
-    if (bgCloseX) bgCloseX.onclick = () => $("#bgModal")?.classList.add("hidden");
+    if (bgCloseX) bgCloseX.onclick = () => hideModal("bgModal");
     
     const redeemBtn = $("#redeemCodeBtn");
     if (redeemBtn) {
@@ -238,7 +238,7 @@
          if (!modal || !list) return;
          
          list.innerHTML = "";
-         const owned = me.ownedBackgrounds || ["HOLO"];
+         const owned = me.owned_backgrounds || ["HOLO"];
          const allBgs = [
            { id: "HOLO", name: "Голограф (HOLO)", desc: "Стандартный фон с летающими фигурами" },
            { id: "BLACK_HOLE", name: "Черная Дыра (BLACK HOLE)", desc: "Цифровая сингулярность, втягивающая материю" },
@@ -295,6 +295,16 @@
       if (overlay) overlay.classList.remove("is-on");
       transitioning = false;
     }, durationMs);
+  }
+
+  function hideModal(modalId) {
+    const modal = $(`#${modalId}`);
+    if (!modal) return;
+    modal.classList.add("is-closing");
+    setTimeout(() => {
+       modal.classList.add("hidden");
+       modal.classList.remove("is-closing");
+    }, 400); // Wait for exit animation
   }
 
   function showView(viewName, { withGlitch = true, originEl = null } = {}) {
@@ -687,10 +697,10 @@
     if (!text) return "";
     let html = text.replace(/</g, "&lt;").replace(/>/g, "&gt;");
     // [EMOJI_X] to SVG mapping
-    html = html.replace(/[EMOJI_(d+)]/g, (match, n) => {
+    html = html.replace(/\[EMOJI_(\d+)\]/g, (match, n) => {
       const i = parseInt(n, 10);
       if (customEmojisHtml[i]) {
-        return customEmojisHtml[i].replace('class="emojiSVG', 'class="inline-emoji');
+        return customEmojisHtml[i].replace('class="emojiSVG', 'class="inline-emoji"');
       }
       return match;
     });
@@ -926,13 +936,13 @@
       casePrev.innerHTML = renderEmojisInText(caseInp.value);
     });
     
-    $("#caseCancelBtn")?.addEventListener("click", () => caseModal.classList.add("hidden"));
+    $("#caseCancelBtn")?.addEventListener("click", () => hideModal("caseModal"));
     $("#caseDoneBtn")?.addEventListener("click", async () => {
       try {
         await apiJson("/api/profile/update", { method: "POST", body: { caseText: caseInp.value } });
         me.caseText = caseInp.value;
         updateProfileCase(me.caseText);
-        caseModal.classList.add("hidden");
+        hideModal("caseModal");
         showToast("Статус обновлен");
       } catch(e){
         showToast("Ошибка");
@@ -957,14 +967,14 @@
             caseInp.dispatchEvent(new Event("input"));
             caseInp.focus();
           }
-          emojiM.classList.add("hidden");
+          hideModal("emojiModal");
         };
         eg.appendChild(div);
       });
     }
     
     $("#emojiBtn")?.addEventListener("click", () => emojiM.classList.remove("hidden"));
-    $("#emojiCloseBtn")?.addEventListener("click", () => emojiM.classList.add("hidden"));
+    $("#emojiCloseBtn")?.addEventListener("click", () => hideModal("emojiModal"));
 
     // Avatar Crop logic
     const avBtn = $("#profileAvatarBtn");
