@@ -1744,7 +1744,7 @@ function createNetworkBackground({ canvas, reducedMotion }) {
     });
 
     // Physics & Projection
-    const speedK_bh = state.bhAlpha > 0.1 ? 0.002 : 1.0; // Near-Frozen (0.2x of previous)
+    const speedK_bh = state.bhAlpha > 0.1 ? 0.0006 : 1.0; // Ultra-Glacial Slowdown
     const projected = state.particles.map(p => {
       // Black hole attraction (only if bhAlpha > 0)
       if (state.bhAlpha > 0.01) {
@@ -1752,8 +1752,8 @@ function createNetworkBackground({ canvas, reducedMotion }) {
         const dy = cfg.blackHoleCenter.y - (state.h/2 + p.y);
         const dist = Math.sqrt(dx*dx + dy*dy);
         
-        // GLOBAL GRAVITY (Extreme Clumping - Flattening + Radial)
-        const globalForce = 0.00015 * state.bhAlpha;
+        // GLOBAL GRAVITY (Deep Slowdown - Flattening + Radial)
+        const globalForce = 0.00005 * state.bhAlpha;
         p.vx += dx * globalForce;
         
         // Horizontal Compression (Extremely thin disk)
@@ -1761,12 +1761,12 @@ function createNetworkBackground({ canvas, reducedMotion }) {
         p.vy += (targetY - p.y) * 0.08 * state.bhAlpha;
 
         if (dist < 1200) {
-           // Radial Force (Stable at ~210px - Tighter Clumping)
+           // Radial Force (Stable at ~210px)
            const stableRadius = 210;
-           const force = state.bhAlpha * (stableRadius - dist) / 4000;
+           const force = state.bhAlpha * (stableRadius - dist) / 10000;
            
            // Tangential Force (Orbital spin)
-           const orbitSpeed = 0.003 * state.bhAlpha;
+           const orbitSpeed = 0.001 * state.bhAlpha;
            const orbitX = -dy * orbitSpeed;
            const orbitY = dx * orbitSpeed;
            

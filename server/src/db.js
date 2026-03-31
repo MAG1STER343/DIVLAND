@@ -127,6 +127,7 @@ async function migrate(db) {
   try { await db.exec("ALTER TABLE users ADD COLUMN twitch_url TEXT NULL"); } catch(e) {}
   try { await db.exec("ALTER TABLE users ADD COLUMN active_background TEXT DEFAULT 'HOLO'"); } catch(e) {}
   try { await db.exec("ALTER TABLE users ADD COLUMN owned_backgrounds TEXT DEFAULT '[\"HOLO\"]'"); } catch(e) {}
+  try { await db.exec("ALTER TABLE users ADD COLUMN last_promo_at TIMESTAMP NULL"); } catch(e) {}
 
   // Email verifications table is mentioned in previous code, let's keep it schema-ready
   await db.exec(`
