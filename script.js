@@ -1667,24 +1667,19 @@ function createNetworkBackground({ canvas, reducedMotion }) {
         const dy = cfg.blackHoleCenter.y - (state.h/2 + p.y);
         const dist = Math.sqrt(dx*dx + dy*dy);
         
-        // GLOBAL GRAVITY (All particles feel the pull)
+        // GLOBAL GRAVITY (Horizontal ONLY)
         const globalForce = 0.00015 * state.bhAlpha;
         p.vx += dx * globalForce;
-        p.vy += dy * globalForce;
+        // p.vy is NOT affected by vertical gravity
 
         if (dist < 1200) {
            const force = state.bhAlpha * (1200 - dist) / 7000;
-           // Sucking (Radial) + Spiralling (Tangential)
-           // More Radial = More 'Sucking', More Tangential = More 'Orbiting'
-           const orbitX = -dy * 0.003 * state.bhAlpha;
-           const orbitY = dx * 0.003 * state.bhAlpha;
+           // Sucking (Radial - Horizontal Only)
+           p.vx += (dx * force * 0.4);
            
-           p.vx += (dx * force * 0.3 + orbitX);
-           p.vy += (dy * force * 0.3 + orbitY);
-           
-           // "Sucking in" effect (Inward spiral)
+           // "Sucking in" effect (Inward spiral - Horizontal focus)
            const horizon = cfg.bhRadius;
-           if (dist < 400) {
+           if (Math.abs(dx) < 150 && dist < 400) {
               const suckFactor = Math.max(0, (dist - horizon) / 340);
               p.hover = - (1 - suckFactor);
               if (dist < horizon + 10) {
