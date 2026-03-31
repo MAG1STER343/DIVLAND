@@ -276,7 +276,7 @@ app.get("/api/me", requireAuth, async (req, res) => {
         avatarUrl: u.avatar_path || null,
         bgColor: u.bg_color || "default",
         caseText: u.case_text || null,
-        balanceL: u.balance_l || 0,
+        balance_l: u.balance_l || 0,
         steamUrl: u.steam_url || null,
         faceitUrl: u.faceit_url || null,
         discordUser: u.discord_user || null,
