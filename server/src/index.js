@@ -101,6 +101,16 @@ function bad(res, status, message) {
   return res.status(status).json({ ok: false, error: message });
 }
 
+// --- Dynamic Promo Codes (Rotating every 5 minutes)
+function getPromo() {
+  const windowIdx = Math.floor(Date.now() / 300000); // 5 min
+  const seed = (windowIdx * 12345).toString();
+  const hash = crypto.createHash('sha256').update(seed).digest('hex').toUpperCase();
+  const part1 = hash.substring(0, 4);
+  const part2 = hash.substring(4, 8);
+  return { code: `L-${part1} ${part2}`, expiresAt: (windowIdx + 1) * 300000 };
+}
+
 function validateString(v, { min = 1, max = 120 } = {}) {
   if (typeof v !== "string") return null;
   const s = v.trim();
@@ -520,10 +530,29 @@ app.post("/api/currency/redeem", requireAuth, async (req, res) => {
     const { code } = req.body || {};
     if (!code) return bad(res, 400, "Введите код");
 
+    const inputCode = code.trim().toUpperCase();
+
+    // 1. Check Global Promo (5 min)
+    const currentPromo = getPromo();
+    if (inputCode === currentPromo.code) {
+       const user = await db.get("SELECT last_promo_at FROM users WHERE id = $1", [req.user.id]);
+       const windowStart = new Date(Math.floor(Date.now() / 300000) * 300000).toISOString();
+       
+       if (user.last_promo_at && new Date(user.last_promo_at) >= new Date(windowStart)) {
+         return bad(res, 400, "Вы уже получили этот подарок!");
+       }
+       
+       await db.run("UPDATE users SET balance_l = balance_l + 500, last_promo_at = $1 WHERE id = $2", [
+         nowIso(), req.user.id
+       ]);
+       return res.json({ ok: true, message: "Золотой код активирован! +500 L", added: 500 });
+    }
+
+    // 2. Check Admin Code
     const adminCode = process.env.ADMIN_REDEEM_CODE || "L-FDAK298D32";
-    if (code.trim().toUpperCase() === adminCode.toUpperCase()) {
+    if (inputCode === adminCode.toUpperCase()) {
       await db.run("UPDATE users SET balance_l = balance_l + 20000 WHERE id = $1", [req.user.id]);
-      return res.json({ ok: true, message: "Код активирован! +20,000 L", added: 20000 });
+      return res.json({ ok: true, message: "Админ-код активирован! +20,000 L", added: 20000 });
     }
 
     return bad(res, 400, "Неверный код");
@@ -531,6 +560,12 @@ app.post("/api/currency/redeem", requireAuth, async (req, res) => {
     console.error(e);
     return bad(res, 500, "Ошибка активации");
   }
+});
+
+// --- Promo: current
+app.get("/api/promo/current", (req, res) => {
+  const p = getPromo();
+  res.json({ ok: true, code: p.code, endsInMs: p.expiresAt - Date.now() });
 });
 
 // --- Shop: buy

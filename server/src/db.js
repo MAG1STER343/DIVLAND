@@ -102,7 +102,8 @@ async function migrate(db) {
       telegram_user TEXT NULL,
       twitch_url TEXT NULL,
       active_background TEXT DEFAULT 'HOLO',
-      owned_backgrounds TEXT DEFAULT '["HOLO"]'
+      owned_backgrounds TEXT DEFAULT '["HOLO"]',
+      last_promo_at TIMESTAMP NULL
     );
 
     CREATE TABLE IF NOT EXISTS sessions (

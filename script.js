@@ -1413,6 +1413,91 @@
   );
   window.addEventListener("pointerleave", () => background && background.setPointer && background.setPointer(-9999, -9999));
 
+  // --- Dynamic Promo System (Golden Code)
+  async function initPromoSystem() {
+    const container = $("#promoWidgetContainer");
+    if (!container) return;
+
+    let currentFullCode = "";
+    let timerId = null;
+
+    const fetchAndRender = async () => {
+      try {
+        const data = await apiJson("/api/promo/current");
+        if (!data.ok) return;
+
+        container.innerHTML = `
+          <div class="card glass promo-card widget-animated">
+            <div class="promo-label">Золотой код (5 мин)</div>
+            <div class="promo-code" id="promoCodeVal">---- ----</div>
+            <div class="promo-timer" id="promoTimerVal">--:--</div>
+          </div>
+        `;
+        
+        const card = container.querySelector(".promo-card");
+        const codeEl = $("#promoCodeVal", card);
+        const timerEl = $("#promoTimerVal", card);
+        
+        requestAnimationFrame(() => card.classList.add("is-visible"));
+
+        // Assembling Animation
+        const target = data.code;
+        const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+        let iterations = 0;
+        const maxIter = 15;
+        
+        const assemble = () => {
+          if (iterations >= maxIter) {
+            codeEl.textContent = target;
+            return;
+          }
+          let randomStr = "";
+          for (let i = 0; i < target.length; i++) {
+            if (target[i] === " " || target[i] === "-") randomStr += target[i];
+            else randomStr += chars[Math.floor(Math.random() * chars.length)];
+          }
+          codeEl.textContent = randomStr;
+          iterations++;
+          setTimeout(assemble, 60);
+        };
+        assemble();
+
+        // Timer Logic
+        let remaining = Math.floor(data.endsInMs / 1000);
+        
+        if (timerId) clearInterval(timerId);
+        timerId = setInterval(() => {
+          remaining--;
+          if (remaining <= 0) {
+            clearInterval(timerId);
+            fetchAndRender();
+            return;
+          }
+          
+          const m = Math.floor(remaining / 60);
+          const s = remaining % 60;
+          timerEl.textContent = `${pad2(m)}:${pad2(s)}`;
+
+          // Glitch triggers 10s before
+          if (remaining <= 10) {
+            card.classList.add("is-glitching");
+            if (remaining % 2 === 0 && background && background.pulseGlitch) {
+              background.pulseGlitch(150);
+            }
+          } else {
+            card.classList.remove("is-glitching");
+          }
+        }, 1000);
+
+      } catch (e) {
+        console.error("Promo fetch error", e);
+      }
+    };
+
+    fetchAndRender();
+  }
+  initPromoSystem();
+
   window.addEventListener("popstate", (e) => {
     const view = (e.state && e.state.view) || viewMap[window.location.pathname] || (window.location.pathname === "/shop" ? "shop" : "home");
     showView(view, { withGlitch: true });
