@@ -1077,6 +1077,33 @@
           }
         }, "image/jpeg", 0.9);
     });
+
+    // Color Theme Picker Logic
+    const colorPicker = $("#colorPicker");
+    if (colorPicker && !colorPicker.dataset.initialized) {
+      colorPicker.dataset.initialized = "true";
+      const buttons = $$(".colorBtn", colorPicker);
+      buttons.forEach(btn => {
+        btn.onclick = async () => {
+          const color = btn.dataset.color;
+          if (!color) return;
+          
+          try {
+            // Update UI immediately
+            document.body.setAttribute('data-theme', color);
+            buttons.forEach(b => b.classList.toggle("active", b === btn));
+            if (background && background.setThemeColor) background.setThemeColor(color);
+            
+            // Save to DB
+            await apiJson("/api/profile/update", { method: "POST", body: { bgColor: color } });
+            if (me) me.bgColor = color;
+            showToast("Цвет обновлен");
+          } catch(e) {
+            showToast("Ошибка сохранения");
+          }
+        };
+      });
+    }
   }
 
   let currentParticipants = [];
@@ -1493,7 +1520,7 @@ function createNetworkBackground({ canvas, reducedMotion }) {
   function setPointer(x, y) { state.mx = x; state.my = y; }
   function freezeFor(ms) { state.slowUntil = performance.now() + ms; }
   function pulseGlitch(ms) { state.glitchUntil = performance.now() + ms; }
-  function setZoom(zoomed) { state.targetZoom = zoomed ? 1.8 : 1.0; }
+  function setZoom(zoomed) { state.targetZoom = zoomed ? 2.2 : 1.0; }
   function setThemeColor(c) { state.themeRGB = themeMap[c] || "255, 255, 255"; }
 
   function makeParticle() {
@@ -1607,6 +1634,7 @@ function createNetworkBackground({ canvas, reducedMotion }) {
     // Target Alpha for Black Hole (smooth transition)
     const activeBg = document.body.getAttribute('data-background');
     state.targetBhAlpha = (activeBg === 'BLACK_HOLE') ? 1 : 0;
+    state.zoom += (state.targetZoom - state.zoom) * 0.02 * dt; // Smoother zoom
     state.bhAlpha += (state.targetBhAlpha - state.bhAlpha) * 0.08 * dt;
 
     // Position of the Black Hole - Left side (30% width)
@@ -1631,7 +1659,7 @@ function createNetworkBackground({ canvas, reducedMotion }) {
     });
 
     // Physics & Projection
-    const speedK_bh = state.bhAlpha > 0.1 ? 0.18 : 1.0; // Slow down particles in BH mode
+    const speedK_bh = state.bhAlpha > 0.1 ? 0.06 : 1.0; // Ultra slow Black Hole
     const projected = state.particles.map(p => {
       // Black hole attraction (only if bhAlpha > 0)
       if (state.bhAlpha > 0.01) {
@@ -1640,16 +1668,16 @@ function createNetworkBackground({ canvas, reducedMotion }) {
         const dist = Math.sqrt(dx*dx + dy*dy);
         
         // GLOBAL GRAVITY (All particles feel the pull)
-        const globalForce = 0.0003 * state.bhAlpha;
+        const globalForce = 0.00015 * state.bhAlpha;
         p.vx += dx * globalForce;
         p.vy += dy * globalForce;
 
         if (dist < 1200) {
-           const force = state.bhAlpha * (1200 - dist) / 6000;
+           const force = state.bhAlpha * (1200 - dist) / 7000;
            // Sucking (Radial) + Spiralling (Tangential)
            // More Radial = More 'Sucking', More Tangential = More 'Orbiting'
-           const orbitX = -dy * 0.005 * state.bhAlpha;
-           const orbitY = dx * 0.005 * state.bhAlpha;
+           const orbitX = -dy * 0.003 * state.bhAlpha;
+           const orbitY = dx * 0.003 * state.bhAlpha;
            
            p.vx += (dx * force * 0.3 + orbitX);
            p.vy += (dy * force * 0.3 + orbitY);
