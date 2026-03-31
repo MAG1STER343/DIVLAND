@@ -651,10 +651,14 @@
   function applyThemeFromUser(u) {
     if (!u) return;
     const theme = u.bgColor || 'default';
+    const bg = u.activeBackground || 'HOLO';
     document.body.setAttribute('data-theme', theme);
+    document.body.setAttribute('data-background', bg);
     if (background && background.setThemeColor) background.setThemeColor(theme);
     // persist to localStorage so it survives page reload
-    try { localStorage.setItem('dv_theme', theme); } catch(_){}
+    try { 
+      if (theme !== 'default') localStorage.setItem('dv_theme', theme); 
+    } catch(_){}
   }
 
   function updateProfileAvatarView(path) {
@@ -722,7 +726,7 @@
       updateProfileAvatarView(u.avatarUrl || u.avatar_path);
       updateProfileCase(u.caseText);
       renderIntegrations(u);
-      applyThemeFromUser({ bgColor: u.bgColor });
+      applyThemeFromUser(u);
       setMediaBackground({ audioUrl: u.audioUrl || u.audio_path });
       updateMediaResetButtons(u, false); // No resets on public view
     } catch (err) {
