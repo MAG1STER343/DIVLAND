@@ -94,7 +94,7 @@
 
     if (burgerBtn && mainNav) {
       burgerBtn.classList.remove("is-open");
-      mainNav.classList.remove("is-open");
+      mainNav.classList.remove("is-mobile-active");
     }
   }
 

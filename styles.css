@@ -89,7 +89,7 @@ a {
 .scanlines {
   position: fixed;
   inset: 0;
-  z-index: 50;
+  z-index: 10;
   pointer-events: none;
   background: repeating-linear-gradient(
     to bottom,
@@ -104,7 +104,7 @@ a {
 .glitchOverlay {
   position: fixed;
   inset: 0;
-  z-index: 45;
+  z-index: 10;
   pointer-events: none;
   opacity: 0;
   background:
@@ -1813,7 +1813,7 @@ body[data-theme="default"], body { --theme-glow: 255, 255, 255; }
   border-radius: 12px;
   padding: 10px;
   cursor: pointer;
-  z-index: 10;
+  z-index: 20000; /* Must be extremely high */
   transition: all 0.3s;
 }
 
@@ -1868,37 +1868,14 @@ body[data-theme="default"], body { --theme-glow: 255, 255, 255; }
     z-index: 10000;
   }
 
-  .navBtn {
-    font-size: 1.5rem;
-    padding: 15px 30px;
-    width: 80%;
-    text-align: center;
-    background: rgba(255, 255, 255, 0.035);
+  /* Responsive layout fix for Top Header overlap */
+  .app {
+    padding-top: 80px;
   }
 
-  .navBtn.is-active {
-    background: rgba(255, 255, 255, 0.12);
-    border-color: rgba(255, 255, 255, 0.3);
-  }
-
-  .headerUser {
-    margin-top: 20px;
-    padding: 20px;
-    border-left: none;
-    border-top: 1px solid var(--stroke);
-    flex-direction: column;
-    width: 100%;
-    display: flex;
-    align-items: center;
-  }
-
-  .headerAvatar {
-    width: 48px;
-    height: 48px;
-  }
-
-  .headerLogin {
-    font-size: 1.2rem;
+  /* Hide the brand ticker on mobile to save space and avoid click overlap */
+  #brandTicker {
+    display: none !important;
   }
 }
 
