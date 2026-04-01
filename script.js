@@ -104,11 +104,17 @@
     console.log("loadMeAndShowDock called");
     try {
       const resp = await fetch("/api/me");
-      if (!resp.ok) throw new Error();
-      const data = await resp.json();
-      me = data.user;
+      if (resp.status === 401) {
+        me = null;
+      } else if (!resp.ok) {
+        throw new Error(`HTTP ${resp.status}`);
+      } else {
+        const data = await resp.json();
+        me = data.user;
+      }
       
       if (me) {
+        // ... (existing authenticated logic)
         document.body.setAttribute('data-background', me.activeBackground || 'HOLO');
         if (background && background.setThemeColor) background.setThemeColor(me.bgColor || 'default');
         
@@ -151,8 +157,19 @@
             setupCustomization();
           }
         }
+      } else {
+        // Guest mode - hide owner-only features
+        $("#headerUser")?.classList.add("hidden");
+        document.body.classList.remove("is-owner");
+        $("#profileStage")?.classList.add("hidden");
+        $("#authCard")?.classList.remove("hidden");
       }
-    } catch(e) { console.error("loadMe error:", e); me = null; }
+    } catch(e) { 
+      console.warn("loadMe (non-critical):", e); 
+      me = null; 
+    }
+    // Crucial: always run setActiveNav so the dock works
+    setActiveNav(currentViewName);
   }
 
   window.renderShop = async function() {
