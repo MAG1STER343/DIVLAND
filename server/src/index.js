@@ -663,17 +663,6 @@ app.post("/api/background/set", requireAuth, async (req, res) => {
   }
 });
 
-  // Temporary Admin tool (will be removed after execution)
-  app.get("/api/admin/clean-users", async (req, res) => {
-    try {
-      const db = await openDb();
-      const r = await db.pool.query("DELETE FROM users WHERE slug IN ('dieversi', 'mi_koroli') RETURNING login");
-      res.json({ ok: true, deleted: r.rows });
-    } catch(e) {
-      res.status(500).json({ ok: false, error: e.message });
-    }
-  });
-
 app.get("*", (req, res) => {
   res.sendFile(path.join(ROOT_DIR, "index.html"));
 });
