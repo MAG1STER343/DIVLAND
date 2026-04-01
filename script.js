@@ -117,7 +117,7 @@
           headerUser.classList.remove("hidden");
           const av = headerUser.querySelector(".headerAvatar");
           if (av) {
-            const avPath = me.avatarUrl || me.avatar_path;
+            const avPath = me.avatarUrl;
             av.style.backgroundImage = avPath ? `url(${avPath})` : 'none';
           }
           const lg = headerUser.querySelector("#headerLogin");
@@ -130,7 +130,7 @@
         if (currentViewName === 'shop') renderShop();
         
         if (currentViewName === 'profile' || currentViewName === 'home') {
-          updateProfileAvatarView(me.avatarUrl || me.avatar_path);
+          updateProfileAvatarView(me.avatarUrl);
           updateProfileCase(me.caseText);
           const myLink = $("#profileLinkBox");
           if (myLink) myLink.textContent = `u/${me.slug}`;
@@ -173,7 +173,7 @@
     items.forEach(item => {
       const card = document.createElement("div");
       card.className = "card glass shopItem widget-animated shop-card";
-      const isOwned = me && me.owned_backgrounds && me.owned_backgrounds.includes(item.id);
+      const isOwned = me && me.ownedBackgrounds && me.ownedBackgrounds.includes(item.id);
       card.innerHTML = `
         <div class="cardTitle" style="font-size: 14px;">${item.name}</div>
         <div class="muted mono mb-10" style="font-size: 11px;">${item.desc}</div>
@@ -239,7 +239,7 @@
          if (!modal || !list) return;
          
          list.innerHTML = "";
-         const owned = me.owned_backgrounds || ["HOLO"];
+         const owned = me.ownedBackgrounds || ["HOLO"];
          const allBgs = [
            { id: "HOLO", name: "Голограф (HOLO)", desc: "Стандартный фон с летающими фигурами" },
            { id: "BLACK_HOLE", name: "Черная Дыра (BLACK HOLE)", desc: "Цифровая сингулярность, втягивающая материю" },
@@ -435,7 +435,7 @@
           profileStage_.classList.remove("hidden");
           document.body.classList.add("is-owner");
           
-          updateProfileAvatarView(me.avatarUrl || me.avatar_path);
+          updateProfileAvatarView(me.avatarUrl);
           updateProfileCase(me.caseText);
           applyThemeFromUser(me);
           
@@ -620,7 +620,7 @@
     if (!isOwner) return;
 
     // Reset Avatar Button
-    if (u.avatar_path || u.avatarUrl) {
+    if (u.avatarUrl) {
       const btn = document.createElement("button");
       btn.id = "resetAvatarBtn";
       btn.className = "reset-av-btn";
@@ -629,7 +629,7 @@
         if (!confirm("Удалить аватар?")) return;
         try {
           await apiJson("/api/media/avatar", { method: "DELETE" });
-          u.avatar_path = null; u.avatarUrl = null;
+          u.avatarUrl = null; u.avatarUrl = null;
           updateProfileAvatarView(null);
           updateMediaResetButtons(u, true);
           showToast("Аватар сброшен");
@@ -743,7 +743,7 @@
       const oldBtn = $("#resetAvatarBtn");
       if (oldBtn) oldBtn.remove();
 
-      updateProfileAvatarView(u.avatarUrl || u.avatar_path);
+      updateProfileAvatarView(u.avatarUrl);
       updateProfileCase(u.caseText);
       renderIntegrations(u);
       applyThemeFromUser(u);
@@ -828,8 +828,8 @@
           const data = await apiUpload("/api/media/avatar", avatarInput.files[0], "avatar");
           showToast("Аватар сохранен!");
           if (me) {
-            me.avatar_path = data.avatar_url;
-            updateProfileAvatarView(me.avatar_url);
+            me.avatarUrl = data.avatar_url;
+            updateProfileAvatarView(me.avatarUrl);
             updateMediaResetButtons(me, true);
           }
         } catch (err) {

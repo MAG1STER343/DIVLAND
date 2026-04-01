@@ -16,20 +16,18 @@ async function openDb() {
     process.env.POSTGRES_URL_NON_POOLING;
 
   if (!connectionString) {
-    if (process.env.VERCEL === "1") {
-      const envKeys = Object.keys(process.env).filter(k => k.toLowerCase().includes("url") || k.toLowerCase().includes("postgres"));
-      console.error("DEBUG: Available ENV keys (filtered):", envKeys);
-      throw new Error(`DATABASE ERROR: POSTGRES_URL is missing. Available relevant keys: ${envKeys.join(", ")}`);
-    }
     console.warn("WARNING: DATABASE_URL not found. Local dev?");
+  } else {
+    const masked = connectionString.slice(0, 8) + "***" + (connectionString.includes("@") ? "@" + connectionString.split("@")[1].split("/")[0] : "");
+    console.log(`Database target found (masked): ${masked}`);
   }
 
   const pool = new Pool({
     connectionString,
     ssl: { rejectUnauthorized: false },
     max: 10,
-    idleTimeoutMillis: 10000,
-    connectionTimeoutMillis: 2000, // Reduced to 2s for Vercel Hobby
+    idleTimeoutMillis: 30000,
+    connectionTimeoutMillis: 15000, // 15s for the critical cold start
   });
 
   // Resilience: Attempt up to 2 times for live environment
