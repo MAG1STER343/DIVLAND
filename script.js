@@ -182,7 +182,8 @@
       { id: "NEXUS", name: "Nexus Theme", price: 2500, desc: "Vertical streams of digital data rain." },
       { id: "NEBULA", name: "Nebula Theme", price: 4000, desc: "Fluid plasma clouds reacting to your presence." },
       { id: "CONSTELLATION", name: "Constellation Theme", price: 6500, desc: "A hidden star network revealed by your touch." },
-      { id: "PULSE", name: "Pulse Theme", price: 8000, desc: "Rhythmic geometric shockwaves radiating outwards." }
+      { id: "PULSE", name: "Pulse Theme", price: 8000, desc: "Rhythmic geometric shockwaves radiating outwards." },
+      { id: "CHAINS", name: "Chains Theme", price: 3000, desc: "Moving linked steel following the rhythmic tide." }
     ];
     items.forEach(item => {
       const card = document.createElement("div");
@@ -1621,11 +1622,34 @@ function createNetworkBackground({ canvas, reducedMotion }) {
     targetConstAlpha: 0,
     pulseAlpha: 0,
     targetPulseAlpha: 0,
+    chainsAlpha: 0,
+    targetChainsAlpha: 0,
     flowers: [],
     nexusStreams: [],
     nebulaClouds: [],
-    pulses: []
+    pulses: [],
+    chains: []
   };
+
+  // Generate CHAINS data
+  function initChains() {
+    state.chains = [];
+    const count = 12;
+    for (let i = 0; i < count; i++) {
+        const speed = 0.5 + Math.random() * 2;
+        const z = Math.random(); // 0 is back, 1 is front
+        state.chains.push({
+            y: (i / count) * window.innerHeight + (Math.random() - 0.5) * 50,
+            speed: speed * (z + 0.4),
+            z: z,
+            offset: Math.random() * 2000,
+            linkW: 40 + z * 30,
+            linkH: 20 + z * 15,
+            gap: 15 + z * 10
+        });
+    }
+  }
+  initChains();
 
   // Generate NEXUS data
   function initNexus() {
@@ -1866,6 +1890,10 @@ function createNetworkBackground({ canvas, reducedMotion }) {
     state.nebulaAlpha += (state.targetNebulaAlpha - state.nebulaAlpha) * 0.08 * dt;
     state.constAlpha += (state.targetConstAlpha - state.constAlpha) * 0.08 * dt;
     state.pulseAlpha += (state.targetPulseAlpha - state.pulseAlpha) * 0.08 * dt;
+    state.chainsAlpha += (state.targetChainsAlpha - state.chainsAlpha) * 0.08 * dt;
+
+    // Target Alphas for mobile/active sync
+    state.targetChainsAlpha = (activeBg === 'CHAINS') ? 1 : 0;
 
     // Position of the Black Hole - Left side (30% width)
     cfg.blackHoleCenter.x = state.w * 0.28;
@@ -2151,6 +2179,42 @@ function createNetworkBackground({ canvas, reducedMotion }) {
             ctx.beginPath();
             ctx.arc(p.x, p.y, p.r * 0.7, 0, Math.PI * 2);
             ctx.stroke();
+        });
+        ctx.restore();
+    }
+
+    // DRAW CHAINS (MOVING LINKS)
+    if (state.chainsAlpha > 0.01) {
+        ctx.save();
+        ctx.globalAlpha = state.chainsAlpha;
+        state.chains.forEach(c => {
+            c.offset += c.speed * dt;
+            const linkW = c.linkW;
+            const linkH = c.linkH;
+            const fullLink = linkW + c.gap;
+            const scroll = c.offset % fullLink;
+            
+            ctx.strokeStyle = `rgba(${state.themeRGB}, ${0.15 + c.z * 0.2})`;
+            ctx.lineWidth = 1 + c.z * 2;
+            
+            for (let x = -fullLink; x < state.w + fullLink; x += fullLink) {
+                const finalX = x + scroll;
+                // Shape: rounded rectangle
+                const r = 8;
+                ctx.beginPath();
+                ctx.moveTo(finalX + r, c.y);
+                ctx.lineTo(finalX + linkW - r, c.y);
+                ctx.quadraticCurveTo(finalX + linkW, c.y, finalX + linkW, c.y + r);
+                ctx.lineTo(finalX + linkW, c.y + linkH - r);
+                ctx.quadraticCurveTo(finalX + linkW, c.y + linkH, finalX + linkW - r, c.y + linkH);
+                ctx.lineTo(finalX + r, c.y + linkH);
+                ctx.quadraticCurveTo(finalX, c.y + linkH, finalX, c.y + linkH - r);
+                ctx.lineTo(finalX, c.y + r);
+                ctx.quadraticCurveTo(finalX, c.y, finalX + r, c.y);
+                ctx.stroke();
+                
+                // Inner link (connection) line maybe? Skip for clean look.
+            }
         });
         ctx.restore();
     }
