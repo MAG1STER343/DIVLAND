@@ -589,6 +589,27 @@
 
   // Email confirmation disabled (local auth only)
   let customizationReady = false;
+  let cropImg = null, sx = 0, sy = 0, scale = 1, isDragging = false, startX, startY;
+  
+  function drawCrop() {
+    const cropCanvas = $("#cropCanvas");
+    if(!cropImg || !cropCanvas) return;
+    const ctx = cropCanvas.getContext("2d");
+    ctx.clearRect(0,0,cropCanvas.width, cropCanvas.height);
+    const w = cropImg.width * scale;
+    const h = cropImg.height * scale;
+    ctx.drawImage(cropImg, sx - w/2, sy - h/2, w, h);
+    
+    // dark overlay except center circle
+    ctx.fillStyle = "rgba(0,0,0,0.6)";
+    ctx.fillRect(0,0,cropCanvas.width, cropCanvas.height);
+    ctx.globalCompositeOperation = 'destination-out';
+    ctx.beginPath();
+    // Circle crop guide
+    ctx.arc(cropCanvas.width/2, cropCanvas.height/2, Math.min(cropCanvas.width, cropCanvas.height)/2.2, 0, Math.PI*2);
+    ctx.fill();
+    ctx.globalCompositeOperation = 'source-over';
+  }
 
   function setModelsVisible(isVisible) {
     const bg = $("#bg");
@@ -687,9 +708,10 @@
   }
 
   function updateProfileAvatarView(path) {
-    const empty = $(".profileAvatarEmpty");
     const img = $("#profileAvatarImg");
-    if (!empty || !img) return;
+    const empty = $(".profileAvatarEmpty");
+    if (!img || !empty) return;
+
     if (path) {
       img.src = path;
       img.hidden = false;
@@ -697,6 +719,7 @@
     } else {
       img.hidden = true;
       empty.hidden = false;
+      // Note: CSS handles the pencil vs question mark toggle via .owner-only / .guest-only
     }
     
     // update header
@@ -815,13 +838,41 @@
     const pickAvatar = $("#profileAvatarBtn");
     const pickAudio = $("#pickAudioBtn");
 
-    if (pickAvatar && avatarInput && !pickAvatar.dataset.initialized) {
-      pickAvatar.dataset.initialized = "true";
-      pickAvatar.addEventListener("click", (e) => {
-        // Prevent click if clicking the delete button specifically
-        if (e.target.closest("#removeAvatarBtn")) return;
-        avatarInput.click();
-      });
+    // Consolidated Avatar Click - merged with cropping logic
+    const avBtn = $("#profileAvatarBtn");
+    if (avBtn && !avBtn.dataset.clickInit) {
+      avBtn.dataset.clickInit = "true";
+      avBtn.onclick = () => {
+        if (!document.body.classList.contains('is-owner')) return;
+        
+        const fileInp = document.createElement("input");
+        fileInp.type = "file";
+        fileInp.accept = "image/*";
+        fileInp.onchange = (e) => {
+          const f = e.target.files[0];
+          if(!f) return;
+          const reader = new FileReader();
+          reader.onload = (re) => {
+            cropImg = new Image();
+            cropImg.onload = () => {
+              const cropModal = $("#cropModal");
+              const cropCanvas = $("#cropCanvas");
+              if (!cropModal || !cropCanvas) return;
+              cropModal.classList.remove('hidden');
+              // Init canvas
+              cropCanvas.width = 400; 
+              cropCanvas.height = 400;
+              sx = 200;
+              sy = 200;
+              scale = Math.max(400 / cropImg.width, 400 / cropImg.height);
+              drawCrop();
+            };
+            cropImg.src = re.target.result;
+          };
+          reader.readAsDataURL(f);
+        };
+        fileInp.click();
+      };
     }
 
     if (avatarInput && !avatarInput.dataset.initialized) {
@@ -833,9 +884,10 @@
           const data = await apiUpload("/api/media/avatar", avatarInput.files[0], "avatar");
           showToast("Аватар сохранен!");
           if (me) {
-            me.avatarUrl = data.avatar_url;
+            me.avatarUrl = data.avatarUrl;
             updateProfileAvatarView(me.avatarUrl);
-            updateMediaResetButtons(me, true);
+            const rmb = $("#removeAvatarBtn");
+            if (rmb) rmb.hidden = false;
           }
         } catch (err) {
           showToast(String(err.message || err));
@@ -993,61 +1045,10 @@
     // Close buttons handled via onclick in HTML
 
     // Avatar Crop logic
-    const avBtn = $("#profileAvatarBtn");
     const cropModal = $("#cropModal");
     const cropArea = $(".cropArea");
     const cropCanvas = $("#cropCanvas");
     
-    let cropImg = null, sx = 0, sy = 0, scale = 1, isDragging = false, startX, startY;
-    
-    if (avBtn) avBtn.onclick = () => {
-      if (!document.body.classList.contains('is-owner')) return;
-      
-      const fileInp = document.createElement("input");
-      fileInp.type = "file";
-      fileInp.accept = "image/*";
-      fileInp.onchange = (e) => {
-        const f = e.target.files[0];
-        if(!f) return;
-        const reader = new FileReader();
-        reader.onload = (re) => {
-          cropImg = new Image();
-          cropImg.onload = () => {
-            cropModal.classList.remove('hidden');
-            // Init canvas
-            cropCanvas.width = cropArea.clientWidth;
-            cropCanvas.height = cropArea.clientHeight;
-            sx = cropCanvas.width / 2;
-            sy = cropCanvas.height / 2;
-            scale = Math.max(cropCanvas.width / cropImg.width, cropCanvas.height / cropImg.height);
-            drawCrop();
-          };
-          cropImg.src = re.target.result;
-        };
-        reader.readAsDataURL(f);
-      };
-      fileInp.click();
-    };
-
-    function drawCrop() {
-      if(!cropImg) return;
-      const ctx = cropCanvas.getContext("2d");
-      ctx.clearRect(0,0,cropCanvas.width, cropCanvas.height);
-      const w = cropImg.width * scale;
-      const h = cropImg.height * scale;
-      ctx.drawImage(cropImg, sx - w/2, sy - h/2, w, h);
-      
-      // dark overlay except center circle
-      ctx.fillStyle = "rgba(0,0,0,0.6)";
-      ctx.fillRect(0,0,cropCanvas.width, cropCanvas.height);
-      ctx.globalCompositeOperation = 'destination-out';
-      ctx.beginPath();
-      // Circle crop guide
-      ctx.arc(cropCanvas.width/2, cropCanvas.height/2, Math.min(cropCanvas.width, cropCanvas.height)/2.2, 0, Math.PI*2);
-      ctx.fill();
-      ctx.globalCompositeOperation = 'source-over';
-    }
-
     if(cropCanvas) {
       cropCanvas.onmousedown = (e) => { isDragging = true; startX = e.clientX; startY = e.clientY; };
       window.onmouseup = () => { isDragging = false; };
@@ -1206,6 +1207,12 @@
       requestAnimationFrame(() => {
         grid.classList.add("is-visible");
       });
+      
+      // Smooth scroll 3D effect for participants
+      grid.onscroll = () => {
+        const tilt = Math.min(15, Math.max(-15, (grid.scrollTop % 500 - 250) / 10));
+        grid.style.setProperty('--scroll-tilt', `${tilt}deg`);
+      };
       
       // Pagination controls
       if (currentParticipants.length > PARTICIPANTS_PER_PAGE) {

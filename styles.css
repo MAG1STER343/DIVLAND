@@ -1475,37 +1475,72 @@ body[data-theme="default"], body { --theme-glow: 255, 255, 255; }
   font-size: 11px;
 }
 
+/* Participants Upgrade */
 .participant-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: 16px;
-  width: 100%;
-  margin-top: 16px;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 24px;
+  width: min(1400px, 95vw);
+  margin: 24px auto;
+  perspective: 2000px; /* Perspective for the scroll tilt */
 }
 
 .participantCard {
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid var(--stroke);
-  border-radius: 12px;
-  padding: 16px;
+  border-radius: 20px;
+  padding: 24px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 12px;
+  gap: 16px;
   cursor: pointer;
-  transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), border-color 0.2s, background 0.2s;
+  transition: 
+    transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), 
+    border-color 0.2s, 
+    background 0.2s,
+    box-shadow 0.3s;
+  
+  /* The rotation magic */
+  transform: rotateX(var(--scroll-tilt, 0deg)) scale(1);
+  transform-style: preserve-3d;
+  will-change: transform;
 }
 
 .participantCard:hover {
-  transform: translateY(-5px) scale(1.02);
-  border-color: rgba(255,255,255,0.3);
-  background: rgba(255, 255, 255, 0.1);
+  transform: translateY(-8px) scale(1.03) rotateX(0deg);
+  border-color: rgba(255,255,255,0.4);
+  background: rgba(255, 255, 255, 0.12);
+  box-shadow: 0 15px 35px -10px rgba(0,0,0,0.6);
 }
 
 .participantCard .user-avatar {
-  width: 64px;
-  height: 64px;
-  font-size: 1.5rem;
+  width: 80px;
+  height: 80px;
+  font-size: 1.8rem;
+  box-shadow: 0 0 20px rgba(0,0,0,0.3);
+}
+
+/* Guest Icons & Question Mark */
+.guest-only {
+  display: block;
+}
+
+.is-owner .guest-only {
+  display: none !important;
+}
+
+.questionIcon svg {
+  width: 42px;
+  height: 42px;
+  color: var(--muted);
+  animation: questionMarkAnim 3s infinite ease-in-out;
+  filter: drop-shadow(0 0 10px rgba(255,255,255,0.1));
+}
+
+@keyframes questionMarkAnim {
+  0%, 100% { transform: translateZ(20px) rotateY(0deg); opacity: 0.6; }
+  50% { transform: translateZ(50px) rotateY(180deg); opacity: 1; }
 }
 .splitCol {
   flex: 1;

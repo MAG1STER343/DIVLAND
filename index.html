@@ -425,11 +425,17 @@
 
 
                 <div class="profileAvatarEmpty">
-
-
-                  <svg viewBox="0 0 24 24" fill="none" class="pencilIcon"><path d="M18.36 5.64a2.828 2.828 0 10-4-4L3 13V17h4l11.36-11.36z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-
-
+                  <!-- Pencil for Owner -->
+                  <svg viewBox="0 0 24 24" fill="none" class="pencilIcon owner-only"><path d="M18.36 5.64a2.828 2.828 0 10-4-4L3 13V17h4l11.36-11.36z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                  
+                  <!-- Question Mark for Guest -->
+                  <div class="questionIcon guest-only">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <circle cx="12" cy="12" r="10"/>
+                      <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
+                      <line x1="12" y1="17" x2="12.01" y2="17"/>
+                    </svg>
+                  </div>
                 </div>
 
 
