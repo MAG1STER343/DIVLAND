@@ -65,7 +65,7 @@
   if (burgerBtn && mainNav) {
     burgerBtn.onclick = () => {
       burgerBtn.classList.toggle("is-open");
-      mainNav.classList.toggle("is-open");
+      mainNav.classList.toggle("is-mobile-active");
     };
 
     // Automatically sync indicator whenever the nav bar changes size (hover expansion/shrink)
@@ -151,9 +151,6 @@
             setupCustomization();
           }
         }
-      } else {
-        $("#headerUser")?.classList.add("hidden");
-        $("#shopBtn")?.classList.add("hidden");
       }
     } catch(e) { console.error("loadMe error:", e); me = null; }
   }
