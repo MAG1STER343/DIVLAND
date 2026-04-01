@@ -250,7 +250,7 @@
            { id: "PULSE", name: "Пульс (PULSE)", desc: "Ритмичные шоковые волны" }
          ];
 
-         allBgs.forEach(bg => {
+         allBgs.forEach((bg, idx) => {
            if (!owned.includes(bg.id)) return;
            
            const item = document.createElement("div");
@@ -277,6 +277,11 @@
              };
            }
            list.appendChild(item);
+           
+           // Trigger 3D flip animation with stagger
+           setTimeout(() => {
+             item.classList.add("is-revealed");
+           }, idx * 80);
          });
          modal.classList.remove("hidden");
        };
