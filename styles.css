@@ -1866,6 +1866,43 @@ body[data-theme="default"], body { --theme-glow: 255, 255, 255; }
     pointer-events: auto;
     transform: translateY(0);
     z-index: 10000;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 24px;
+    background: rgba(5, 5, 5, 0.98);
+    backdrop-filter: blur(25px);
+  }
+
+  .navBtn {
+    font-size: 1.6rem;
+    padding: 18px 40px;
+    width: 85%;
+    text-align: center;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 16px;
+    color: #fff;
+    text-decoration: none;
+    transition: all 0.2s;
+  }
+
+  .navBtn.is-active {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: rgba(var(--theme-glow), 0.5);
+    box-shadow: 0 0 20px rgba(var(--theme-glow), 0.2);
+  }
+
+  .headerUser {
+    margin-top: 30px;
+    padding: 20px;
+    border-top: 1px solid var(--stroke);
+    flex-direction: column;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 12px;
   }
 
   /* Responsive layout fix for Top Header overlap */
