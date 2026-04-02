@@ -173,8 +173,8 @@ a {
 
 .brandTicker:hover {
   padding: 10px 24px;
-  background: rgba(255, 255, 255, 0.1);
-  box-shadow: 0 0 20px rgba(var(--theme-glow), 0.1), var(--shadow);
+  background: rgba(255, 255, 255, 0.15);
+  box-shadow: 0 0 30px rgba(var(--theme-glow), 0.2), var(--shadow);
 }
 
 .brandTicker .glitchTitle {
@@ -186,49 +186,25 @@ a {
 .team-text {
   display: inline-block;
   opacity: 0;
+  transform: translateX(-10px) scale(0.9);
   max-width: 0;
   overflow: hidden;
-  transition: all 0.4s cubic-bezier(0.19, 1, 0.22, 1);
-  color: rgb(var(--theme-glow));
-  font-weight: 900;
-  letter-spacing: 2px;
-  vertical-align: middle;
-}
-
-.brandTicker:hover .team-text {
-  opacity: 1;
-  max-width: 80px;
-  margin-right: 4px;
-}
-
-.brandTicker__content {
-  display: flex;
-  align-items: center;
-  width: 100%;
-}
-
-.brandTicker .glitchTitle {
-  font-size: 14px;
-  letter-spacing: 1.6px;
   white-space: nowrap;
-}
-
-.team-text {
-  display: inline-block;
-  opacity: 0;
-  max-width: 0;
-  overflow: hidden;
-  transition: all 0.4s cubic-bezier(0.19, 1, 0.22, 1);
+  transition: 
+    opacity 0.4s ease,
+    transform 0.4s cubic-bezier(0.19, 1, 0.22, 1),
+    max-width 0.4s cubic-bezier(0.19, 1, 0.22, 1),
+    margin 0.4s ease;
   color: rgb(var(--theme-glow));
   font-weight: 900;
   letter-spacing: 2px;
-  vertical-align: middle;
 }
 
 .brandTicker:hover .team-text {
   opacity: 1;
-  max-width: 80px;
-  margin-right: 4px;
+  transform: translateX(0) scale(1);
+  max-width: 100px;
+  margin-right: 8px;
 }
 
 /* glitchCard is kept for structure, but no widget movement on hover */
