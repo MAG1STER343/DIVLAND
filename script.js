@@ -243,13 +243,6 @@
     }
     
     const bgSettingsBtn = $("#bgSettingsBtn");
-    const createSpaceBtn = $("#createSpaceBtn");
-
-    if (createSpaceBtn) {
-      createSpaceBtn.onclick = () => {
-        showToast("UNVERSI PROTON: Создание команды в разработке");
-      };
-    }
 
     if (bgSettingsBtn) {
        bgSettingsBtn.onclick = () => {
