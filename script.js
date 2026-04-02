@@ -243,6 +243,14 @@
     }
     
     const bgSettingsBtn = $("#bgSettingsBtn");
+    const createSpaceBtn = $("#createSpaceBtn");
+
+    if (createSpaceBtn) {
+      createSpaceBtn.onclick = () => {
+        showToast("UNVERSI PROTON: Создание личного пространства в разработке");
+      };
+    }
+
     if (bgSettingsBtn) {
        bgSettingsBtn.onclick = () => {
          if (!me) {
