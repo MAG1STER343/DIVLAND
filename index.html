@@ -44,8 +44,13 @@
 
 
     <div class="brandTicker glass glitchCard" id="brandTicker" aria-label="DIEVERSI brand">
-      <div class="glitchTitle" id="brandTickerText" data-text="TEAM UNVERSI">
-        <span class="glitchTitle__base"><span class="team-text">TEAM </span>UNVERSI</span>
+      <div class="brandTicker__content">
+        <div class="glitchTitle" id="brandTickerText" data-text="TEAM UNVERSI">
+          <span class="glitchTitle__base"><span class="team-text">TEAM </span>UNVERSI</span>
+        </div>
+      </div>
+      <div class="brandTicker__actions">
+        <button class="btn primary minimal" id="createTeamBtn">Создать команду</button>
       </div>
     </div>
 
@@ -83,19 +88,14 @@
           <button class="navBtn is-active" type="button" data-nav="home">ГЛАВНАЯ</button>
 
 
-          <button class="navBtn" type="button" data-nav="participants">УЧАСТНИКИ</button>
-
+          <div class="navGroup" id="membersGroup">
+            <button class="navBtn" type="button" data-nav="participants" id="membersBtn">УЧАСТНИКИ</button>
+            <button class="navBtn navBtn--teams hidden" type="button" data-nav="teams" id="teamsBtn">КОМАНДЫ</button>
+          </div>
 
           <div class="navGroup" id="profileGroup">
-
-
             <button class="navBtn" type="button" data-nav="profile" id="profileBtn">ПРОФИЛЬ</button>
-
-
             <button class="navBtn navBtn--shop hidden" type="button" data-nav="shop" id="shopBtn">МАГАЗИН</button>
-            <button class="navBtn navBtn--teams hidden" type="button" data-nav="teams" id="teamsBtn">КОМАНДЫ</button>
-
-
           </div>
 
 

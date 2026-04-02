@@ -165,10 +165,18 @@ a {
   backdrop-filter: blur(var(--blur));
   -webkit-backdrop-filter: blur(var(--blur));
   display: flex;
+  flex-direction: column;
+  justify-content: center;
   align-items: center;
   user-select: none;
   cursor: pointer;
-  transition: padding 0.4s cubic-bezier(0.19, 1, 0.22, 1), background 0.3s ease;
+  transition: 
+    padding 0.4s cubic-bezier(0.19, 1, 0.22, 1), 
+    background 0.3s ease,
+    height 0.4s ease;
+  overflow: visible;
+  height: auto;
+  min-height: 42px;
 }
 
 .brandTicker:hover {
@@ -179,8 +187,11 @@ a {
 
 .brandTicker .glitchTitle {
   font-size: 14px;
-  letter-spacing: 1.6px;
+  letter-spacing: 2px;
   white-space: nowrap;
+  display: flex;
+  align-items: center;
+  height: 22px;
 }
 
 .team-text {
@@ -205,6 +216,44 @@ a {
   transform: translateX(0) scale(1);
   max-width: 100px;
   margin-right: 8px;
+}
+
+.brandTicker__actions {
+  max-height: 0;
+  opacity: 0;
+  overflow: hidden;
+  transition: all 0.4s cubic-bezier(0.19, 1, 0.22, 1);
+  width: 100%;
+  pointer-events: none;
+}
+
+.brandTicker:hover .brandTicker__actions {
+  max-height: 80px;
+  opacity: 1;
+  margin-top: 10px;
+  pointer-events: auto;
+}
+
+#createTeamBtn {
+  width: 100%;
+  font-size: 11px;
+  padding: 8px 16px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  animation: glowPulse 2s infinite;
+  white-space: nowrap;
+}
+
+@keyframes glowPulse {
+  0% { box-shadow: 0 0 5px rgba(255, 255, 255, 0.05); }
+  50% { box-shadow: 0 0 15px rgba(255, 255, 255, 0.2); }
+  100% { box-shadow: 0 0 5px rgba(255, 255, 255, 0.05); }
+}
+
+.navGroup {
+  display: flex;
+  align-items: center;
+  position: relative;
 }
 
 /* glitchCard is kept for structure, but no widget movement on hover */
@@ -2592,7 +2641,6 @@ body[data-theme="default"], body { --theme-glow: 255, 255, 255; }
 .teamLogoUpload {
   display: flex;
   flex-direction: column;
-  alignment: center;
   align-items: center;
 }
 

@@ -133,8 +133,6 @@
           if (bal) bal.textContent = `${me.balance_l || 0} L`;
         }
         
-        $("#shopBtn")?.classList.remove("hidden");
-        $("#teamsBtn")?.classList.remove("hidden");
         if (currentViewName === 'shop') renderShop();
         if (currentViewName === 'teams') renderTeams();
         
@@ -501,7 +499,7 @@
         renderShop();
       }
 
-      // Shop tab reveal logic
+      // --- Dynamic Tab Reveals ---
       const shopBtn = $("#shopBtn");
       if (shopBtn) {
         if (me && (viewName === "profile" || viewName === "shop")) {
@@ -509,9 +507,18 @@
           requestAnimationFrame(() => shopBtn.classList.add("is-revealed"));
         } else {
           shopBtn.classList.remove("is-revealed");
-          setTimeout(() => {
-            if (!shopBtn.classList.contains("is-revealed")) shopBtn.classList.add("hidden");
-          }, 500);
+          setTimeout(() => { if (!shopBtn.classList.contains("is-revealed")) shopBtn.classList.add("hidden"); }, 500);
+        }
+      }
+
+      const teamsBtn = $("#teamsBtn");
+      if (teamsBtn) {
+        if (me && (viewName === "participants" || viewName === "teams")) {
+          teamsBtn.classList.remove("hidden");
+          requestAnimationFrame(() => teamsBtn.classList.add("is-revealed"));
+        } else {
+          teamsBtn.classList.remove("is-revealed");
+          setTimeout(() => { if (!teamsBtn.classList.contains("is-revealed")) teamsBtn.classList.add("hidden"); }, 500);
         }
       }
     };
