@@ -137,6 +137,25 @@ async function migrate(db) {
       created_at TIMESTAMP NOT NULL DEFAULT NOW(),
       attempts INTEGER NOT NULL DEFAULT 0
     );
+
+    CREATE TABLE IF NOT EXISTS teams (
+      id SERIAL PRIMARY KEY,
+      name TEXT NOT NULL UNIQUE,
+      description TEXT,
+      tag TEXT NOT NULL UNIQUE,
+      creator_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      logo_blob BYTEA NULL,
+      created_at TIMESTAMP NOT NULL DEFAULT NOW()
+    );
+
+    CREATE TABLE IF NOT EXISTS team_members (
+      id SERIAL PRIMARY KEY,
+      team_id INTEGER NOT NULL REFERENCES teams(id) ON DELETE CASCADE,
+      user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      role TEXT DEFAULT 'member', -- 'creator', 'admin', 'member'
+      joined_at TIMESTAMP NOT NULL DEFAULT NOW(),
+      UNIQUE(team_id, user_id)
+    );
   `);
 }
 

@@ -663,6 +663,148 @@ app.post("/api/background/set", requireAuth, async (req, res) => {
   }
 });
 
+// --- Teams: create
+app.post("/api/teams/create", requireAuth, async (req, res) => {
+  try {
+    const name = validateString(req.body?.name, { min: 2, max: 25 });
+    const description = validateString(req.body?.description, { min: 0, max: 250 }) || "";
+    const tag = validateString(req.body?.tag, { min: 2, max: 5 });
+
+    if (!name || !tag) return bad(res, 400, "Название (2-25) и Тег (2-5) обязательны");
+
+    // Check if team already exists
+    const exists = await db.get("SELECT id FROM teams WHERE name = $1 OR tag = $2 LIMIT 1", [name, tag]);
+    if (exists) return bad(res, 409, "Команда с таким названием или тегом уже существует");
+
+    const ins = await db.run(
+      "INSERT INTO teams(name, description, tag, creator_id) VALUES($1, $2, $3, $4) RETURNING id",
+      [name, description, tag.toUpperCase(), req.user.id]
+    );
+    const teamId = ins.lastInsertRowid;
+
+    // Add creator as member with role 'creator'
+    await db.run(
+      "INSERT INTO team_members(team_id, user_id, role) VALUES($1, $2, $3)",
+      [teamId, req.user.id, 'creator']
+    );
+
+    return res.json({ ok: true, teamId });
+  } catch (e) {
+    console.error(e);
+    return bad(res, 500, "Ошибка создания команды");
+  }
+});
+
+// --- Teams: list
+app.get("/api/teams", async (req, res) => {
+  try {
+    const teams = await db.all(`
+      SELECT t.*, u.username as creator_name,
+      (SELECT COUNT(*) FROM team_members tm WHERE tm.team_id = t.id) as member_count
+      FROM teams t
+      JOIN users u ON u.id = t.creator_id
+      ORDER BY t.created_at DESC
+    `);
+    
+    // Convert logo_blob to data URL or similar if needed, but for now we'll send it as is
+    // Actually, we'll implement a separate endpoint for team logo download
+    return res.json({ ok: true, teams });
+  } catch (e) {
+    console.error(e);
+    return bad(res, 500, "Ошибка получения списка команд");
+  }
+});
+
+// --- Teams: my team (if creator)
+app.get("/api/teams/my", requireAuth, async (req, res) => {
+  try {
+    const team = await db.get("SELECT * FROM teams WHERE creator_id = $1 LIMIT 1", [req.user.id]);
+    if (!team) return res.json({ ok: true, team: null });
+    
+    const members = await db.all(`
+      SELECT tm.role, tm.user_id, u.username, u.slug, u.avatar_path
+      FROM team_members tm
+      JOIN users u ON u.id = tm.user_id
+      WHERE tm.team_id = $1
+      ORDER BY CASE WHEN tm.role = 'creator' THEN 0 WHEN tm.role = 'admin' THEN 1 ELSE 2 END
+    `, [team.id]);
+    
+    return res.json({ ok: true, team, members });
+  } catch (e) {
+    console.error(e);
+    return bad(res, 500, "Ошибка получения данных команды");
+  }
+});
+
+// --- Teams: upload logo
+app.post("/api/teams/:id/logo", requireAuth, upload.single("logo"), async (req, res) => {
+  try {
+    const teamId = req.params.id;
+    const team = await db.get("SELECT creator_id FROM teams WHERE id = $1", [teamId]);
+    if (!team) return bad(res, 404, "Команда не найдена");
+    if (team.creator_id !== req.user.id) return bad(res, 403, "Вы не создатель команды");
+
+    if (!req.file) return bad(res, 400, "Файл не загружен");
+
+    const blob = req.file.buffer;
+    if (isVercel) {
+      const { url } = await put(`team_logos/team-${teamId}-${Date.now()}.png`, blob, {
+        access: "public",
+        token: getBlobToken()
+      });
+      // We save the URL. For PG logic previously, we might have used BYTEA but URL is better for Vercel
+      await db.run("UPDATE teams SET logo_blob = $1 WHERE id = $2", [url, teamId]);
+      return res.json({ ok: true, url });
+    } else {
+      // Local dev: just save as BYTEA for simplicity in this specific project context
+      await db.run("UPDATE teams SET logo_blob = $1 WHERE id = $2", [blob, teamId]);
+      return res.json({ ok: true });
+    }
+  } catch (e) {
+    console.error(e);
+    return bad(res, 500, "Ошибка загрузки логотипа");
+  }
+});
+
+// --- Teams: manage members
+app.post("/api/teams/:id/manage", requireAuth, async (req, res) => {
+  try {
+    const teamId = req.params.id;
+    const { action, targetUsername, targetUserId } = req.body || {};
+    
+    const team = await db.get("SELECT creator_id FROM teams WHERE id = $1", [teamId]);
+    if (!team) return bad(res, 404, "Команда не найдена");
+    if (team.creator_id !== req.user.id) return bad(res, 403, "У вас нет прав управления");
+
+    if (action === "add") {
+      const targetUser = await db.get("SELECT id FROM users WHERE username = $1 OR login = $2 LIMIT 1", [targetUsername, targetUsername.toLowerCase()]);
+      if (!targetUser) return bad(res, 404, "Пользователь не найден");
+      
+      const alreadyIn = await db.get("SELECT 1 FROM team_members WHERE team_id = $1 AND user_id = $2", [teamId, targetUser.id]);
+      if (alreadyIn) return bad(res, 400, "Пользователь уже в команде");
+      
+      await db.run("INSERT INTO team_members(team_id, user_id, role) VALUES($1, $2, 'member')", [teamId, targetUser.id]);
+      return res.json({ ok: true, message: "Пользователь добавлен" });
+    }
+
+    if (action === "remove") {
+      if (targetUserId == req.user.id) return bad(res, 400, "Нельзя удалить самого себя");
+      await db.run("DELETE FROM team_members WHERE team_id = $1 AND user_id = $2", [teamId, targetUserId]);
+      return res.json({ ok: true, message: "Пользователь удален" });
+    }
+
+    if (action === "promote") {
+      await db.run("UPDATE team_members SET role = 'admin' WHERE team_id = $1 AND user_id = $2", [teamId, targetUserId]);
+      return res.json({ ok: true, message: "Пользователь повышен" });
+    }
+
+    return bad(res, 400, "Неизвестное действие");
+  } catch (e) {
+    console.error(e);
+    return bad(res, 500, "Ошибка управления командой");
+  }
+});
+
 app.get("*", (req, res) => {
   res.sendFile(path.join(ROOT_DIR, "index.html"));
 });

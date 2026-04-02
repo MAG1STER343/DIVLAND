@@ -14,6 +14,7 @@
     "/diversi": "dieversi",
     "/discord": "discord",
     "/shop": "shop",
+    "/teams": "teams",
   };
   const profileRe = new RegExp("^/profile/([a-z0-9_-]{1,60})/?$", "i");
 
@@ -133,7 +134,11 @@
         }
         
         $("#shopBtn")?.classList.remove("hidden");
+        $("#teamsBtn")?.classList.remove("hidden");
         if (currentViewName === 'shop') renderShop();
+        if (currentViewName === 'teams') renderTeams();
+        
+        await renderTeamManagement();
         
         if (currentViewName === 'profile' || currentViewName === 'home') {
           updateProfileAvatarView(me.avatarUrl);
@@ -522,6 +527,10 @@
     if (viewName === "profile") {
       if (background && background.freezeFor) background.freezeFor(520);
       freezeCardFor(authCard, 520);
+    }
+
+    if (viewName === "teams") {
+      renderTeams();
     }
   }
 
@@ -1587,6 +1596,178 @@
       console.error("Startup error:", err);
     }
   })();
+
+  // --- Teams System Logic ---
+  const createTeamBtn = $("#createTeamBtn");
+  const saveTeamBtn = $("#saveTeamBtn");
+  const resetTeamBtn = $("#resetTeamBtn");
+  const teamLogoInput = $("#teamLogoInput");
+  const teamLogoPreview = $("#teamLogoPreview");
+
+  if (createTeamBtn) {
+    createTeamBtn.addEventListener("click", () => {
+      if (!me) return showToast("Нужно войти в систему");
+      document.getElementById("teamNameInput").value = "";
+      document.getElementById("teamTagInput").value = "";
+      document.getElementById("teamDescInput").value = "";
+      teamLogoPreview.style.backgroundImage = "none";
+      teamLogoPreview.textContent = "?";
+      const modal = $("#createTeamModal");
+      modal.classList.remove("hidden");
+    });
+  }
+
+  if (teamLogoInput) {
+    teamLogoInput.addEventListener("change", (e) => {
+      const file = e.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = (re) => {
+          teamLogoPreview.style.backgroundImage = `url(${re.target.result})`;
+          teamLogoPreview.textContent = "";
+        };
+        reader.readAsDataURL(file);
+      }
+    });
+  }
+
+  if (saveTeamBtn) {
+    saveTeamBtn.addEventListener("click", async () => {
+      const name = $("#teamNameInput").value;
+      const tag = $("#teamTagInput").value;
+      const description = $("#teamDescInput").value;
+
+      try {
+        const data = await apiJson("/api/teams/create", {
+          method: "POST",
+          body: { name, tag, description }
+        });
+        
+        if (data.ok) {
+          const logoFile = teamLogoInput.files[0];
+          if (logoFile) {
+            await apiUpload(`/api/teams/${data.teamId}/logo`, logoFile, "logo");
+          }
+          showToast("Команда создана!");
+          hideModal("createTeamModal");
+          window.location.reload();
+        }
+      } catch (err) {
+        showToast(err.message);
+      }
+    });
+  }
+
+  async function renderTeams() {
+    const list = $("#teams-list");
+    if (!list) return;
+    try {
+      const data = await apiJson("/api/teams");
+      if (!data.ok) return;
+      list.innerHTML = "";
+      if (data.teams.length === 0) {
+        list.innerHTML = `<div class="muted mono">Пока нет созданных команд.</div>`;
+        return;
+      }
+      data.teams.forEach(team => {
+        const item = document.createElement("div");
+        item.className = "team-item widget-animated";
+        const logo = team.logo_blob || "";
+        item.innerHTML = `
+          <div class="team-item__logo" style="${logo ? `background-image: url(${logo}); color: transparent;` : ''}">
+            ${logo ? '' : (team.tag || '?')}
+          </div>
+          <div class="team-item__info">
+            <div class="team-item__name">${team.name}</div>
+            <div class="team-item__tag">#${team.tag} • Создатель: ${team.creator_name}</div>
+          </div>
+          <div class="team-item__count">${team.member_count} чел.</div>
+        `;
+        list.appendChild(item);
+      });
+    } catch (e) {
+      list.innerHTML = `<div class="error mono">Ошибка загрузки.</div>`;
+    }
+  }
+
+  async function renderTeamManagement() {
+    const widget = $("#teamManagementWidget");
+    if (!widget || !me) return;
+    try {
+      const data = await apiJson("/api/teams/my");
+      if (!data.ok || !data.team) {
+        widget.classList.add("hidden");
+        return;
+      }
+      widget.classList.remove("hidden");
+      const team = data.team;
+      $("#manageTeamName").textContent = team.name;
+      $("#manageTeamTag").textContent = `#${team.tag}`;
+      const logoEl = $("#manageTeamLogo");
+      if (team.logo_blob) {
+         logoEl.style.backgroundImage = `url(${team.logo_blob})`;
+         logoEl.textContent = "";
+      } else {
+         logoEl.style.backgroundImage = "none";
+         logoEl.textContent = team.tag;
+      }
+
+      const membersList = $("#teamMembersList");
+      membersList.innerHTML = "";
+      data.members.forEach(m => {
+        const row = document.createElement("div");
+        row.className = "teamMemberItem";
+        row.innerHTML = `
+          <div class="memberInfo">
+            <div class="memberAvatar" style="${m.avatar_path ? `background-image: url(${m.avatar_path})` : ''}"></div>
+            <div class="mono" style="font-size: 13px;">${m.username}</div>
+            <span class="memberRoleLabel role-${m.role}">${m.role === 'creator' ? 'Глава' : m.role === 'admin' ? 'Админ' : 'Участник'}</span>
+          </div>
+          <div class="memberActions">
+            ${(m.role === 'member' && team.creator_id === me.id) ? `<button class="actionBtn actionBtn--promote" onclick="manageMember('${team.id}', '${m.user_id}', 'promote')" title="Повысить">↑</button>` : ''}
+            ${(m.user_id !== me.id) ? `<button class="actionBtn actionBtn--delete" onclick="manageMember('${team.id}', '${m.user_id}', 'remove')" title="Удалить">×</button>` : ''}
+          </div>
+        `;
+        membersList.appendChild(row);
+      });
+      
+      // Hook up add button
+      const addBtn = $("#addMemberBtn");
+      const addInput = $("#newMemberUsername");
+      addBtn.onclick = async () => {
+        const username = addInput.value.trim();
+        if (!username) return;
+        try {
+          await apiJson(`/api/teams/${team.id}/manage`, {
+            method: "POST",
+            body: { action: "add", targetUsername: username }
+          });
+          showToast("Пользователь добавлен");
+          addInput.value = "";
+          renderTeamManagement();
+        } catch (err) {
+          showToast(err.message);
+        }
+      };
+
+    } catch (e) {
+      console.error("Team mgmt error", e);
+    }
+  }
+
+  window.manageMember = async (teamId, userId, action) => {
+    try {
+      await apiJson(`/api/teams/${teamId}/manage`, {
+        method: "POST",
+        body: { action, targetUserId: userId }
+      });
+      showToast(action === 'remove' ? "Удален" : "Повышен");
+      renderTeamManagement();
+    } catch (err) {
+      showToast(err.message);
+    }
+  };
+
 
 function createNetworkBackground({ canvas, reducedMotion }) {
   if (!canvas) return null;

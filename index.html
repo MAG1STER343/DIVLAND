@@ -93,6 +93,7 @@
 
 
             <button class="navBtn navBtn--shop hidden" type="button" data-nav="shop" id="shopBtn">МАГАЗИН</button>
+            <button class="navBtn navBtn--teams hidden" type="button" data-nav="teams" id="teamsBtn">КОМАНДЫ</button>
 
 
           </div>
@@ -569,6 +570,34 @@
           </article>
 
 
+          <!-- Team Management Widget (Owner Only) -->
+          <article class="card glass profileWidget glitchCard hidden" id="teamManagementWidget">
+            <div class="card-header">
+              <div class="glitchTitle" data-text="УПРАВЛЕНИЕ КОМАНДОЙ">
+                <span class="glitchTitle__base">УПРАВЛЕНИЕ КОМАНДОЙ</span>
+              </div>
+            </div>
+            <div class="teamManageBody">
+              <div class="teamIdentity row">
+                <div id="manageTeamLogo" class="manageTeamLogo">?</div>
+                <div class="teamDetails">
+                  <div id="manageTeamName" class="cardTitle">Команда</div>
+                  <div id="manageTeamTag" class="mono muted">#TAG</div>
+                </div>
+              </div>
+              <div class="memberAddRow mt-20 row">
+                <input class="input" type="text" id="newMemberUsername" placeholder="Имя пользователя" />
+                <button class="btn primary minimal" id="addMemberBtn">ДОБАВИТЬ</button>
+              </div>
+              <div class="memberScrollArea mt-20">
+                <div class="muted mono mb-10" style="font-size: 10px;">УЧАСТНИКИ:</div>
+                <div id="teamMembersList" class="teamMembersList">
+                  <div class="loading">Загрузка состава...</div>
+                </div>
+              </div>
+            </div>
+          </article>
+
         </div>
 
 
@@ -841,47 +870,44 @@
 
 
 
+      </section>
+
       <!-- Shop View -->
-
-
       <section class="view" data-view="shop">
-
-
         <div class="centerStage">
-
-
           <article class="card glass wide glitchCard">
-
-
             <div class="card-header">
-
-
               <div class="glitchTitle" data-text="МАГАЗИН">
-
-
                 <span class="glitchTitle__base">МАГАЗИН</span>
-
-
               </div>
-
-
             </div>
-
-
             <div class="shopContent">
               <p class="muted mono mb-20" style="font-size: 11px;">Эксклюзивные визуальные модификации для вашего интерфейса.</p>
               <div class="shop-list" id="shop-list">
                 <!-- Shop items will be rendered here via JS -->
               </div>
             </div>
-
-
           </article>
-
-
         </div>
+      </section>
 
-
+      <!-- Teams View -->
+      <section class="view" data-view="teams">
+        <div class="centerStage">
+          <article class="card glass wide glitchCard">
+            <div class="card-header">
+              <div class="glitchTitle" data-text="КОМАНДЫ">
+                <span class="glitchTitle__base">КОМАНДЫ</span>
+              </div>
+            </div>
+            <div class="teamsContent">
+              <p class="muted mono mb-20" style="font-size: 11px;">Список активных команд в системе DIVI LAND.</p>
+              <div class="shop-list" id="teams-list">
+                <div class="loading">Загрузка команд...</div>
+              </div>
+            </div>
+          </article>
+        </div>
       </section>
 
 
@@ -957,6 +983,39 @@
         <button class="btn primary glitch-on-hover mt-10" style="width: 100%;" id="redeemCodeBtn">АКТИВИРОВАТЬ</button>
       </div>
     </div>
+    <!-- CREATE TEAM Modal -->
+    <div class="modal hidden" id="createTeamModal">
+      <div class="modalContent glass glitchCard team-modal-wide">
+        <button class="close-x" onclick="hideModal('createTeamModal')">×</button>
+        <div class="cardTitle">СОЗДАНИЕ КОМАНДЫ</div>
+        <div class="createTeamForm">
+          <div class="teamLogoUpload">
+            <div class="logoPreview" id="teamLogoPreview">?</div>
+            <input type="file" id="teamLogoInput" accept="image/*" hidden />
+            <button class="btn ghost minimal mt-10" onclick="document.getElementById('teamLogoInput').click()">Загрузить Лого</button>
+          </div>
+          <div class="teamFields">
+            <div class="field">
+              <span class="fieldLabel">Название команды</span>
+              <input class="input" type="text" id="teamNameInput" placeholder="Alpha Team" maxlength="25" />
+            </div>
+            <div class="field mt-10">
+              <span class="fieldLabel">Тег (2-5 символов)</span>
+              <input class="input" type="text" id="teamTagInput" placeholder="ALT" maxlength="5" />
+            </div>
+            <div class="field mt-10">
+              <span class="fieldLabel">Описание</span>
+              <textarea class="input" id="teamDescInput" placeholder="О чем ваша команда..." maxlength="250" style="min-height: 80px;"></textarea>
+            </div>
+          </div>
+        </div>
+        <div class="modalActions mt-20">
+          <button class="btn primary glitch-on-hover" id="saveTeamBtn">СОЗДАТЬ</button>
+          <button class="btn ghost" id="resetTeamBtn">СБРОСИТЬ</button>
+        </div>
+      </div>
+    </div>
+
     <!-- Background Settings Modal -->
     <div class="modal hidden" id="bgModal">
       <div class="modalContent glass glitchCard bg-modal-wide">
