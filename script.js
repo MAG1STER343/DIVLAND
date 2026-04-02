@@ -247,7 +247,7 @@
 
     if (createSpaceBtn) {
       createSpaceBtn.onclick = () => {
-        showToast("UNVERSI PROTON: Создание личного пространства в разработке");
+        showToast("UNVERSI PROTON: Создание команды в разработке");
       };
     }
 
