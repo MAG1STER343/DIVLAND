@@ -191,7 +191,9 @@ a {
   white-space: nowrap;
   display: flex;
   align-items: center;
-  height: 22px;
+  justify-content: center;
+  height: 100%;
+  padding-top: 2px; /* Visual balance */
 }
 
 .team-text {
@@ -209,6 +211,14 @@ a {
   color: rgb(var(--theme-glow));
   font-weight: 900;
   letter-spacing: 2px;
+  background: rgba(var(--theme-glow), 0.15);
+  padding: 0 6px;
+  border-radius: 4px;
+  margin-top: -1px; /* Center with UNVERSI */
+  line-height: 1.5;
+  display: flex;
+  align-items: center;
+  height: 18px;
 }
 
 .brandTicker:hover .team-text {
@@ -2682,6 +2692,42 @@ body[data-theme="default"], body { --theme-glow: 255, 255, 255; }
   align-items: center;
   padding-bottom: 16px;
   border-bottom: 1px solid var(--stroke);
+}
+
+/* Two column profile stage */
+#profileStage:not(.hidden) ~ #teamManagementWidget:not(.hidden) {
+  margin-top: 0; /* Align with profile stage */
+}
+
+/* Base style for centerStage flex */
+[data-view="profile"] .centerStage {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 32px;
+  max-width: 1300px;
+  width: 95%;
+  flex-wrap: wrap;
+}
+
+#profileStage {
+  width: 100%;
+  max-width: 650px;
+  margin: 0;
+}
+
+#teamManagementWidget {
+  width: 100%;
+  max-width: 480px;
+  margin: 0;
+}
+
+@media (max-width: 1100px) {
+  [data-view="profile"] .centerStage {
+    flex-direction: column;
+    align-items: center;
+  }
 }
 
 .manageTeamLogo {

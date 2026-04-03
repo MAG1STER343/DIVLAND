@@ -136,6 +136,17 @@
         if (currentViewName === 'shop') renderShop();
         if (currentViewName === 'teams') renderTeams();
         
+        // Check if user owns a team to hide create button
+        try {
+          const tdata = await apiJson("/api/teams/my");
+          me.ownsTeam = !!(tdata.ok && tdata.team);
+          if (me.ownsTeam) {
+            $("#createTeamBtn")?.classList.add("hidden");
+          } else {
+            $("#createTeamBtn")?.classList.remove("hidden");
+          }
+        } catch (e) { console.error("Error checking team ownership", e); }
+
         await renderTeamManagement();
         
         if (currentViewName === 'profile' || currentViewName === 'home') {
@@ -498,6 +509,10 @@
       if (viewName === "shop") {
         renderShop();
       }
+      
+      if (viewName === "teams") {
+        renderTeams();
+      }
 
       // --- Dynamic Tab Reveals ---
       const shopBtn = $("#shopBtn");
@@ -534,10 +549,6 @@
     if (viewName === "profile") {
       if (background && background.freezeFor) background.freezeFor(520);
       freezeCardFor(authCard, 520);
-    }
-
-    if (viewName === "teams") {
-      renderTeams();
     }
   }
 
@@ -1669,11 +1680,12 @@
     const list = $("#teams-list");
     if (!list) return;
     try {
+      list.innerHTML = `<div class="loading mono">Загрузка команд...</div>`;
       const data = await apiJson("/api/teams");
-      if (!data.ok) return;
+      if (!data.ok) throw new Error("API Error");
       list.innerHTML = "";
       if (data.teams.length === 0) {
-        list.innerHTML = `<div class="muted mono">Пока нет созданных команд.</div>`;
+        list.innerHTML = `<div class="muted mono" style="padding: 20px; text-align: center;">Пока нет созданных команд.</div>`;
         return;
       }
       data.teams.forEach(team => {

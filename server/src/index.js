@@ -666,13 +666,14 @@ app.post("/api/background/set", requireAuth, async (req, res) => {
 // --- Teams: create
 app.post("/api/teams/create", requireAuth, async (req, res) => {
   try {
-    const name = validateString(req.body?.name, { min: 2, max: 25 });
-    const description = validateString(req.body?.description, { min: 0, max: 250 }) || "";
-    const tag = validateString(req.body?.tag, { min: 2, max: 5 });
-
+    const { name, description, tag } = req.body || {};
     if (!name || !tag) return bad(res, 400, "Название (2-25) и Тег (2-5) обязательны");
 
-    // Check if team already exists
+    // Check if user already owns a team
+    const alreadyOwns = await db.get("SELECT id FROM teams WHERE creator_id = $1", [req.user.id]);
+    if (alreadyOwns) return bad(res, 400, "Вы уже создали команду");
+
+    // Check if team name or tag already exists
     const exists = await db.get("SELECT id FROM teams WHERE name = $1 OR tag = $2 LIMIT 1", [name, tag]);
     if (exists) return bad(res, 409, "Команда с таким названием или тегом уже существует");
 
