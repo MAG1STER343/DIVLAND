@@ -1688,9 +1688,13 @@
         list.innerHTML = `<div class="muted mono" style="padding: 20px; text-align: center;">Пока нет созданных команд.</div>`;
         return;
       }
-      data.teams.forEach(team => {
+      data.teams.forEach((team, index) => {
         const item = document.createElement("div");
         item.className = "team-item widget-animated";
+        // Staggered delay for cards
+        item.style.setProperty("--dx", `${(Math.random() - 0.5) * 100}px`);
+        item.style.setProperty("--dy", `${(Math.random() - 0.5) * 50}px`);
+        
         const logo = team.logo_blob || "";
         item.innerHTML = `
           <div class="team-item__logo" style="${logo ? `background-image: url(${logo}); color: transparent;` : ''}">
@@ -1698,13 +1702,17 @@
           </div>
           <div class="team-item__info">
             <div class="team-item__name">${team.name}</div>
-            <div class="team-item__tag">#${team.tag} • Создатель: ${team.creator_name}</div>
+            <div class="team-item__tag">#${team.tag} • Создатель: ${team.creator_name || 'Глюк системы'}</div>
           </div>
           <div class="team-item__count">${team.member_count} чел.</div>
         `;
         list.appendChild(item);
+        
+        // Trigger animation
+        setTimeout(() => item.classList.add("is-visible"), 50 * index);
       });
     } catch (e) {
+      console.error("renderTeams error:", e);
       list.innerHTML = `<div class="error mono">Ошибка загрузки.</div>`;
     }
   }
