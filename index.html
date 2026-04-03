@@ -59,87 +59,51 @@
 
 
     <header class="topbar">
-
-
       <div class="header-container">
-
-
         <button class="burgerBtn glass" id="burgerBtn" aria-label="Menu">
-
-
           <span></span>
-
-
           <span></span>
-
-
           <span></span>
-
-
         </button>
-
-
         <nav class="nav glass" id="mainNav">
-
-
           <div class="nav-indicator" id="navIndicator"></div>
-
-
           <button class="navBtn is-active" type="button" data-nav="home">ГЛАВНАЯ</button>
-
-
           <div class="navGroup" id="membersGroup">
             <button class="navBtn" type="button" data-nav="participants" id="membersBtn">УЧАСТНИКИ</button>
             <button class="navBtn navBtn--teams hidden" type="button" data-nav="teams" id="teamsBtn">КОМАНДЫ</button>
           </div>
-
           <div class="navGroup" id="profileGroup">
             <button class="navBtn" type="button" data-nav="profile" id="profileBtn">ПРОФИЛЬ</button>
             <button class="navBtn navBtn--shop hidden" type="button" data-nav="shop" id="shopBtn">МАГАЗИН</button>
           </div>
-
-
           <button class="navBtn" type="button" data-nav="dieversi">DIEVERSI</button>
-
-
           <button class="navBtn" type="button" data-nav="discord">DISCORD</button>
-
-
-          
-
-
-          <div class="headerUser hidden" id="headerUser">
-            <div class="headerAvatar" id="headerAvatar"></div>
-            <div class="headerInfo">
-              <span class="headerLogin mono" id="headerLogin">—</span>
-              <div class="headerBalance" id="headerBalance">
-                <span class="balanceValue mono" id="balanceValue">0 L</span>
-                <button class="btn primary minimal replenishBtn" id="replenishBtn">ПОПОЛНИТЬ</button>
-              </div>
+        </nav>
+        <div class="headerUser hidden" id="headerUser">
+          <div class="headerAvatar" id="headerAvatar"></div>
+          <div class="headerInfo">
+            <span class="headerLogin mono" id="headerLogin">—</span>
+            <div class="headerBalance" id="headerBalance">
+              <span class="balanceValue mono" id="balanceValue">0 L</span>
+              <button class="btn primary minimal replenishBtn" id="replenishBtn">ПОПОЛНИТЬ</button>
             </div>
-            <div class="headerActions">
-              <button class="btn ghost minimal" id="headerLogout">ВЫХОД</button>
-              <div class="smsStretchWrap" id="smsTrigger">
-                <div class="smsIcon">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
-                  <div class="smsBadge hidden" id="smsBadge">0</div>
-                </div>
-                <div class="smsContentStretch">
-                  <div class="smsList" id="smsList">
-                    <div class="muted mono" style="font-size: 10px; padding: 0 10px; white-space: nowrap;">Нет новых уведомлений</div>
-                  </div>
+          </div>
+          <div class="headerActions">
+            <button class="btn ghost minimal" id="headerLogout">ВЫХОД</button>
+            <div class="smsStretchWrap" id="smsTrigger">
+              <div class="smsIcon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+                <div class="smsBadge hidden" id="smsBadge">0</div>
+              </div>
+              <div class="smsContentStretch">
+                <div class="smsList" id="smsList">
+                  <div class="muted mono" style="font-size: 10px; padding: 0 10px; white-space: nowrap;">Нет новых уведомлений</div>
                 </div>
               </div>
             </div>
           </div>
-
-
-        </nav>
-
-
+        </div>
       </div>
-
-
     </header>
 
 
