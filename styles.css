@@ -371,7 +371,7 @@ a {
 .view {
   position: absolute;
   inset: 0;
-  padding: 130px 22px 24px;
+  padding: 150px 22px 24px;
   opacity: 0;
   transform: translateY(15px) scale(0.98);
   filter: blur(8px);
@@ -2708,8 +2708,9 @@ body[data-theme="default"], body { --theme-glow: 255, 255, 255; }
   gap: 32px;
   max-width: 1300px;
   width: 95%;
+  margin: 0 auto; /* Center the container itself */
   flex-wrap: wrap;
-  padding-top: 20px;
+  padding-top: 40px; /* Extra push down from nav bar */
 }
 
 #profileStage {
