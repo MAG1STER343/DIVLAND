@@ -677,11 +677,11 @@ app.post("/api/teams/create", requireAuth, async (req, res) => {
     const exists = await db.get("SELECT id FROM teams WHERE name = $1 OR tag = $2 LIMIT 1", [name, tag]);
     if (exists) return bad(res, 409, "Команда с таким названием или тегом уже существует");
 
-    const ins = await db.run(
+    const result = await db.get(
       "INSERT INTO teams(name, description, tag, creator_id) VALUES($1, $2, $3, $4) RETURNING id",
       [name, description, tag.toUpperCase(), req.user.id]
     );
-    const teamId = ins.lastInsertRowid;
+    const teamId = result.id;
 
     // Add creator as member with role 'creator'
     await db.run(
@@ -699,11 +699,12 @@ app.post("/api/teams/create", requireAuth, async (req, res) => {
 // --- Teams: list
 app.get("/api/teams", async (req, res) => {
   try {
+    // Using LEFT JOIN to ensure teams show up even if user table joined oddly (though it shouldn't)
     const teams = await db.all(`
       SELECT t.*, u.username as creator_name,
       (SELECT COUNT(*) FROM team_members tm WHERE tm.team_id = t.id) as member_count
       FROM teams t
-      JOIN users u ON u.id = t.creator_id
+      LEFT JOIN users u ON u.id = t.creator_id
       ORDER BY t.created_at DESC
     `);
     
