@@ -156,6 +156,16 @@ async function migrate(db) {
       joined_at TIMESTAMP NOT NULL DEFAULT NOW(),
       UNIQUE(team_id, user_id)
     );
+
+    CREATE TABLE IF NOT EXISTS team_invitations (
+      id SERIAL PRIMARY KEY,
+      team_id INTEGER NOT NULL REFERENCES teams(id) ON DELETE CASCADE,
+      inviter_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      invitee_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      status TEXT NOT NULL DEFAULT 'pending', -- 'pending', 'accepted', 'rejected'
+      created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+      UNIQUE(team_id, invitee_id) -- Only one active/pending invite per user per team
+    );
   `);
 }
 

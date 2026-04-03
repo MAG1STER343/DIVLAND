@@ -109,35 +109,29 @@
 
 
           <div class="headerUser hidden" id="headerUser">
-
-
             <div class="headerAvatar" id="headerAvatar"></div>
-
-
             <div class="headerInfo">
-
-
               <span class="headerLogin mono" id="headerLogin">—</span>
-
-
               <div class="headerBalance" id="headerBalance">
-
-
                 <span class="balanceValue mono" id="balanceValue">0 L</span>
-
-
                 <button class="btn primary minimal replenishBtn" id="replenishBtn">ПОПОЛНИТЬ</button>
-
-
               </div>
-
-
             </div>
-
-
-            <button class="btn ghost minimal" id="headerLogout">ВЫХОД</button>
-
-
+            <div class="headerActions">
+              <button class="btn ghost minimal" id="headerLogout">ВЫХОД</button>
+              <div class="smsWrap" id="smsTrigger">
+                <div class="smsIcon">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+                  <div class="smsBadge hidden" id="smsBadge">0</div>
+                </div>
+                <div class="smsPanel">
+                  <div class="smsHeader mono">СМС / УВЕДОМЛЕНИЯ</div>
+                  <div class="smsList" id="smsList">
+                    <div class="muted mono" style="font-size: 10px; padding: 10px;">Нет сообщений</div>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
 
 

@@ -834,6 +834,83 @@ async function start() {
   }
 }
 
+// --- Teams: Invite user
+app.post("/api/teams/invite", requireAuth, async (req, res) => {
+  try {
+    const { username } = req.body || {};
+    if (!username) return bad(res, 400, "Укажите имя пользователя");
+
+    // 1. Check if user is creator of a team
+    const team = await db.get("SELECT id FROM teams WHERE creator_id = $1 LIMIT 1", [req.user.id]);
+    if (!team) return bad(res, 403, "Только создатель команды может приглашать участников");
+
+    // 2. Check if target user exists
+    const targetUser = await db.get("SELECT id FROM users WHERE username = $1 OR login = $1 LIMIT 1", [username]);
+    if (!targetUser) return bad(res, 404, "Пользователь не найден");
+    if (targetUser.id === req.user.id) return bad(res, 400, "Вы не можете пригласить сами себя");
+
+    // 3. Check if already a member
+    const alreadyMember = await db.get("SELECT id FROM team_members WHERE team_id = $1 AND user_id = $2", [team.id, targetUser.id]);
+    if (alreadyMember) return bad(res, 400, "Пользователь уже в команде");
+
+    // 4. Check for existing pending invite
+    const existingInvite = await db.get("SELECT id FROM team_invitations WHERE team_id = $1 AND invitee_id = $2 AND status = 'pending'", [team.id, targetUser.id]);
+    if (existingInvite) return bad(res, 400, "Приглашение уже отправлено");
+
+    // 5. Create invite
+    await db.run(`
+      INSERT INTO team_invitations (team_id, inviter_id, invitee_id)
+      VALUES ($1, $2, $3)
+    `, [team.id, req.user.id, targetUser.id]);
+
+    return res.json({ ok: true, message: "Приглашение отправлено" });
+  } catch (e) {
+    console.error(e);
+    return res.status(500).json({ ok: false, error: "Ошибка при отправке приглашения" });
+  }
+});
+
+// --- Notifications: List pending invites
+app.get("/api/notifications", requireAuth, async (req, res) => {
+  try {
+    const invites = await db.all(`
+      SELECT ti.id, ti.created_at, t.name as team_name, u.username as inviter_name
+      FROM team_invitations ti
+      JOIN teams t ON t.id = ti.team_id
+      JOIN users u ON u.id = ti.inviter_id
+      WHERE ti.invitee_id = $1 AND ti.status = 'pending'
+      ORDER BY ti.created_at DESC
+    `, [req.user.id]);
+    return res.json({ ok: true, invites });
+  } catch (e) {
+    console.error(e);
+    return res.status(500).json({ ok: false, error: "Ошибка при получении уведомлений" });
+  }
+});
+
+// --- Invitations: Respond
+app.post("/api/invitations/:id/respond", requireAuth, async (req, res) => {
+  try {
+    const { action } = req.body || {}; // 'accept' or 'reject'
+    const inviteId = req.params.id;
+
+    const invite = await db.get("SELECT * FROM team_invitations WHERE id = $1 AND invitee_id = $2 AND status = 'pending'", [inviteId, req.user.id]);
+    if (!invite) return bad(res, 404, "Приглашение не найдено");
+
+    if (action === 'accept') {
+      await db.run("UPDATE team_invitations SET status = 'accepted' WHERE id = $1", [inviteId]);
+      await db.run("INSERT INTO team_members (team_id, user_id, role) VALUES ($1, $2, 'member') ON CONFLICT DO NOTHING", [invite.team_id, req.user.id]);
+      return res.json({ ok: true, message: "Вы вступили в команду" });
+    } else {
+      await db.run("UPDATE team_invitations SET status = 'rejected' WHERE id = $1", [inviteId]);
+      return res.json({ ok: true, message: "Приглашение отклонено" });
+    }
+  } catch (e) {
+    console.error(e);
+    return res.status(500).json({ ok: false, error: "Ошибка при ответе на приглашение" });
+  }
+});
+
 start();
 
 module.exports = app;

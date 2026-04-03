@@ -147,6 +147,10 @@
           }
         } catch (e) { console.error("Error checking team ownership", e); }
 
+        // SMS System: Initial render and periodic refresh
+        renderNotifications();
+        setInterval(renderNotifications, 30000); // Check every 30s
+
         await renderTeamManagement();
         
         if (currentViewName === 'profile' || currentViewName === 'home') {
@@ -1758,29 +1762,89 @@
         membersList.appendChild(row);
       });
       
-      // Hook up add button
+      // Hook up invite button
       const addBtn = $("#addMemberBtn");
       const addInput = $("#newMemberUsername");
-      addBtn.onclick = async () => {
-        const username = addInput.value.trim();
-        if (!username) return;
-        try {
-          await apiJson(`/api/teams/${team.id}/manage`, {
-            method: "POST",
-            body: { action: "add", targetUsername: username }
-          });
-          showToast("Пользователь добавлен");
-          addInput.value = "";
-          renderTeamManagement();
-        } catch (err) {
-          showToast(err.message);
-        }
-      };
-
+      if (addBtn) {
+        addBtn.textContent = "ПРИГЛАСИТЬ";
+        addBtn.onclick = async () => {
+          const username = addInput.value.trim();
+          if (!username) return showToast("Укажите ник");
+          try {
+            const res = await apiJson("/api/teams/invite", "POST", { username });
+            if (res.ok) {
+              showToast("Приглашение отправлено!");
+              addInput.value = "";
+            } else {
+              showToast(res.error || "Ошибка");
+            }
+          } catch (e) {
+            showToast("Ошибка сети");
+          }
+        };
+      }
     } catch (e) {
       console.error("Team mgmt error", e);
     }
   }
+
+  async function renderNotifications() {
+    const list = $("#smsList");
+    const badge = $("#smsBadge");
+    if (!list || !me) return;
+    try {
+      const data = await apiJson("/api/notifications");
+      if (!data.ok) return;
+      
+      const invites = data.invites || [];
+      badge.textContent = invites.length;
+      if (invites.length > 0) {
+        badge.classList.remove("hidden");
+      } else {
+        badge.classList.add("hidden");
+      }
+
+      list.innerHTML = "";
+      if (invites.length === 0) {
+        list.innerHTML = `<div class="muted mono" style="font-size: 10px; padding: 10px; text-align: center;">Нет новых СМС</div>`;
+        return;
+      }
+
+      invites.forEach(inv => {
+        const item = document.createElement("div");
+        item.className = "smsItem widget-animated is-visible";
+        item.innerHTML = `
+          <div class="smsText">
+            <span class="mono" style="color: var(--fg); font-weight: 700;">${inv.inviter_name}</span> 
+            приглашает вас в команду 
+            <span class="mono" style="color: rgb(var(--theme-glow)); font-weight: 800;">${inv.team_name}</span>
+          </div>
+          <div class="smsActions">
+            <button class="smsActionBtn smsActionBtn--accept" onclick="respondToInvite('${inv.id}', 'accept')">ПРИНЯТЬ</button>
+            <button class="smsActionBtn smsActionBtn--reject" onclick="respondToInvite('${inv.id}', 'reject')">ОТКАЗАТЬСЯ</button>
+          </div>
+        `;
+        list.appendChild(item);
+      });
+    } catch (e) {
+      console.error("renderNotifications error:", e);
+    }
+  }
+
+  window.respondToInvite = async (id, action) => {
+    try {
+      const res = await apiJson(`/api/invitations/${id}/respond`, "POST", { action });
+      if (res.ok) {
+        showToast(res.message);
+        renderNotifications();
+        if (currentViewName === 'profile') renderTeamManagement();
+      } else {
+        showToast(res.error || "Ошибка");
+      }
+    } catch (e) {
+      showToast("Ошибка сети");
+    }
+  };
 
   window.manageMember = async (teamId, userId, action) => {
     try {

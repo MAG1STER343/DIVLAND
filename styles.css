@@ -2887,4 +2887,155 @@ body[data-theme="default"], body { --theme-glow: 255, 255, 255; }
   padding: 4px 10px;
   border-radius: 99px;
   color: var(--muted);
+/* --- SMS / Notifications System --- */
+.smsWrap {
+  position: relative;
+  cursor: pointer;
+  z-index: 1001;
+}
+
+.smsIcon {
+  width: 40px;
+  height: 40px;
+  background: var(--glass);
+  border: 1px solid var(--stroke);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--muted);
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+.smsWrap:hover .smsIcon {
+  background: var(--glass2);
+  color: var(--fg);
+  border-color: var(--stroke2);
+  transform: translateY(-2px);
+}
+
+.smsBadge {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  background: #ff4444;
+  color: white;
+  font-size: 9px;
+  font-weight: 800;
+  padding: 2px 5px;
+  border-radius: 6px;
+  min-width: 16px;
+  text-align: center;
+  border: 2px solid var(--bg);
+}
+
+.smsPanel {
+  position: absolute;
+  top: 0;
+  left: calc(100% + 12px);
+  width: 280px;
+  background: rgba(10, 10, 10, 0.95);
+  backdrop-filter: blur(25px);
+  border: 1px solid var(--stroke);
+  border-radius: 16px;
+  padding: 12px;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateX(-10px) scale(0.95);
+  transition: 
+    opacity 0.4s cubic-bezier(0.19, 1, 0.22, 1),
+    transform 0.4s cubic-bezier(0.19, 1, 0.22, 1),
+    visibility 0.4s;
+  box-shadow: 0 20px 50px rgba(0,0,0,0.8);
+  pointer-events: none;
+}
+
+.smsWrap:hover .smsPanel {
+  opacity: 1;
+  visibility: visible;
+  transform: translateX(0) scale(1);
+  pointer-events: auto;
+}
+
+.smsHeader {
+  font-size: 10px;
+  font-weight: 800;
+  color: var(--muted);
+  border-bottom: 1px solid var(--stroke);
+  padding-bottom: 8px;
+  margin-bottom: 10px;
+  letter-spacing: 1px;
+}
+
+.smsList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 350px;
+  overflow-y: auto;
+}
+
+.smsItem {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--stroke);
+  border-radius: 12px;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  transition: background 0.2s ease;
+}
+
+.smsItem:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.smsText {
+  font-size: 11px;
+  line-height: 1.4;
+  color: var(--fg);
+}
+
+.smsActions {
+  display: flex;
+  gap: 6px;
+}
+
+.smsActionBtn {
+  flex: 1;
+  padding: 6px;
+  border-radius: 6px;
+  font-size: 10px;
+  font-weight: 700;
+  cursor: pointer;
+  text-align: center;
+  transition: all 0.2s ease;
+  border: none;
+}
+
+.smsActionBtn--accept {
+  background: rgba(0, 255, 127, 0.15);
+  color: #00ff7f;
+  border: 1px solid rgba(0, 255, 127, 0.2);
+}
+.smsActionBtn--accept:hover {
+  background: rgba(0, 255, 127, 0.25);
+  transform: translateY(-1px);
+}
+
+.smsActionBtn--reject {
+  background: rgba(255, 68, 68, 0.1);
+  color: #ff4444;
+  border: 1px solid rgba(255, 68, 68, 0.2);
+}
+.smsActionBtn--reject:hover {
+  background: rgba(255, 68, 68, 0.2);
+  transform: translateY(-1px);
+}
+
+.smsIcon svg {
+  width: 20px;
+  height: 20px;
+}
 }
