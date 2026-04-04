@@ -45,12 +45,9 @@
 
     <div class="brandTicker glass glitchCard" id="brandTicker" aria-label="DIEVERSI brand">
       <div class="brandTicker__content">
-        <div class="glitchTitle" id="brandTickerText" data-text="TEAM UNVERSI">
-          <span class="glitchTitle__base"><span class="team-text">TEAM </span>UNVERSI</span>
+        <div class="glitchTitle" id="brandTickerText" data-text="UNVERSI">
+          <span class="glitchTitle__base">UNVERSI</span>
         </div>
-      </div>
-      <div class="brandTicker__actions">
-        <button class="btn primary minimal" id="createTeamBtn">Создать команду</button>
       </div>
     </div>
 
@@ -70,7 +67,6 @@
           <button class="navBtn is-active" type="button" data-nav="home">ГЛАВНАЯ</button>
           <div class="navGroup" id="membersGroup">
             <button class="navBtn" type="button" data-nav="participants" id="membersBtn">УЧАСТНИКИ</button>
-            <button class="navBtn navBtn--teams hidden" type="button" data-nav="teams" id="teamsBtn">КОМАНДЫ</button>
           </div>
           <div class="navGroup" id="profileGroup">
             <button class="navBtn" type="button" data-nav="profile" id="profileBtn">ПРОФИЛЬ</button>
@@ -90,17 +86,6 @@
           </div>
           <div class="headerActions">
             <button class="btn ghost minimal" id="headerLogout">ВЫХОД</button>
-            <div class="smsStretchWrap" id="smsTrigger">
-              <div class="smsIcon">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
-                <div class="smsBadge hidden" id="smsBadge">0</div>
-              </div>
-              <div class="smsContentStretch">
-                <div class="smsList" id="smsList">
-                  <div class="muted mono" style="font-size: 10px; padding: 0 10px; white-space: nowrap;">Нет новых уведомлений</div>
-                </div>
-              </div>
-            </div>
           </div>
         </div>
       </div>
@@ -527,33 +512,6 @@
           </article>
 
 
-          <!-- Team Management Widget (Owner Only) -->
-          <article class="card glass profileWidget glitchCard hidden" id="teamManagementWidget">
-            <div class="card-header">
-              <div class="glitchTitle" data-text="УПРАВЛЕНИЕ КОМАНДОЙ">
-                <span class="glitchTitle__base">УПРАВЛЕНИЕ КОМАНДОЙ</span>
-              </div>
-            </div>
-            <div class="teamManageBody">
-              <div class="teamIdentity row">
-                <div id="manageTeamLogo" class="manageTeamLogo">?</div>
-                <div class="teamDetails">
-                  <div id="manageTeamName" class="cardTitle">Команда</div>
-                  <div id="manageTeamTag" class="mono muted">#TAG</div>
-                </div>
-              </div>
-              <div class="memberAddRow mt-20 row">
-                <input class="input" type="text" id="newMemberUsername" placeholder="Имя пользователя" />
-                <button class="btn primary minimal" id="addMemberBtn">ДОБАВИТЬ</button>
-              </div>
-              <div class="memberScrollArea mt-20">
-                <div class="muted mono mb-10" style="font-size: 10px;">УЧАСТНИКИ:</div>
-                <div id="teamMembersList" class="teamMembersList">
-                  <div class="loading">Загрузка состава...</div>
-                </div>
-              </div>
-            </div>
-          </article>
 
         </div>
 
@@ -848,24 +806,6 @@
         </div>
       </section>
 
-      <!-- Teams View -->
-      <section class="view" data-view="teams">
-        <div class="centerStage">
-          <article class="card glass wide glitchCard">
-            <div class="card-header">
-              <div class="glitchTitle" data-text="КОМАНДЫ">
-                <span class="glitchTitle__base">КОМАНДЫ</span>
-              </div>
-            </div>
-            <div class="teamsContent">
-              <p class="muted mono mb-20" style="font-size: 11px;">Список активных команд в системе DIVI LAND.</p>
-              <div class="shop-list" id="teams-list">
-                <div class="loading">Загрузка команд...</div>
-              </div>
-            </div>
-          </article>
-        </div>
-      </section>
 
 
 
@@ -938,38 +878,6 @@
           <input class="input" type="text" id="lCodeInput" placeholder="L-XXXX-XXXX" />
         </div>
         <button class="btn primary glitch-on-hover mt-10" style="width: 100%;" id="redeemCodeBtn">АКТИВИРОВАТЬ</button>
-      </div>
-    </div>
-    <!-- CREATE TEAM Modal -->
-    <div class="modal hidden" id="createTeamModal">
-      <div class="modalContent glass glitchCard team-modal-wide">
-        <button class="close-x" onclick="hideModal('createTeamModal')">×</button>
-        <div class="cardTitle">СОЗДАНИЕ КОМАНДЫ</div>
-        <div class="createTeamForm">
-          <div class="teamLogoUpload">
-            <div class="logoPreview" id="teamLogoPreview">?</div>
-            <input type="file" id="teamLogoInput" accept="image/*" hidden />
-            <button class="btn ghost minimal mt-10" onclick="document.getElementById('teamLogoInput').click()">Загрузить Лого</button>
-          </div>
-          <div class="teamFields">
-            <div class="field">
-              <span class="fieldLabel">Название команды</span>
-              <input class="input" type="text" id="teamNameInput" placeholder="Alpha Team" maxlength="25" />
-            </div>
-            <div class="field mt-10">
-              <span class="fieldLabel">Тег (2-5 символов)</span>
-              <input class="input" type="text" id="teamTagInput" placeholder="ALT" maxlength="5" />
-            </div>
-            <div class="field mt-10">
-              <span class="fieldLabel">Описание</span>
-              <textarea class="input" id="teamDescInput" placeholder="О чем ваша команда..." maxlength="250" style="min-height: 80px;"></textarea>
-            </div>
-          </div>
-        </div>
-        <div class="modalActions mt-20">
-          <button class="btn primary glitch-on-hover" id="saveTeamBtn">СОЗДАТЬ</button>
-          <button class="btn ghost" id="resetTeamBtn">СБРОСИТЬ</button>
-        </div>
       </div>
     </div>
 
