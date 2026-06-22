@@ -1198,6 +1198,20 @@
           <button class="btn ghost minimal view-profile-btn" data-slug="${u.slug}" style="margin-top: auto;">ПРОФИЛЬ</button>
         `;
         
+        // 3D tilt on mouse move
+        item.addEventListener("mousemove", (e) => {
+          const rect = item.getBoundingClientRect();
+          const cx = rect.left + rect.width / 2;
+          const cy = rect.top + rect.height / 2;
+          const dx = (e.clientX - cx) / (rect.width / 2);
+          const dy = (e.clientY - cy) / (rect.height / 2);
+          item.style.transform = `translateY(-12px) rotateY(${dx * 8}deg) rotateX(${-dy * 6}deg) translateZ(40px) scale(1.06)`;
+        });
+        
+        item.addEventListener("mouseleave", () => {
+          item.style.transform = "";
+        });
+        
         item.onclick = (e) => {
           if (e.target.tagName !== 'BUTTON') {
             window.history.pushState({}, "", `/profile/${u.slug}`);
@@ -1749,15 +1763,24 @@ function createNetworkBackground({ canvas, reducedMotion }) {
       for (let i = 0; i < cfg.numParticles; i++) {
         state.particles.push(makeParticle());
       }
-      // Clumped white glows
-      for (let i = 0; i < 5; i++) {
+      // Enhanced ambient glows — varied sizes for depth
+      const glowConfigs = [
+        { size: 500, opacity: 0.05 },
+        { size: 350, opacity: 0.04 },
+        { size: 600, opacity: 0.03 },
+        { size: 280, opacity: 0.06 },
+        { size: 450, opacity: 0.035 },
+        { size: 300, opacity: 0.045 },
+      ];
+      for (let i = 0; i < glowConfigs.length; i++) {
+        const gc = glowConfigs[i];
         state.glows.push({
           x: Math.random() * state.w,
           y: Math.random() * state.h,
-          vx: (Math.random() - 0.5) * 0.2,
-          vy: (Math.random() - 0.5) * 0.2,
-          size: 400 + Math.random() * 400,
-          opacity: 0.04 + Math.random() * 0.04
+          vx: (Math.random() - 0.5) * 0.15,
+          vy: (Math.random() - 0.5) * 0.15,
+          size: gc.size,
+          opacity: gc.opacity
         });
       }
     }
@@ -1803,9 +1826,9 @@ function createNetworkBackground({ canvas, reducedMotion }) {
 
   function drawShape(p, pr) {
     const isHover = p.hover > 0.1;
-    const alpha = (0.2 + (p.z + 600) / 1200 * 0.6) * (isHover ? 1 : 0.8);
+    const alpha = (0.25 + (p.z + 600) / 1200 * 0.65) * (isHover ? 1 : 0.85);
     
-    let stroke = isHover ? `rgba(${state.themeRGB},${0.4 + p.hover * 0.6})` : `rgba(${state.themeRGB},${alpha})`;
+    let stroke = isHover ? `rgba(${state.themeRGB},${0.5 + p.hover * 0.5})` : `rgba(${state.themeRGB},${alpha})`;
     if (p.isGlitchy) {
       const flicker = Math.random() > 0.5 ? 1 : 0.2;
       stroke = `rgba(255, 255, 255, ${flicker * 0.8})`;
@@ -1839,8 +1862,8 @@ function createNetworkBackground({ canvas, reducedMotion }) {
     const finalSize = p.size * finalS;
 
     if (isHover || p.isGlitchy) {
-      ctx.shadowBlur = (isHover ? 15 * p.hover : 8);
-      ctx.shadowColor = "white";
+      ctx.shadowBlur = (isHover ? 20 * p.hover : 10);
+      ctx.shadowColor = `rgba(${state.themeRGB}, 0.8)`;
     }
 
     m.e.forEach(e => {
@@ -1904,7 +1927,29 @@ function createNetworkBackground({ canvas, reducedMotion }) {
     
     ctx.clearRect(0, 0, state.w, state.h);
 
-    // DRAW WHITE GLOW CLUMPS
+    // AMBIENT LIGHTING — soft top-left spotlight
+    const ambientPulse = 1 + Math.sin(now / 4000) * 0.15;
+    const ambGrd = ctx.createRadialGradient(
+      state.w * 0.2, state.h * 0.15, 0,
+      state.w * 0.2, state.h * 0.15, state.w * 0.55
+    );
+    ambGrd.addColorStop(0, `rgba(${state.themeRGB}, ${0.035 * ambientPulse})`);
+    ambGrd.addColorStop(0.5, `rgba(${state.themeRGB}, ${0.012 * ambientPulse})`);
+    ambGrd.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = ambGrd;
+    ctx.fillRect(0, 0, state.w, state.h);
+
+    // Secondary ambient — bottom-right warm glow
+    const ambGrd2 = ctx.createRadialGradient(
+      state.w * 0.8, state.h * 0.85, 0,
+      state.w * 0.8, state.h * 0.85, state.w * 0.4
+    );
+    ambGrd2.addColorStop(0, `rgba(${state.themeRGB}, ${0.02 * ambientPulse})`);
+    ambGrd2.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = ambGrd2;
+    ctx.fillRect(0, 0, state.w, state.h);
+
+    // DRAW WHITE GLOW CLUMPS (enhanced)
     state.glows.forEach(g => {
       g.x += g.vx * dt; g.y += g.vy * dt;
       if (g.x < -g.size) g.x = state.w + g.size;
@@ -1912,8 +1957,10 @@ function createNetworkBackground({ canvas, reducedMotion }) {
       if (g.y < -g.size) g.y = state.h + g.size;
       if (g.y > state.h + g.size) g.y = -g.size;
 
-      const grd = ctx.createRadialGradient(g.x, g.y, 0, g.x, g.y, g.size);
-      grd.addColorStop(0, `rgba(${state.themeRGB},${g.opacity})`);
+      const pulse = 1 + Math.sin(now / 3000 + g.x * 0.01) * 0.2;
+      const grd = ctx.createRadialGradient(g.x, g.y, 0, g.x, g.y, g.size * pulse);
+      grd.addColorStop(0, `rgba(${state.themeRGB},${g.opacity * 1.3})`);
+      grd.addColorStop(0.4, `rgba(${state.themeRGB},${g.opacity * 0.5})`);
       grd.addColorStop(1, `rgba(${state.themeRGB},0)`);
       ctx.fillStyle = grd;
       ctx.fillRect(0, 0, state.w, state.h);
@@ -2000,14 +2047,14 @@ function createNetworkBackground({ canvas, reducedMotion }) {
       return pr;
     });
 
-    // Draw lines
+    // Draw lines (with subtle glow)
     ctx.lineWidth = 0.5;
     for (let i = 0; i < state.particles.length; i++) {
        for (let j = i + 1; j < state.particles.length; j++) {
           const p1 = state.particles[i], p2 = state.particles[j];
           const d = Math.hypot(p1.x-p2.x, p1.y-p2.y, p1.z-p2.z);
           if (d < cfg.linkDist) {
-            let lineAlpha = (1 - d/cfg.linkDist) * 0.15;
+            let lineAlpha = (1 - d/cfg.linkDist) * 0.18;
             
             // CONSTELLATION MODE: Lines only near cursor
             if (activeBg === 'CONSTELLATION') {
@@ -2025,6 +2072,17 @@ function createNetworkBackground({ canvas, reducedMotion }) {
               ctx.moveTo(projected[i].x, projected[i].y);
               ctx.lineTo(projected[j].x, projected[j].y);
               ctx.stroke();
+
+              // Subtle line glow for close connections
+              if (d < cfg.linkDist * 0.5) {
+                ctx.strokeStyle = `rgba(${state.themeRGB},${lineAlpha * 0.3})`;
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(projected[i].x, projected[i].y);
+                ctx.lineTo(projected[j].x, projected[j].y);
+                ctx.stroke();
+                ctx.lineWidth = 0.5;
+              }
             }
           }
        }
