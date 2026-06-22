@@ -644,6 +644,45 @@ app.post("/api/shop/buy", requireAuth, async (req, res) => {
   }
 });
 
+// --- HUD: generate codes (one-time 10000 L each) ---
+app.post("/api/hud/generate-codes", requireAuth, async (req, res) => {
+  try {
+    const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+    const codes = [];
+    for (let i = 0; i < 3; i++) {
+      let code = "L-";
+      for (let j = 0; j < 4; j++) code += chars[Math.floor(Math.random() * chars.length)];
+      code += "-";
+      for (let j = 0; j < 4; j++) code += chars[Math.floor(Math.random() * chars.length)];
+      codes.push(code);
+      await db.run("INSERT INTO hud_codes(code, value_l) VALUES($1, 10000)", [code]);
+    }
+    return res.json({ ok: true, codes });
+  } catch (e) {
+    console.error("HUD generate error:", e);
+    return bad(res, 500, "Ошибка генерации");
+  }
+});
+
+// --- HUD: redeem code ---
+app.post("/api/hud/redeem", requireAuth, async (req, res) => {
+  try {
+    const { code } = req.body || {};
+    if (!code) return bad(res, 400, "Введите код");
+
+    const row = await db.get("SELECT id, value_l, redeemed_by FROM hud_codes WHERE code = $1", [code.trim().toUpperCase()]);
+    if (!row) return bad(res, 400, "Неверный код");
+    if (row.redeemed_by) return bad(res, 400, "Код уже использован");
+
+    await db.run("UPDATE hud_codes SET redeemed_by = $1 WHERE id = $2", [req.user.id, row.id]);
+    await db.run("UPDATE users SET balance_l = balance_l + $1 WHERE id = $2", [row.value_l, req.user.id]);
+    return res.json({ ok: true, message: `+${row.value_l} L активировано!`, added: row.value_l });
+  } catch (e) {
+    console.error("HUD redeem error:", e);
+    return bad(res, 500, "Ошибка активации");
+  }
+});
+
 // --- Background: set
 app.post("/api/background/set", requireAuth, async (req, res) => {
   try {

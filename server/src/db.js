@@ -138,7 +138,13 @@ async function migrate(db) {
       attempts INTEGER NOT NULL DEFAULT 0
     );
 
-
+    CREATE TABLE IF NOT EXISTS hud_codes (
+      id SERIAL PRIMARY KEY,
+      code TEXT NOT NULL UNIQUE,
+      value_l INTEGER NOT NULL DEFAULT 10000,
+      redeemed_by INTEGER NULL REFERENCES users(id),
+      created_at TIMESTAMP NOT NULL DEFAULT NOW()
+    );
   `);
 }
 

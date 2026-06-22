@@ -1220,6 +1220,125 @@ a {
   100% { opacity: 1; background: rgba(0, 20, 0, 0.15); backdrop-filter: blur(1px); }
 }
 
+/* HUD Fingerprints */
+.hud-fingerprints {
+  position: fixed;
+  inset: 0;
+  z-index: 20001;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.hud-fingerprints.hidden {
+  display: none !important;
+}
+
+.hud-fingerprints.is-leaving {
+  animation: achFadeOut 0.5s ease forwards;
+}
+
+.hud-fingerprint {
+  position: absolute;
+  border-radius: 40% 40% 35% 35%;
+  background: repeating-radial-gradient(
+    ellipse at center,
+    rgba(57, 255, 20, 0.06) 0px,
+    rgba(57, 255, 20, 0.03) 2px,
+    transparent 3px,
+    transparent 5px
+  );
+  border: 1px solid rgba(57, 255, 20, 0.08);
+  opacity: 0;
+  animation: fingerprintFadeIn 0.6s ease forwards;
+}
+
+@keyframes fingerprintFadeIn {
+  0% { opacity: 0; transform: rotate(var(--rot, 0deg)) scale(0.7); filter: blur(4px); }
+  100% { opacity: 1; transform: rotate(var(--rot, 0deg)) scale(1); filter: blur(0px); }
+}
+
+@keyframes achFadeOut {
+  to { opacity: 0; }
+}
+
+/* HUD Codes */
+.hud-codes {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 20002;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 18px 24px;
+  background: rgba(0, 15, 0, 0.88);
+  border: 1px solid rgba(57, 255, 20, 0.3);
+  border-radius: 14px;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  box-shadow: 0 0 30px rgba(57, 255, 20, 0.1), 0 10px 40px rgba(0, 0, 0, 0.6);
+  animation: achSlideIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.hud-codes.hidden {
+  display: none !important;
+}
+
+.hud-codes.is-leaving {
+  animation: achSlideOut 0.4s cubic-bezier(0.4, 0, 1, 1) forwards;
+}
+
+.hud-codes-title {
+  font-size: 10px;
+  color: #39ff14;
+  letter-spacing: 1.5px;
+  text-shadow: 0 0 8px rgba(57, 255, 20, 0.4);
+}
+
+.hud-codes-sub {
+  font-size: 11px;
+  color: rgba(57, 255, 20, 0.6);
+  margin-bottom: 4px;
+}
+
+.hud-code-val {
+  color: #39ff14;
+  font-weight: 700;
+}
+
+.hud-code-item {
+  font-size: 16px;
+  color: #39ff14;
+  letter-spacing: 2px;
+  padding: 6px 16px;
+  border: 1px solid rgba(57, 255, 20, 0.25);
+  border-radius: 8px;
+  background: rgba(57, 255, 20, 0.04);
+  cursor: pointer;
+  transition: all 0.2s;
+  text-shadow: 0 0 6px rgba(57, 255, 20, 0.3);
+}
+
+.hud-code-item:hover {
+  background: rgba(57, 255, 20, 0.1);
+  border-color: rgba(57, 255, 20, 0.5);
+  box-shadow: 0 0 15px rgba(57, 255, 20, 0.15);
+}
+
+.hud-code-item.is-used {
+  opacity: 0.4;
+  pointer-events: none;
+  border-color: rgba(57, 255, 20, 0.1);
+}
+
+.hud-codes-hint {
+  font-size: 9px;
+  color: rgba(57, 255, 20, 0.35);
+  margin-top: 4px;
+}
+
 /* HUD Mode — Fallout terminal green */
 body.hud-mode {
   --theme-glow: 57, 255, 20;

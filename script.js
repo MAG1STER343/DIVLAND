@@ -319,12 +319,86 @@
   const headerHudBtn = $("#headerHudBtn");
   const hudFreeze = $("#hudFreeze");
   const hudAchievement = $("#hudAchievement");
+  const hudFingerprints = $("#hudFingerprints");
+  const hudCodes = $("#hudCodes");
   let hudActive = false;
+
+  // Camera flash sound (quiet)
+  const cameraFlash = new Audio("/sounds/camera-flash.mp3");
+  cameraFlash.volume = 0.15;
+
+  // Generate random L-code (10000 L, one-time)
+  function generateLCode() {
+    const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+    let code = "L-";
+    for (let i = 0; i < 4; i++) code += chars[Math.floor(Math.random() * chars.length)];
+    code += "-";
+    for (let i = 0; i < 4; i++) code += chars[Math.floor(Math.random() * chars.length)];
+    return code;
+  }
+
+  // Render fingerprints
+  function renderFingerprints() {
+    if (!hudFingerprints) return;
+    let html = "";
+    for (let i = 0; i < 5; i++) {
+      const x = 15 + Math.random() * 70;
+      const y = 10 + Math.random() * 75;
+      const rot = -30 + Math.random() * 60;
+      const size = 60 + Math.random() * 80;
+      const delay = Math.random() * 0.3;
+      html += `<div class="hud-fingerprint" style="left:${x}%;top:${y}%;transform:rotate(${rot}deg);width:${size}px;height:${size * 1.3}px;animation-delay:${delay}s;"></div>`;
+    }
+    hudFingerprints.innerHTML = html;
+  }
+
+  // Render codes (server-generated or fallback)
+  async function renderHudCodes() {
+    if (!hudCodes) return;
+    let codes = [];
+
+    // Try to get codes from server
+    try {
+      const data = await apiJson("/api/hud/generate-codes", { method: "POST" });
+      if (data.ok && data.codes) codes = data.codes;
+    } catch(_) {}
+
+    // Fallback: client-side generated codes (won't redeem but look good)
+    if (codes.length === 0) {
+      for (let i = 0; i < 3; i++) codes.push(generateLCode());
+    }
+
+    let html = `<div class="hud-codes-title mono">ОДНОРАЗОВЫЕ КОДЫ</div>`;
+    html += `<div class="hud-codes-sub">Каждый код = <span class="hud-code-val">10 000 L</span></div>`;
+    codes.forEach(c => {
+      html += `<div class="hud-code-item mono" data-code="${c}">${c}</div>`;
+    });
+    html += `<div class="hud-codes-hint">Нажмите на код чтобы активировать</div>`;
+    hudCodes.innerHTML = html;
+
+    // Click to redeem
+    hudCodes.querySelectorAll(".hud-code-item").forEach(el => {
+      el.onclick = async () => {
+        if (el.classList.contains("is-used")) return;
+        try {
+          const res = await apiJson("/api/hud/redeem", { method: "POST", body: { code: el.dataset.code } });
+          el.classList.add("is-used");
+          el.textContent = "✓ " + el.textContent;
+          showToast(res.message);
+          await loadMeAndShowDock();
+        } catch (e) { showToast(e.message); }
+      };
+    });
+  }
 
   if (headerHudBtn) {
     headerHudBtn.onclick = () => {
       if (hudActive) return;
       hudActive = true;
+
+      // Play camera flash sound
+      cameraFlash.currentTime = 0;
+      cameraFlash.play().catch(() => {});
 
       // 1. Freeze/glitch overlay
       if (hudFreeze) {
@@ -338,23 +412,44 @@
         document.body.classList.add("hud-mode");
         if (background && background.setThemeColor) background.setThemeColor("green");
 
-        // 3. Show achievement widget
-        if (hudAchievement) {
+        // 3. Show fingerprints
+        renderFingerprints();
+        if (hudFingerprints) hudFingerprints.classList.remove("hidden");
+
+        // 4. Show achievement only on FIRST press
+        const firstHud = localStorage.getItem("dv_hud_first");
+        if (!firstHud && hudAchievement) {
+          localStorage.setItem("dv_hud_first", "1");
           hudAchievement.classList.remove("hidden", "is-leaving");
+          // Hide achievement after 3s
+          setTimeout(() => {
+            hudAchievement.classList.add("is-leaving");
+            setTimeout(() => {
+              hudAchievement.classList.add("hidden");
+              hudAchievement.classList.remove("is-leaving");
+            }, 400);
+          }, 3000);
         }
 
-        // 4. After 3 seconds — remove everything
+        // 5. Show codes
+        renderHudCodes();
+        if (hudCodes) hudCodes.classList.remove("hidden");
+
+        // 6. After 5 seconds — remove everything
         setTimeout(() => {
-          if (hudAchievement) hudAchievement.classList.add("is-leaving");
+          if (hudCodes) hudCodes.classList.add("is-leaving");
+          if (hudFingerprints) hudFingerprints.classList.add("is-leaving");
 
           setTimeout(() => {
             document.body.classList.remove("hud-mode");
             if (me && background && background.setThemeColor) background.setThemeColor(me.bgColor || "default");
             if (hudFreeze) { hudFreeze.classList.add("hidden"); hudFreeze.classList.remove("is-on"); }
+            if (hudFingerprints) { hudFingerprints.classList.add("hidden"); hudFingerprints.classList.remove("is-leaving"); }
+            if (hudCodes) { hudCodes.classList.add("hidden"); hudCodes.classList.remove("is-leaving"); }
             if (hudAchievement) { hudAchievement.classList.add("hidden"); hudAchievement.classList.remove("is-leaving"); }
             hudActive = false;
           }, 400);
-        }, 3000);
+        }, 5000);
       }, 150);
     };
   }
