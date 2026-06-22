@@ -307,6 +307,58 @@
   }
   initGlobalUI();
 
+  // --- Header Dropdown: Shop + HUD ---
+  const headerShopBtn = $("#headerShopBtn");
+  if (headerShopBtn) {
+    headerShopBtn.onclick = () => {
+      if (!me) { showToast("Войдите в профиль"); return; }
+      showView("shop", { withGlitch: true });
+    };
+  }
+
+  const headerHudBtn = $("#headerHudBtn");
+  const hudFreeze = $("#hudFreeze");
+  const hudAchievement = $("#hudAchievement");
+  let hudActive = false;
+
+  if (headerHudBtn) {
+    headerHudBtn.onclick = () => {
+      if (hudActive) return;
+      hudActive = true;
+
+      // 1. Freeze/glitch overlay
+      if (hudFreeze) {
+        hudFreeze.classList.remove("hidden");
+        hudFreeze.classList.add("is-on");
+        if (background && background.pulseGlitch) background.pulseGlitch(500);
+      }
+
+      // 2. Add HUD mode class after short delay (terminal boot)
+      setTimeout(() => {
+        document.body.classList.add("hud-mode");
+        if (background && background.setThemeColor) background.setThemeColor("green");
+
+        // 3. Show achievement widget
+        if (hudAchievement) {
+          hudAchievement.classList.remove("hidden", "is-leaving");
+        }
+
+        // 4. After 3 seconds — remove everything
+        setTimeout(() => {
+          if (hudAchievement) hudAchievement.classList.add("is-leaving");
+
+          setTimeout(() => {
+            document.body.classList.remove("hud-mode");
+            if (me && background && background.setThemeColor) background.setThemeColor(me.bgColor || "default");
+            if (hudFreeze) { hudFreeze.classList.add("hidden"); hudFreeze.classList.remove("is-on"); }
+            if (hudAchievement) { hudAchievement.classList.add("hidden"); hudAchievement.classList.remove("is-leaving"); }
+            hudActive = false;
+          }, 400);
+        }, 3000);
+      }, 150);
+    };
+  }
+
   function glitchTransition(cb, { durationMs = 720 } = {}) {
     if (transitioning) return;
     transitioning = true;
@@ -498,18 +550,6 @@
         renderShop();
       }
       
-
-      // --- Dynamic Tab Reveals ---
-      const shopBtn = $("#shopBtn");
-      if (shopBtn) {
-        if (me && (viewName === "profile" || viewName === "shop")) {
-          shopBtn.classList.remove("hidden");
-          requestAnimationFrame(() => shopBtn.classList.add("is-revealed"));
-        } else {
-          shopBtn.classList.remove("is-revealed");
-          setTimeout(() => { if (!shopBtn.classList.contains("is-revealed")) shopBtn.classList.add("hidden"); }, 500);
-        }
-      }
 
       // Reposition particles to match new view/theme
       if (background && background.reposition) background.reposition(700);
@@ -1879,19 +1919,20 @@ function createNetworkBackground({ canvas, reducedMotion }) {
       x: (Math.random() - 0.5) * 1600,
       y: (Math.random() - 0.5) * 1600,
       z: (Math.random() - 0.5) * 1200,
-      vx: (Math.random() - 0.5) * 1.5,
-      vy: (Math.random() - 0.5) * 1.5,
-      vz: (Math.random() - 0.5) * 1.2,
+      vx: (Math.random() - 0.5) * 1.2,
+      vy: (Math.random() - 0.5) * 1.2,
+      vz: (Math.random() - 0.5) * 0.8,
       rotX: Math.random() * Math.PI,
       rotY: Math.random() * Math.PI,
       rotZ: Math.random() * Math.PI,
-      vRotX: (Math.random() - 0.5) * 0.02,
-      vRotY: (Math.random() - 0.5) * 0.02,
-      vRotZ: (Math.random() - 0.5) * 0.02,
+      vRotX: (Math.random() - 0.5) * 0.025,
+      vRotY: (Math.random() - 0.5) * 0.025,
+      vRotZ: (Math.random() - 0.5) * 0.015,
       kind: ["cube", "pyramid", "octa"][Math.floor(Math.random() * 3)],
-      size: 15 + Math.random() * 15,
+      size: 14 + Math.random() * 18,
       hover: 0,
-      isGlitchy: Math.random() < 0.1
+      isGlitchy: Math.random() < 0.12,
+      drift: (Math.random() - 0.5) * 0.003
     };
   }
 
@@ -2120,6 +2161,11 @@ function createNetworkBackground({ canvas, reducedMotion }) {
       if (state.flowerAlpha > 0.01) {
           p.y += (1.5 + Math.random() * 0.5) * dt * state.flowerAlpha;
           p.vx *= 0.95;
+      } else if (state.bhAlpha < 0.01) {
+          // HOLO: gentle drift + slow orbital drift
+          p.x += Math.sin(now * 0.0003 + p.rotX * 10) * 0.15 * dt;
+          p.y += Math.cos(now * 0.00025 + p.rotY * 10) * 0.12 * dt;
+          p.y += p.vy * dt * speedK * speedK_bh;
       } else {
           p.y += p.vy * dt * speedK * speedK_bh;
       }
@@ -2148,7 +2194,7 @@ function createNetworkBackground({ canvas, reducedMotion }) {
           const p1 = state.particles[i], p2 = state.particles[j];
           const d = Math.hypot(p1.x-p2.x, p1.y-p2.y, p1.z-p2.z);
           if (d < cfg.linkDist) {
-            let lineAlpha = (1 - d/cfg.linkDist) * 0.18;
+            let lineAlpha = (1 - d/cfg.linkDist) * 0.2;
             
             // CONSTELLATION MODE: Lines only near cursor
             if (activeBg === 'CONSTELLATION') {

@@ -1021,10 +1021,225 @@ a {
   border-left: 1px solid var(--stroke);
   margin-left: 6px;
   animation: fadeIn 300ms ease;
+  position: relative;
 }
 
 .headerUser.hidden {
   display: none !important;
+}
+
+/* Header Dropdown */
+.headerDropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  min-width: 160px;
+  border-radius: 14px;
+  padding: 6px;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(-6px) scale(0.95);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.headerUser:hover .headerDropdown,
+.headerDropdown:hover {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0) scale(1);
+}
+
+.headerDropBtn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  border: none;
+  background: transparent;
+  color: var(--fg);
+  font-size: 12px;
+  letter-spacing: 0.5px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background 0.2s;
+  white-space: nowrap;
+}
+
+.headerDropBtn:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.headerDropBtn.hudBtn {
+  color: #39ff14;
+}
+
+.headerDropBtn.hudBtn:hover {
+  background: rgba(57, 255, 20, 0.08);
+}
+
+/* HUD Achievement */
+.hud-achievement {
+  position: fixed;
+  top: 80px;
+  right: 24px;
+  z-index: 20000;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 20px;
+  background: rgba(0, 20, 0, 0.85);
+  border: 1px solid rgba(57, 255, 20, 0.4);
+  border-radius: 14px;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  box-shadow: 0 0 30px rgba(57, 255, 20, 0.15), 0 10px 40px rgba(0, 0, 0, 0.5);
+  animation: achSlideIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.hud-achievement.is-leaving {
+  animation: achSlideOut 0.4s cubic-bezier(0.4, 0, 1, 1) forwards;
+}
+
+.hud-achievement.hidden {
+  display: none !important;
+}
+
+@keyframes achSlideIn {
+  0% { opacity: 0; transform: translateX(40px) scale(0.9); }
+  100% { opacity: 1; transform: translateX(0) scale(1); }
+}
+
+@keyframes achSlideOut {
+  0% { opacity: 1; transform: translateX(0) scale(1); }
+  100% { opacity: 0; transform: translateX(40px) scale(0.9); }
+}
+
+.hud-ach-icon {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #39ff14;
+  flex-shrink: 0;
+}
+
+.hud-ach-icon svg {
+  width: 28px;
+  height: 28px;
+  filter: drop-shadow(0 0 8px rgba(57, 255, 20, 0.5));
+}
+
+.hud-ach-text {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.hud-ach-title {
+  font-size: 10px;
+  color: #39ff14;
+  letter-spacing: 1.2px;
+  text-shadow: 0 0 10px rgba(57, 255, 20, 0.4);
+}
+
+.hud-ach-desc {
+  font-size: 12px;
+  color: rgba(57, 255, 20, 0.8);
+  line-height: 1.3;
+}
+
+.hud-ach-color {
+  color: #39ff14;
+  font-weight: 700;
+  text-shadow: 0 0 8px rgba(57, 255, 20, 0.5);
+}
+
+/* HUD Freeze Overlay */
+.hud-freeze {
+  position: fixed;
+  inset: 0;
+  z-index: 19999;
+  pointer-events: none;
+  background: rgba(0, 20, 0, 0.15);
+  backdrop-filter: blur(1px);
+  -webkit-backdrop-filter: blur(1px);
+}
+
+.hud-freeze.hidden {
+  display: none !important;
+}
+
+.hud-freeze.is-on {
+  animation: hudFreezePulse 0.6s ease-out forwards;
+}
+
+@keyframes hudFreezePulse {
+  0% { opacity: 1; background: rgba(57, 255, 20, 0.12); backdrop-filter: blur(4px); }
+  30% { background: rgba(57, 255, 20, 0.06); backdrop-filter: blur(1px); }
+  100% { opacity: 1; background: rgba(0, 20, 0, 0.15); backdrop-filter: blur(1px); }
+}
+
+/* HUD Mode — Fallout terminal green */
+body.hud-mode {
+  --theme-glow: 57, 255, 20;
+}
+
+body.hud-mode .navBtn.is-active {
+  color: #39ff14;
+  text-shadow: 0 0 10px rgba(57, 255, 20, 0.5);
+}
+
+body.hud-mode .card,
+body.hud-mode .glass {
+  border-color: rgba(57, 255, 20, 0.25);
+}
+
+body.hud-mode .btn.primary {
+  border-color: rgba(57, 255, 20, 0.3);
+  background: rgba(57, 255, 20, 0.08);
+}
+
+body.hud-mode .glitchTitle {
+  color: #39ff14 !important;
+  text-shadow: 0 0 15px rgba(57, 255, 20, 0.5);
+}
+
+body.hud-mode .scanlines {
+  background: repeating-linear-gradient(
+    to bottom,
+    rgba(57, 255, 20, 0.04) 0px,
+    rgba(57, 255, 20, 0.04) 1px,
+    rgba(0, 0, 0, 0) 3px,
+    rgba(0, 0, 0, 0) 5px
+  );
+}
+
+body.hud-mode .headerUser {
+  border-color: rgba(57, 255, 20, 0.3);
+}
+
+body.hud-mode .headerLogin,
+body.hud-mode .balanceValue {
+  color: #39ff14;
+  text-shadow: 0 0 8px rgba(57, 255, 20, 0.3);
+}
+
+body.hud-mode .nav-indicator {
+  background: rgba(57, 255, 20, 0.12);
+  border-color: rgba(57, 255, 20, 0.3);
+}
+
+body.hud-mode .brandTicker {
+  border-color: rgba(57, 255, 20, 0.2);
+}
+
+body.hud-mode .brandTicker .glitchTitle {
+  color: #39ff14;
 }
 
 .headerAvatar {
@@ -1090,34 +1305,6 @@ a {
 
 .nav:hover .navGroup {
   gap: 4px;
-}
-
-.navBtn--shop {
-  max-height: 0;
-  opacity: 0;
-  margin-top: 0;
-  overflow: hidden;
-  transition: 
-    max-height 500ms cubic-bezier(0.4, 0, 0.2, 1), 
-    opacity 300ms ease, 
-    margin-top 500ms cubic-bezier(0.4, 0, 0.2, 1),
-    font-size 400ms cubic-bezier(0.19, 1, 0.22, 1),
-    padding 400ms cubic-bezier(0.19, 1, 0.22, 1),
-    height 400ms cubic-bezier(0.19, 1, 0.22, 1);
-  font-size: 11px !important;
-  background: rgba(255, 255, 255, 0.04) !important;
-  border-color: rgba(255, 255, 255, 0.08) !important;
-  height: 28px;
-  display: flex !important;
-  align-items: center;
-  justify-content: center;
-  padding: 0 12px;
-}
-
-.navBtn--shop.is-revealed {
-  max-height: 40px;
-  opacity: 1;
-  margin-top: 4px;
 }
 
 .minimal {
