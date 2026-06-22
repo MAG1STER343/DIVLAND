@@ -1018,10 +1018,20 @@ a {
   align-items: center;
   gap: 12px;
   padding-left: 12px;
+  padding-right: 10px;
   border-left: 1px solid var(--stroke);
   margin-left: 6px;
   animation: fadeIn 300ms ease;
   position: relative;
+  border-radius: 999px;
+  transition: background 0.3s, box-shadow 0.3s, padding-right 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  cursor: pointer;
+}
+
+.headerUser:hover {
+  background: var(--glass);
+  box-shadow: var(--shadow);
+  padding-right: 14px;
 }
 
 .headerUser.hidden {
@@ -1031,19 +1041,30 @@ a {
 /* Header Dropdown */
 .headerDropdown {
   position: absolute;
-  top: calc(100% + 8px);
+  top: 100%;
   right: 0;
-  min-width: 160px;
+  min-width: 170px;
   border-radius: 14px;
-  padding: 6px;
+  padding: 8px;
   opacity: 0;
   pointer-events: none;
-  transform: translateY(-6px) scale(0.95);
+  transform: translateY(-4px) scale(0.96);
   transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
   z-index: 1000;
   display: flex;
   flex-direction: column;
   gap: 2px;
+  margin-top: 4px;
+}
+
+/* Invisible bridge to keep hover alive when moving mouse to dropdown */
+.headerDropdown::before {
+  content: "";
+  position: absolute;
+  top: -12px;
+  left: 0;
+  right: 0;
+  height: 12px;
 }
 
 .headerUser:hover .headerDropdown,
@@ -1079,6 +1100,21 @@ a {
 
 .headerDropBtn.hudBtn:hover {
   background: rgba(57, 255, 20, 0.08);
+}
+
+.headerDropSep {
+  height: 1px;
+  background: rgba(255, 255, 255, 0.1);
+  margin: 4px 8px;
+}
+
+.headerDropLogout {
+  color: rgba(255, 100, 100, 0.8);
+}
+
+.headerDropLogout:hover {
+  background: rgba(255, 50, 50, 0.1);
+  color: #ff5555;
 }
 
 /* HUD Achievement */
