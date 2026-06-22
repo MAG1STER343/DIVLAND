@@ -1336,14 +1336,6 @@
       loadParticipants();
     });
   }
-      }
-    } catch (err) {
-      const msg = err.message === "Database initialization failed" 
-        ? "Ошибка: База данных Postgres не подключена в Vercel."
-        : `Ошибка: ${err.message}`;
-      list.innerHTML = `<div class="error" style="color: #ff3232; padding: 20px; border: 1px solid #ff3232; border-radius: 8px; text-align: center;">${msg}</div>`;
-    }
-  }
 
   async function handleLogin(form) {
     const loginEl = form.querySelector("input[name='login']");
