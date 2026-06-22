@@ -117,6 +117,7 @@
         // ... (existing authenticated logic)
         document.body.setAttribute('data-background', me.activeBackground || 'HOLO');
         if (background && background.setThemeColor) background.setThemeColor(me.bgColor || 'default');
+        if (background && background.reposition) background.reposition(900);
         
         const headerUser = $("#headerUser");
         if (headerUser) {
@@ -206,6 +207,7 @@
           try {
             await apiJson("/api/shop/buy", { method: "POST", body: { itemId: item.id } });
             showToast("Приобретено!");
+            if (background && background.pulseGlitch) background.pulseGlitch(600);
             await loadMeAndShowDock();
             renderShop();
           } catch(e) { showToast(e.message); }
@@ -287,8 +289,8 @@
                  showToast("Фон обновлен");
                  me.activeBackground = bg.id;
                  document.body.setAttribute('data-background', bg.id);
+                 if (background && background.reposition) background.reposition(1000);
                  modal.classList.add("hidden");
-                 // Refresh UI if needed or just let the background script react to data-background
                } catch(e) { showToast(e.message); }
              };
            }
@@ -509,6 +511,9 @@
         }
       }
 
+      // Reposition particles to match new view/theme
+      if (background && background.reposition) background.reposition(700);
+
     };
 
     if (!withGlitch) {
@@ -717,6 +722,7 @@
     document.body.setAttribute('data-theme', theme);
     document.body.setAttribute('data-background', bg);
     if (background && background.setThemeColor) background.setThemeColor(theme);
+    if (background && background.reposition) background.reposition(800);
     // persist to localStorage so it survives page reload
     try { 
       if (theme !== 'default') localStorage.setItem('dv_theme', theme); 
@@ -2044,6 +2050,7 @@ function createNetworkBackground({ canvas, reducedMotion }) {
 
     // Physics & Projection
     const speedK_bh = state.bhAlpha > 0.1 ? 0.0006 : 1.0;
+    repositionStep(now, dt);
     const projected = state.particles.map(p => {
       // Black hole attraction (only if bhAlpha > 0)
       if (state.bhAlpha > 0.01) {
@@ -2717,10 +2724,84 @@ function createNetworkBackground({ canvas, reducedMotion }) {
     requestAnimationFrame(draw);
   }
 
+  // --- REPOSITION: smoothly snap particles to target layout for current theme ---
+  let repositionUntil = 0;
+  function reposition(durationMs) {
+    repositionUntil = performance.now() + (durationMs || 800);
+  }
+
+  function repositionStep(now, dt) {
+    if (now > repositionUntil) return;
+    const t = Math.min(1, (repositionUntil - now) / 400);
+    const ease = t * t * (3 - 2 * t);
+    const activeBg = document.body.getAttribute('data-background');
+    const bhX = cfg.blackHoleCenter.x - state.w / 2;
+    const bhY = cfg.blackHoleCenter.y - state.h / 2;
+
+    state.particles.forEach((p, i) => {
+      let tx, ty, tz;
+      if (activeBg === 'BLACK_HOLE') {
+        const angle = (i / state.particles.length) * Math.PI * 2;
+        const r = 180 + (i % 5) * 30;
+        const layerZ = (i % 7 - 3) * 80;
+        tx = bhX + Math.cos(angle) * r;
+        ty = bhY + Math.sin(angle) * r;
+        tz = layerZ;
+      } else if (activeBg === 'FLOWERS') {
+        const col = i % 6;
+        const row = Math.floor(i / 6);
+        tx = -300 + col * 120 + (Math.random() - 0.5) * 40;
+        ty = 200 + row * 80 - (i % 3) * 60;
+        tz = (i % 5 - 2) * 50;
+      } else if (activeBg === 'NEXUS') {
+        const col = i % 8;
+        tx = -400 + col * 110;
+        ty = (Math.random() - 0.5) * 800;
+        tz = (i % 4 - 2) * 100;
+      } else if (activeBg === 'NEBULA') {
+        const angle = (i / state.particles.length) * Math.PI * 2;
+        const r = 200 + (i % 4) * 100;
+        tx = Math.cos(angle + i * 0.3) * r;
+        ty = Math.sin(angle + i * 0.5) * r;
+        tz = (i % 6 - 3) * 70;
+      } else if (activeBg === 'CONSTELLATION') {
+        const phi = Math.acos(1 - 2 * (i + 0.5) / state.particles.length);
+        const theta = Math.PI * (1 + Math.sqrt(5)) * i;
+        const r = 500;
+        tx = r * Math.sin(phi) * Math.cos(theta);
+        ty = r * Math.sin(phi) * Math.sin(theta);
+        tz = r * Math.cos(phi) * 0.5;
+      } else if (activeBg === 'PULSE') {
+        const ring = i % 4;
+        const angle = (i / state.particles.length) * Math.PI * 2 + ring * 0.5;
+        const r = 150 + ring * 100;
+        tx = Math.cos(angle) * r;
+        ty = Math.sin(angle) * r;
+        tz = (ring - 2) * 60;
+      } else if (activeBg === 'CHAINS') {
+        tx = (Math.random() - 0.5) * 1200;
+        ty = (i / state.particles.length) * 1200 - 600;
+        tz = (i % 5 - 2) * 80;
+      } else {
+        // HOLO default: spread in 3D space
+        tx = (Math.random() - 0.5) * 1400;
+        ty = (Math.random() - 0.5) * 1400;
+        tz = (Math.random() - 0.5) * 1000;
+      }
+
+      p.x += (tx - p.x) * ease * 0.08;
+      p.y += (ty - p.y) * ease * 0.08;
+      p.z += (tz - p.z) * ease * 0.08;
+      p.vx *= 0.9;
+      p.vy *= 0.9;
+      p.vz *= 0.9;
+    });
+  }
+
   resize();
   window.addEventListener("resize", resize);
   draw();
 
-  return { setPointer, freezeFor, pulseGlitch, setZoom, setThemeColor };
+  return { setPointer, freezeFor, pulseGlitch, setZoom, setThemeColor, reposition };
 }
 })();
