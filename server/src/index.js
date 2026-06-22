@@ -516,7 +516,7 @@ app.post("/api/profile/update", requireAuth, async (req, res) => {
 
 app.get("/api/users", async (req, res) => {
   try {
-    const users = await db.all("SELECT username, login, slug, created_at, avatar_path FROM users ORDER BY id DESC");
+    const users = await db.all("SELECT username, login, slug, created_at, avatar_path, bg_color, active_background, discord_user, telegram_user, steam_url, faceit_url, instagram_url, twitch_url FROM users ORDER BY id DESC");
     return res.json({ ok: true, users });
   } catch (e) {
     console.error("API /api/users ERROR:", e);
