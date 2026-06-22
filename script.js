@@ -376,17 +376,29 @@
     html += `<div class="hud-codes-hint">Нажмите на код чтобы активировать</div>`;
     hudCodes.innerHTML = html;
 
-    // Click to redeem
+    // Click to redeem (only first click works, rest disabled)
+    let codeRedeemed = false;
     hudCodes.querySelectorAll(".hud-code-item").forEach(el => {
       el.onclick = async () => {
-        if (el.classList.contains("is-used")) return;
+        if (el.classList.contains("is-used") || codeRedeemed) return;
+        codeRedeemed = true;
+
+        // Mark this one as used, disable all others
+        hudCodes.querySelectorAll(".hud-code-item").forEach(c => {
+          if (c !== el) c.classList.add("is-disabled");
+        });
+
         try {
           const res = await apiJson("/api/hud/redeem", { method: "POST", body: { code: el.dataset.code } });
           el.classList.add("is-used");
           el.textContent = "✓ " + el.textContent;
           showToast(res.message);
           await loadMeAndShowDock();
-        } catch (e) { showToast(e.message); }
+        } catch (e) {
+          showToast(e.message);
+          codeRedeemed = false;
+          hudCodes.querySelectorAll(".hud-code-item").forEach(c => c.classList.remove("is-disabled"));
+        }
       };
     });
   }

@@ -1333,6 +1333,13 @@ a {
   border-color: rgba(57, 255, 20, 0.1);
 }
 
+.hud-code-item.is-disabled {
+  opacity: 0.25;
+  pointer-events: none;
+  border-color: rgba(57, 255, 20, 0.05);
+  text-decoration: line-through;
+}
+
 .hud-codes-hint {
   font-size: 9px;
   color: rgba(57, 255, 20, 0.35);

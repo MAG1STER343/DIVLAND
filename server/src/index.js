@@ -93,6 +93,8 @@ app.get("/styles.css", (req, res) => res.sendFile(path.join(ROOT_DIR, "styles.cs
 app.get("/script.js", (req, res) => res.sendFile(path.join(ROOT_DIR, "script.js")));
 
 app.use("/assets", express.static(ASSETS_DIR));
+app.use("/sounds", express.static(path.join(ROOT_DIR, "sounds")));
+app.use("/videos", express.static(path.join(ROOT_DIR, "videos")));
 
 const COOKIE_NAME = process.env.SESSION_COOKIE || "dieversi_session";
 const SESSION_TTL_DAYS = 14;
