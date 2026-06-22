@@ -2043,55 +2043,67 @@ function createNetworkBackground({ canvas, reducedMotion }) {
     });
 
     // Physics & Projection
-    const speedK_bh = state.bhAlpha > 0.1 ? 0.0006 : 1.0; // Ultra-Glacial Slowdown
+    const speedK_bh = state.bhAlpha > 0.1 ? 0.0006 : 1.0;
     const projected = state.particles.map(p => {
       // Black hole attraction (only if bhAlpha > 0)
       if (state.bhAlpha > 0.01) {
-        const dx = cfg.blackHoleCenter.x - (state.w/2 + p.x);
-        const dy = cfg.blackHoleCenter.y - (state.h/2 + p.y);
+        const bhX = cfg.blackHoleCenter.x - state.w/2;
+        const bhY = cfg.blackHoleCenter.y - state.h/2;
+        const dx = bhX - p.x;
+        const dy = bhY - p.y;
         const dist = Math.sqrt(dx*dx + dy*dy);
         
-        // GLOBAL GRAVITY (Deep Slowdown - Flattening + Radial)
-        const globalForce = 0.00005 * state.bhAlpha;
+        // GLOBAL GRAVITY — slow inward pull
+        const globalForce = 0.00003 * state.bhAlpha;
         p.vx += dx * globalForce;
-        
-        // Horizontal Compression (Extremely thin disk)
-        const targetY = cfg.blackHoleCenter.y - state.h/2;
-        p.vy += (targetY - p.y) * 0.08 * state.bhAlpha;
+        p.vy += dy * globalForce;
 
-        if (dist < 1200) {
-           // Radial Force (Stable at ~210px)
-           const stableRadius = 210;
-           const force = state.bhAlpha * (stableRadius - dist) / 10000;
+        if (dist < 1400) {
+           // Orbital mechanics: radial + tangential
+           const orbitRadius = 250;
+           const radialForce = state.bhAlpha * (orbitRadius - dist) / 8000;
            
-           // Tangential Force (Orbital spin)
-           const orbitSpeed = 0.001 * state.bhAlpha;
+           // Stronger orbital spin
+           const orbitSpeed = 0.0018 * state.bhAlpha;
            const orbitX = -dy * orbitSpeed;
            const orbitY = dx * orbitSpeed;
            
-           p.vx += (dx * force + orbitX);
-           p.vy += (dy * force + orbitY);
+           p.vx += dx * radialForce + orbitX;
+           p.vy += dy * radialForce + orbitY;
+
+           // Slow down particles that are orbiting (smooth deceleration toward orbit)
+           if (dist < orbitRadius + 100 && dist > cfg.bhRadius + 30) {
+              p.vx *= 0.998;
+              p.vy *= 0.998;
+              p.vz *= 0.998;
+           }
            
-           // "Sucking in" effect (Inward spiral - ONLY if very close)
+           // Sucking in effect near horizon
            const horizon = cfg.bhRadius;
-           if (dist < 280) {
-              const suckFactor = Math.max(0, (dist - horizon) / 240);
-              p.hover = - (1 - suckFactor);
-              if (dist < horizon + 10) {
-                // RESPAWN AT EDGES - Very Tight Y
-                const side = Math.random();
-                if (side < 0.25) { p.x = -1000; p.y = targetY + (Math.random()-0.5)*150; }
-                else if (side < 0.5) { p.x = 1000; p.y = targetY + (Math.random()-0.5)*150; }
-                else if (side < 0.75) { p.y = -1000; p.x = (Math.random()-0.5)*2000; }
-                else { p.y = 1000; p.x = (Math.random()-0.5)*2000; }
-                
-                p.vx *= 0.1; p.vy *= 0.1;
+           if (dist < 300) {
+              const suckFactor = Math.max(0, (dist - horizon) / 260);
+              p.hover = -(1 - suckFactor);
+              
+              // Extra rotation speed near the horizon
+              const closeOrbit = 0.004 * state.bhAlpha * (1 - suckFactor);
+              p.vx += -dy * closeOrbit;
+              p.vy += dx * closeOrbit;
+              
+              if (dist < horizon + 8) {
+                // RESPAWN far away for continuous loop
+                const angle = Math.random() * Math.PI * 2;
+                const spawnDist = 600 + Math.random() * 400;
+                p.x = bhX + Math.cos(angle) * spawnDist;
+                p.y = bhY + Math.sin(angle) * spawnDist;
+                p.vx = Math.sin(angle) * 0.5;
+                p.vy = -Math.cos(angle) * 0.5;
+                p.vz = (Math.random() - 0.5) * 0.3;
                 p.hover = 0;
               }
            } else { p.hover = Math.max(0, p.hover); }
         }
         
-        // EXIT DAMPENING: If un-hovering, kill velocity to prevent 'explosion'
+        // EXIT DAMPENING
         if (state.targetBhAlpha === 0) {
           p.vx *= 0.85; p.vy *= 0.85; p.vz *= 0.85;
         }
@@ -2099,15 +2111,14 @@ function createNetworkBackground({ canvas, reducedMotion }) {
       
       p.x += p.vx * dt * speedK * speedK_bh;
       if (state.flowerAlpha > 0.01) {
-          // Vertical fall physics
           p.y += (1.5 + Math.random() * 0.5) * dt * state.flowerAlpha;
-          p.vx *= 0.95; // Dampen horizontal wander
+          p.vx *= 0.95;
       } else {
           p.y += p.vy * dt * speedK * speedK_bh;
       }
       p.z += p.vz * dt * speedK;
-      if (p.x < -1000) p.x = 1000; if (p.x > 1000) p.x = -1000;
-      if (p.y < -1000) p.y = 1000; if (p.y > 1000) p.y = -1000;
+      if (p.x < -1200) p.x = 1200; if (p.x > 1200) p.x = -1200;
+      if (p.y < -1200) p.y = 1200; if (p.y > 1200) p.y = -1200;
       if (p.z < -600) p.z = 600; if (p.z > 600) p.z = -600;
 
       p.rotX += p.vRotX * dt * speedK;
@@ -2115,9 +2126,9 @@ function createNetworkBackground({ canvas, reducedMotion }) {
       p.rotZ += p.vRotZ * dt * speedK;
 
       const pr = project(p);
-      const dx = state.mx - pr.x;
-      const dy = state.my - pr.y;
-      if (Math.hypot(dx, dy) < 100) p.hover += (1 - p.hover) * 0.1;
+      const dxh = state.mx - pr.x;
+      const dyh = state.my - pr.y;
+      if (Math.hypot(dxh, dyh) < 100) p.hover += (1 - p.hover) * 0.1;
       else p.hover *= 0.94;
 
       return pr;
@@ -2215,9 +2226,9 @@ function createNetworkBackground({ canvas, reducedMotion }) {
         ctx.restore();
     }
 
-    // DRAW BLACK HOLE (3D — accretion disk + lensing)
+    // DRAW BLACK HOLE (3D — digital ring + orbital figures)
     if (state.bhAlpha > 0.01) {
-      cfg.bhRotation += 0.0035 * dt; 
+      cfg.bhRotation += 0.004 * dt; 
       ctx.save();
       ctx.translate(cfg.blackHoleCenter.x, cfg.blackHoleCenter.y);
       ctx.globalAlpha = state.bhAlpha;
@@ -2225,12 +2236,104 @@ function createNetworkBackground({ canvas, reducedMotion }) {
       const glitch = Math.random() < 0.04 ? 1 : 0;
       const pulse = 1 + Math.sin(cfg.bhRotation * 5) * 0.1;
 
-      // Accretion disk (3D ellipse)
+      // --- ORBIT TRAILS (particles leaving faint trails near BH) ---
+      state.particles.forEach(p => {
+        if (state.bhAlpha < 0.3) return;
+        const bhX = cfg.blackHoleCenter.x - state.w/2;
+        const bhY = cfg.blackHoleCenter.y - state.h/2;
+        const dist = Math.sqrt((p.x - bhX) ** 2 + (p.y - bhY) ** 2);
+        if (dist < 350 && dist > cfg.bhRadius + 15) {
+          const trailAlpha = Math.max(0, (1 - dist / 350)) * 0.12 * state.bhAlpha;
+          const pr = project(p);
+          const trailGrd = ctx.createRadialGradient(pr.x, pr.y, 0, pr.x, pr.y, 15 * pr.s);
+          trailGrd.addColorStop(0, `rgba(${state.themeRGB}, ${trailAlpha})`);
+          trailGrd.addColorStop(1, `rgba(${state.themeRGB}, 0)`);
+          ctx.fillStyle = trailGrd;
+          ctx.beginPath();
+          ctx.arc(pr.x, pr.y, 15 * pr.s, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      });
+
+      // --- GLOWING DIGITAL CIRCLE (sci-fi HUD ring) ---
+      const digitalR = cfg.bhRadius * 2.2;
+      const segments = 24;
+      const segLen = (Math.PI * 2) / segments;
+      
+      // Outer glow aura
+      const auraGrd = ctx.createRadialGradient(0, 0, digitalR * 0.8, 0, 0, digitalR * 1.3);
+      auraGrd.addColorStop(0, `rgba(${state.themeRGB}, ${0.02 * pulse})`);
+      auraGrd.addColorStop(0.5, `rgba(${state.themeRGB}, ${0.04 * pulse})`);
+      auraGrd.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = auraGrd;
+      ctx.beginPath();
+      ctx.arc(0, 0, digitalR * 1.3, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Rotating digital segments
+      for (let s = 0; s < segments; s++) {
+        const startAngle = cfg.bhRotation + s * segLen;
+        const gap = segLen * 0.3;
+        const segAlpha = (0.15 + Math.sin(cfg.bhRotation * 3 + s * 0.7) * 0.1) * pulse;
+        const isActive = (s % 3 !== 0) || (Math.sin(cfg.bhRotation * 2 + s) > 0.3);
+        
+        if (isActive) {
+          ctx.beginPath();
+          ctx.arc(0, 0, digitalR, startAngle + gap, startAngle + segLen - gap);
+          ctx.strokeStyle = `rgba(${state.themeRGB}, ${segAlpha})`;
+          ctx.lineWidth = 1.5 + Math.sin(cfg.bhRotation * 4 + s) * 0.5;
+          ctx.stroke();
+        }
+      }
+
+      // Inner rotating ring (counter-rotate)
+      const innerR = cfg.bhRadius * 1.6;
+      const innerSegs = 16;
+      for (let s = 0; s < innerSegs; s++) {
+        const startAngle = -cfg.bhRotation * 1.5 + s * (Math.PI * 2 / innerSegs);
+        const gap = (Math.PI * 2 / innerSegs) * 0.35;
+        const segAlpha = (0.1 + Math.sin(cfg.bhRotation * 2 + s * 1.2) * 0.06) * pulse;
+        
+        ctx.beginPath();
+        ctx.arc(0, 0, innerR, startAngle + gap, startAngle + (Math.PI * 2 / innerSegs) - gap);
+        ctx.strokeStyle = `rgba(${state.themeRGB}, ${segAlpha})`;
+        ctx.lineWidth = 1;
+        ctx.stroke();
+      }
+
+      // Pulsing center dot
+      const dotR = 3 + Math.sin(cfg.bhRotation * 6) * 1.5;
+      const dotGrd = ctx.createRadialGradient(0, 0, 0, 0, 0, dotR * 5);
+      dotGrd.addColorStop(0, `rgba(255, 255, 255, ${0.4 * pulse})`);
+      dotGrd.addColorStop(0.3, `rgba(${state.themeRGB}, ${0.15 * pulse})`);
+      dotGrd.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = dotGrd;
+      ctx.beginPath();
+      ctx.arc(0, 0, dotR * 5, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Small tick marks on digital ring
+      for (let t = 0; t < 48; t++) {
+        const angle = cfg.bhRotation * 0.7 + t * (Math.PI * 2 / 48);
+        const tickLen = (t % 4 === 0) ? 8 : 4;
+        const x1 = Math.cos(angle) * (digitalR - tickLen);
+        const y1 = Math.sin(angle) * (digitalR - tickLen);
+        const x2 = Math.cos(angle) * digitalR;
+        const y2 = Math.sin(angle) * digitalR;
+        ctx.beginPath();
+        ctx.moveTo(x1, y1);
+        ctx.lineTo(x2, y2);
+        ctx.strokeStyle = `rgba(${state.themeRGB}, ${0.08 + (t % 4 === 0 ? 0.06 : 0)})`;
+        ctx.lineWidth = (t % 4 === 0) ? 1.5 : 0.8;
+        ctx.stroke();
+      }
+
+      // --- ACCRETION DISK (3D ellipse) ---
       ctx.save();
       ctx.rotate(cfg.bhRotation * 0.3);
       for (let ring = 0; ring < 4; ring++) {
           const ringR = cfg.bhRadius * (1.8 + ring * 0.5);
-          const ringAlpha = (0.08 - ring * 0.015) * pulse;
+          const ringAlpha = (0.07 - ring * 0.012) * pulse;
           ctx.beginPath();
           ctx.ellipse(0, 0, ringR, ringR * 0.3, 0, 0, Math.PI * 2);
           ctx.strokeStyle = `rgba(${state.themeRGB}, ${ringAlpha})`;
@@ -2239,17 +2342,17 @@ function createNetworkBackground({ canvas, reducedMotion }) {
       }
       ctx.restore();
 
-      // Gravitational lensing circles (faint, pulsing)
+      // --- GRAVITATIONAL LENSING circles ---
       ctx.lineWidth = 0.5;
       for (let r = 1; r <= 5; r++) {
          const lensR = cfg.bhRadius * (1 + r * 0.35 + Math.sin(cfg.bhRotation + r) * 0.03);
          ctx.beginPath();
          ctx.arc(0, 0, lensR, 0, Math.PI * 2);
-         ctx.strokeStyle = `rgba(${state.themeRGB}, ${0.06 + Math.sin(now / 2000 + r) * 0.02})`;
+         ctx.strokeStyle = `rgba(${state.themeRGB}, ${0.05 + Math.sin(now / 2000 + r) * 0.02})`;
          ctx.stroke();
       }
 
-      // THE SINGULARITY (Black Void)
+      // --- THE SINGULARITY (Black Void) ---
       ctx.beginPath();
       ctx.arc(0, 0, cfg.bhRadius, 0, Math.PI * 2);
       ctx.fillStyle = "#000";
@@ -2258,7 +2361,7 @@ function createNetworkBackground({ canvas, reducedMotion }) {
       // Outer glow ring
       const glowGrd = ctx.createRadialGradient(0, 0, cfg.bhRadius * 0.8, 0, 0, cfg.bhRadius * 1.5);
       glowGrd.addColorStop(0, 'transparent');
-      glowGrd.addColorStop(0.5, `rgba(${state.themeRGB}, ${0.05 + (glitch ? 0.15 : 0)})`);
+      glowGrd.addColorStop(0.5, `rgba(${state.themeRGB}, ${0.06 + (glitch ? 0.15 : 0)})`);
       glowGrd.addColorStop(1, 'transparent');
       ctx.strokeStyle = glowGrd;
       ctx.lineWidth = 8 + (glitch ? 6 : 0);
