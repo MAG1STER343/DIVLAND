@@ -1723,16 +1723,37 @@ function createNetworkBackground({ canvas, reducedMotion }) {
   }
   initChains();
 
-  // Generate NEXUS data
+  // Generate NEXUS data (3 layers for depth)
   function initNexus() {
     state.nexusStreams = [];
-    for (let i = 0; i < 40; i++) {
+    // Layer 0: background (far, slow)
+    for (let i = 0; i < 15; i++) {
       state.nexusStreams.push({
         x: Math.random() * window.innerWidth,
         y: Math.random() * window.innerHeight,
-        len: 5 + Math.random() * 15,
+        len: 3 + Math.floor(Math.random() * 8),
+        speed: 1 + Math.random() * 3,
+        _layer: 0
+      });
+    }
+    // Layer 1: main (mid)
+    for (let i = 0; i < 30; i++) {
+      state.nexusStreams.push({
+        x: Math.random() * window.innerWidth,
+        y: Math.random() * window.innerHeight,
+        len: 5 + Math.floor(Math.random() * 15),
         speed: 2 + Math.random() * 8,
-        chars: []
+        _layer: 1
+      });
+    }
+    // Layer 2: foreground (near, fast, sparse)
+    for (let i = 0; i < 8; i++) {
+      state.nexusStreams.push({
+        x: Math.random() * window.innerWidth,
+        y: Math.random() * window.innerHeight,
+        len: 2 + Math.floor(Math.random() * 5),
+        speed: 6 + Math.random() * 12,
+        _layer: 2
       });
     }
   }
@@ -2146,7 +2167,55 @@ function createNetworkBackground({ canvas, reducedMotion }) {
     // Draw shapes
     state.particles.forEach((p, i) => drawShape(p, projected[i]));
 
-    // DRAW BLACK HOLE (PURIFIED)
+    // DRAW CONSTELLATION (3D STAR FIELD — depth layers)
+    if (state.constAlpha > 0.01) {
+        ctx.save();
+        ctx.globalAlpha = state.constAlpha;
+        
+        if (!state._constStars) {
+            state._constStars = [];
+            for (let k = 0; k < 100; k++) {
+                state._constStars.push({
+                    x: Math.random() * 2000 - 500,
+                    y: Math.random() * 2000 - 500,
+                    z: Math.random() * 1000 - 200,
+                    phase: Math.random() * Math.PI * 2,
+                    brightness: 0.3 + Math.random() * 0.5
+                });
+            }
+        }
+        
+        state._constStars.forEach(st => {
+            st.x += Math.sin(now / 12000 + st.phase) * 0.1;
+            st.y += Math.cos(now / 10000 + st.phase) * 0.08;
+            if (st.x < -300) st.x = state.w + 300; if (st.x > state.w + 300) st.x = -300;
+            if (st.y < -300) st.y = state.h + 300; if (st.y > state.h + 300) st.y = -300;
+            
+            const pr = project({ x: st.x - state.w/2, y: st.y - state.h/2, z: st.z });
+            const twinkle = st.brightness * (0.7 + Math.sin(now / 2000 + st.phase) * 0.3);
+            const distToMouse = Math.hypot(pr.x - state.mx, pr.y - state.my);
+            const mouseBoost = distToMouse < 250 ? (1 - distToMouse / 250) * 0.6 : 0;
+            const finalAlpha = twinkle * 0.3 + mouseBoost;
+            
+            if (finalAlpha > 0.02) {
+                const starGrd = ctx.createRadialGradient(pr.x, pr.y, 0, pr.x, pr.y, 6 * pr.s);
+                starGrd.addColorStop(0, `rgba(255, 255, 255, ${finalAlpha})`);
+                starGrd.addColorStop(0.4, `rgba(${state.themeRGB}, ${finalAlpha * 0.3})`);
+                starGrd.addColorStop(1, `rgba(${state.themeRGB}, 0)`);
+                ctx.fillStyle = starGrd;
+                ctx.fillRect(pr.x - 15, pr.y - 15, 30, 30);
+                
+                ctx.fillStyle = `rgba(255, 255, 255, ${finalAlpha * 0.8})`;
+                ctx.beginPath();
+                ctx.arc(pr.x, pr.y, 1 * pr.s, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        });
+        
+        ctx.restore();
+    }
+
+    // DRAW BLACK HOLE (3D — accretion disk + lensing)
     if (state.bhAlpha > 0.01) {
       cfg.bhRotation += 0.0035 * dt; 
       ctx.save();
@@ -2154,16 +2223,29 @@ function createNetworkBackground({ canvas, reducedMotion }) {
       ctx.globalAlpha = state.bhAlpha;
 
       const glitch = Math.random() < 0.04 ? 1 : 0;
-      const flicker = Math.random() < 0.08 ? 30 : 15;
+      const pulse = 1 + Math.sin(cfg.bhRotation * 5) * 0.1;
 
-      // Vortex Lines REMOVED for clean minimal Look
+      // Accretion disk (3D ellipse)
+      ctx.save();
+      ctx.rotate(cfg.bhRotation * 0.3);
+      for (let ring = 0; ring < 4; ring++) {
+          const ringR = cfg.bhRadius * (1.8 + ring * 0.5);
+          const ringAlpha = (0.08 - ring * 0.015) * pulse;
+          ctx.beginPath();
+          ctx.ellipse(0, 0, ringR, ringR * 0.3, 0, 0, Math.PI * 2);
+          ctx.strokeStyle = `rgba(${state.themeRGB}, ${ringAlpha})`;
+          ctx.lineWidth = 2 - ring * 0.3;
+          ctx.stroke();
+      }
+      ctx.restore();
 
-      // Gravitational lensing circles (faint)
+      // Gravitational lensing circles (faint, pulsing)
       ctx.lineWidth = 0.5;
       for (let r = 1; r <= 5; r++) {
+         const lensR = cfg.bhRadius * (1 + r * 0.35 + Math.sin(cfg.bhRotation + r) * 0.03);
          ctx.beginPath();
-         ctx.arc(0, 0, cfg.bhRadius * (1 + r * 0.35 + Math.sin(cfg.bhRotation + r) * 0.02), 0, Math.PI * 2);
-         ctx.strokeStyle = `rgba(${state.themeRGB}, 0.08)`;
+         ctx.arc(0, 0, lensR, 0, Math.PI * 2);
+         ctx.strokeStyle = `rgba(${state.themeRGB}, ${0.06 + Math.sin(now / 2000 + r) * 0.02})`;
          ctx.stroke();
       }
 
@@ -2173,8 +2255,18 @@ function createNetworkBackground({ canvas, reducedMotion }) {
       ctx.fillStyle = "#000";
       ctx.fill();
       
+      // Outer glow ring
+      const glowGrd = ctx.createRadialGradient(0, 0, cfg.bhRadius * 0.8, 0, 0, cfg.bhRadius * 1.5);
+      glowGrd.addColorStop(0, 'transparent');
+      glowGrd.addColorStop(0.5, `rgba(${state.themeRGB}, ${0.05 + (glitch ? 0.15 : 0)})`);
+      glowGrd.addColorStop(1, 'transparent');
+      ctx.strokeStyle = glowGrd;
+      ctx.lineWidth = 8 + (glitch ? 6 : 0);
+      ctx.beginPath();
+      ctx.arc(0, 0, cfg.bhRadius * 1.15, 0, Math.PI * 2);
+      ctx.stroke();
+
       // Central Glow Shadow (Pulsing)
-      const pulse = 1 + Math.sin(cfg.bhRotation * 5) * 0.1;
       const coreGrd = ctx.createRadialGradient(0, 0, cfg.bhRadius * 0.7 * pulse, 0, 0, cfg.bhRadius * 1.2);
       coreGrd.addColorStop(0, 'black');
       coreGrd.addColorStop(1, `rgba(${state.themeRGB}, ${0.4 + (glitch ? 0.4 : 0)})`);
@@ -2186,120 +2278,281 @@ function createNetworkBackground({ canvas, reducedMotion }) {
       ctx.globalAlpha = 1;
     }
 
-    // DRAW FLOWERS (DIGITAL GARDEN)
+    // DRAW FLOWERS (3D DIGITAL GARDEN — volumetric)
     if (state.flowerAlpha > 0.01) {
         ctx.save();
         ctx.globalAlpha = state.flowerAlpha;
+        
+        // Falling petal particles for depth
+        if (!state._petalParticles) {
+            state._petalParticles = [];
+            for (let i = 0; i < 30; i++) {
+                state._petalParticles.push({
+                    x: Math.random() * 2000 - 500,
+                    y: Math.random() * 2000 - 500,
+                    z: Math.random() * 800 - 200,
+                    size: 2 + Math.random() * 4,
+                    speed: 0.3 + Math.random() * 0.8,
+                    wobble: Math.random() * Math.PI * 2,
+                    wobbleSpeed: 0.01 + Math.random() * 0.02
+                });
+            }
+        }
+
+        // Draw falling petals (depth layer)
+        state._petalParticles.forEach(pt => {
+            pt.y += pt.speed * dt * 60;
+            pt.x += Math.sin(pt.wobble) * 0.3;
+            pt.wobble += pt.wobbleSpeed * dt * 60;
+            if (pt.y > state.h + 50) { pt.y = -50; pt.x = Math.random() * state.w; pt.z = Math.random() * 800 - 200; }
+            
+            const pr = project({ x: pt.x - state.w/2, y: pt.y - state.h/2, z: pt.z });
+            const a = 0.15 + (pt.z + 400) / 800 * 0.3;
+            ctx.fillStyle = `rgba(${state.themeRGB}, ${a})`;
+            ctx.beginPath();
+            ctx.ellipse(pr.x, pr.y, pt.size * pr.s, pt.size * pr.s * 0.6, pt.wobble * 0.5, 0, Math.PI * 2);
+            ctx.fill();
+        });
+
         const sway = Math.sin(now / 1500) * 15;
         
         state.flowers.forEach(f => {
             const swayX = Math.sin(now / 2000 + f.phase) * 10;
-            ctx.strokeStyle = `rgba(${state.themeRGB}, 0.25)`;
-            ctx.lineWidth = 1;
+            const swayZ = Math.cos(now / 2500 + f.phase) * 20;
             
+            // Draw edges with depth-based opacity
             f.edges.forEach(e => {
                 const v1 = f.vertices[e[0]];
                 const v2 = f.vertices[e[1]];
                 
-                // Project garden coordinates (base 0,0 center relative)
                 const pr1 = project({ 
                     x: v1.x + (e[0] > 0 ? swayX : 0), 
                     y: v1.y, 
-                    z: v1.z 
+                    z: v1.z + (e[0] > 0 ? swayZ : 0)
                 });
                 const pr2 = project({ 
                     x: v2.x + (e[1] > 0 ? swayX : 0), 
                     y: v2.y, 
-                    z: v2.z 
+                    z: v2.z + (e[1] > 0 ? swayZ : 0)
                 });
                 
+                const depthAlpha = 0.15 + ((v1.z + 50) / 100) * 0.2;
+                ctx.strokeStyle = `rgba(${state.themeRGB}, ${depthAlpha})`;
+                ctx.lineWidth = 0.8 + pr1.s * 0.5;
                 ctx.beginPath();
                 ctx.moveTo(pr1.x, pr1.y);
                 ctx.lineTo(pr2.x, pr2.y);
                 ctx.stroke();
             });
             
-            // Draw vertices as dots
-            ctx.fillStyle = `rgba(${state.themeRGB}, 0.6)`;
+            // Draw vertices as glowing dots
             f.vertices.forEach((v, idx) => {
                 const pr = project({ 
                     x: v.x + (idx > 0 ? swayX : 0), 
                     y: v.y, 
-                    z: v.z 
+                    z: v.z + (idx > 0 ? swayZ : 0)
                 });
+                const dotSize = (2 + (idx === 1 ? 2 : 0)) * pr.s;
+                
+                // Glow
+                const glowGrd = ctx.createRadialGradient(pr.x, pr.y, 0, pr.x, pr.y, dotSize * 4);
+                glowGrd.addColorStop(0, `rgba(${state.themeRGB}, 0.3)`);
+                glowGrd.addColorStop(1, `rgba(${state.themeRGB}, 0)`);
+                ctx.fillStyle = glowGrd;
+                ctx.fillRect(pr.x - dotSize * 4, pr.y - dotSize * 4, dotSize * 8, dotSize * 8);
+                
+                // Core dot
+                ctx.fillStyle = `rgba(${state.themeRGB}, ${0.5 + Math.sin(now / 1000 + idx) * 0.2})`;
                 ctx.beginPath();
-                ctx.arc(pr.x, pr.y, 2 * pr.s, 0, Math.PI * 2);
+                ctx.arc(pr.x, pr.y, dotSize, 0, Math.PI * 2);
                 ctx.fill();
             });
         });
         ctx.restore();
     }
 
-    // DRAW NEXUS (DIGITAL RAIN)
+    // DRAW NEXUS (3D DIGITAL RAIN — layered depth)
     if (state.nexusAlpha > 0.01) {
         ctx.save();
         ctx.globalAlpha = state.nexusAlpha;
-        ctx.font = "14px monospace";
-        ctx.fillStyle = `rgb(${state.themeRGB})`;
+        
+        // Background layer (far, dim)
+        ctx.font = "11px monospace";
         state.nexusStreams.forEach(s => {
+          if (s._layer !== 0) return;
+          s.y += s.speed * 0.4 * dt;
+          if (s.y > state.h) { s.y = -200; s.x = Math.random() * state.w; }
+          for (let i = 0; i < Math.floor(s.len * 0.6); i++) {
+            const ch = Math.random() > 0.3 ? (Math.random() > 0.5 ? "1" : "0") : "0123456789ABCDEF".charAt(Math.floor(Math.random() * 16));
+            ctx.fillStyle = `rgba(${state.themeRGB}, ${0.04 + Math.sin(now / 2000 + i) * 0.02})`;
+            ctx.fillText(ch, s.x, s.y - i * 16);
+          }
+        });
+        
+        // Main layer
+        ctx.font = "14px monospace";
+        state.nexusStreams.forEach(s => {
+          if (s._layer !== 1) return;
           s.y += s.speed * dt;
           if (s.y > state.h) { s.y = -200; s.x = Math.random() * state.w; }
           const dist = Math.hypot(s.x - state.mx, s.y - state.my);
-          const isGlitch = dist < 120;
+          const isGlitch = dist < 140;
+          
           for (let i = 0; i < s.len; i++) {
-            const char = (isGlitch || Math.random() < 0.05) ? "0123456789ABCDEF".charAt(Math.random() * 16) : (Math.random() > 0.5 ? "1" : "0");
+            const progress = i / s.len;
+            const char = (isGlitch || Math.random() < 0.05) ? "0123456789ABCDEF".charAt(Math.floor(Math.random() * 16)) : (Math.random() > 0.5 ? "1" : "0");
+            const alpha = (1 - progress) * 0.5 + (isGlitch ? 0.3 : 0);
+            
+            // Head glow
+            if (i === 0) {
+              ctx.shadowBlur = 12;
+              ctx.shadowColor = `rgba(${state.themeRGB}, 0.6)`;
+              ctx.fillStyle = `rgba(${state.themeRGB}, ${Math.min(1, alpha + 0.3)})`;
+            } else {
+              ctx.shadowBlur = 0;
+              ctx.fillStyle = `rgba(${state.themeRGB}, ${alpha})`;
+            }
             ctx.fillText(char, s.x, s.y - i * 18);
           }
+          ctx.shadowBlur = 0;
         });
+        
+        // Foreground layer (near, bright, large)
+        ctx.font = "18px monospace";
+        state.nexusStreams.forEach(s => {
+          if (s._layer !== 2) return;
+          s.y += s.speed * 1.6 * dt;
+          if (s.y > state.h) { s.y = -300; s.x = Math.random() * state.w; }
+          for (let i = 0; i < Math.floor(s.len * 0.4); i++) {
+            const ch = "0123456789ABCDEF".charAt(Math.floor(Math.random() * 16));
+            ctx.fillStyle = `rgba(${state.themeRGB}, ${(1 - i / (s.len * 0.4)) * 0.12})`;
+            ctx.fillText(ch, s.x, s.y - i * 24);
+          }
+        });
+        
         ctx.restore();
     }
 
-    // DRAW NEBULA (PLASMA CLOUDS)
+    // DRAW NEBULA (3D VOLUMETRIC PLASMA — layered depth)
     if (state.nebulaAlpha > 0.01) {
         ctx.save();
         ctx.globalAlpha = state.nebulaAlpha;
-        state.nebulaClouds.forEach(c => {
-            c.x += c.vx * dt; c.y += c.vy * dt;
-            if (c.x < -c.size) c.x = state.w + c.size; if (c.x > state.w + c.size) c.x = -c.size;
-            if (c.y < -c.size) c.y = state.h + c.size; if (c.y > state.h + c.size) c.y = -c.size;
+        
+        // Deep background clouds (large, slow, dim)
+        state.nebulaClouds.forEach((c, ci) => {
+            c.x += c.vx * dt * 0.5; c.y += c.vy * dt * 0.5;
+            if (c.x < -c.size * 2) c.x = state.w + c.size; if (c.x > state.w + c.size) c.x = -c.size;
+            if (c.y < -c.size * 2) c.y = state.h + c.size; if (c.y > state.h + c.size) c.y = -c.size;
             
             const dx = state.mx - c.x; const dy = state.my - c.y;
             const d = Math.hypot(dx, dy);
-            if (d < 300) { c.vx += dx * 0.0001; c.vy += dy * 0.0001; }
+            if (d < 350) { c.vx += dx * 0.00008; c.vy += dy * 0.00008; }
             
-            const grd = ctx.createRadialGradient(c.x, c.y, 0, c.x, c.y, c.size);
-            grd.addColorStop(0, `rgba(${state.themeRGB}, 0.08)`);
+            // Multi-layer radial gradient for volume
+            const pulse = 1 + Math.sin(now / 5000 + ci * 1.5) * 0.2;
+            const sz = c.size * pulse;
+            
+            const grd = ctx.createRadialGradient(c.x, c.y, 0, c.x, c.y, sz);
+            grd.addColorStop(0, `rgba(${state.themeRGB}, ${0.06 + Math.sin(now / 3000 + ci) * 0.02})`);
+            grd.addColorStop(0.3, `rgba(${state.themeRGB}, 0.035)`);
+            grd.addColorStop(0.7, `rgba(${state.themeRGB}, 0.01)`);
             grd.addColorStop(1, `rgba(${state.themeRGB}, 0)`);
             ctx.fillStyle = grd;
             ctx.fillRect(0, 0, state.w, state.h);
+            
+            // Inner bright core
+            const coreGrd = ctx.createRadialGradient(c.x, c.y, 0, c.x, c.y, sz * 0.3);
+            coreGrd.addColorStop(0, `rgba(${state.themeRGB}, ${0.04 * pulse})`);
+            coreGrd.addColorStop(1, `rgba(${state.themeRGB}, 0)`);
+            ctx.fillStyle = coreGrd;
+            ctx.fillRect(0, 0, state.w, state.h);
         });
+        
+        // Floating bright particles within nebula
+        if (!state._nebulaParticles) {
+            state._nebulaParticles = [];
+            for (let i = 0; i < 20; i++) {
+                state._nebulaParticles.push({
+                    x: Math.random() * 2000 - 500,
+                    y: Math.random() * 2000 - 500,
+                    z: Math.random() * 600 - 100,
+                    phase: Math.random() * Math.PI * 2
+                });
+            }
+        }
+        state._nebulaParticles.forEach(np => {
+            np.x += Math.sin(now / 8000 + np.phase) * 0.2;
+            np.y += Math.cos(now / 6000 + np.phase) * 0.15;
+            if (np.x < -200) np.x = state.w + 200; if (np.x > state.w + 200) np.x = -200;
+            if (np.y < -200) np.y = state.h + 200; if (np.y > state.h + 200) np.y = -200;
+            
+            const pr = project({ x: np.x - state.w/2, y: np.y - state.h/2, z: np.z });
+            const flicker = 0.15 + Math.sin(now / 1500 + np.phase) * 0.1;
+            
+            const starGrd = ctx.createRadialGradient(pr.x, pr.y, 0, pr.x, pr.y, 8 * pr.s);
+            starGrd.addColorStop(0, `rgba(255, 255, 255, ${flicker})`);
+            starGrd.addColorStop(0.5, `rgba(${state.themeRGB}, ${flicker * 0.4})`);
+            starGrd.addColorStop(1, `rgba(${state.themeRGB}, 0)`);
+            ctx.fillStyle = starGrd;
+            ctx.fillRect(pr.x - 20, pr.y - 20, 40, 40);
+        });
+        
         ctx.restore();
     }
 
-    // DRAW PULSE (SHOCKWAVES)
+    // DRAW PULSE (3D SHOCKWAVES — perspective rings)
     if (state.pulseAlpha > 0.01) {
-        if (Math.random() < 0.02 * dt) {
-            state.pulses.push({ x: Math.random() * state.w, y: Math.random() * state.h, r: 0, max: 200 + Math.random() * 400 });
+        if (Math.random() < 0.025 * dt) {
+            state.pulses.push({
+                x: Math.random() * state.w, y: Math.random() * state.h,
+                z: Math.random() * 400 - 100,
+                r: 0, max: 200 + Math.random() * 400,
+                phase: Math.random() * Math.PI * 2
+            });
         }
         ctx.save();
         ctx.globalAlpha = state.pulseAlpha;
         state.pulses.forEach((p, i) => {
-            p.r += 4 * dt;
+            p.r += 3.5 * dt;
             const alpha = 1 - (p.r / p.max);
             if (alpha <= 0) { state.pulses.splice(i, 1); return; }
-            ctx.strokeStyle = `rgba(${state.themeRGB}, ${alpha * 0.3})`;
-            ctx.lineWidth = 2;
+            
+            const pr = project({ x: p.x - state.w/2, y: p.y - state.h/2, z: p.z });
+            const perspectiveR = p.r * pr.s;
+            
+            // Outer ring glow
+            ctx.strokeStyle = `rgba(${state.themeRGB}, ${alpha * 0.15})`;
+            ctx.lineWidth = 3;
             ctx.beginPath();
-            ctx.rect(p.x - p.r/2, p.y - p.r/2, p.r, p.r);
+            ctx.ellipse(pr.x, pr.y, perspectiveR, perspectiveR * 0.6, 0, 0, Math.PI * 2);
             ctx.stroke();
+            
+            // Inner ring
+            ctx.strokeStyle = `rgba(${state.themeRGB}, ${alpha * 0.25})`;
+            ctx.lineWidth = 1.5;
             ctx.beginPath();
-            ctx.arc(p.x, p.y, p.r * 0.7, 0, Math.PI * 2);
+            ctx.ellipse(pr.x, pr.y, perspectiveR * 0.7, perspectiveR * 0.42, 0, 0, Math.PI * 2);
             ctx.stroke();
+            
+            // Center square (3D tilted)
+            const sq = perspectiveR * 0.3;
+            ctx.strokeStyle = `rgba(${state.themeRGB}, ${alpha * 0.2})`;
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.ellipse(pr.x, pr.y, sq, sq * 0.5, p.phase, 0, Math.PI * 2);
+            ctx.stroke();
+            
+            // Center dot
+            const coreGrd = ctx.createRadialGradient(pr.x, pr.y, 0, pr.x, pr.y, 10);
+            coreGrd.addColorStop(0, `rgba(255, 255, 255, ${alpha * 0.3})`);
+            coreGrd.addColorStop(1, `rgba(${state.themeRGB}, 0)`);
+            ctx.fillStyle = coreGrd;
+            ctx.fillRect(pr.x - 10, pr.y - 10, 20, 20);
         });
         ctx.restore();
     }
 
-    // DRAW CHAINS (MOVING LINKS)
+    // DRAW CHAINS (3D MOVING LINKS — perspective depth)
     if (state.chainsAlpha > 0.01) {
         ctx.save();
         ctx.globalAlpha = state.chainsAlpha;
@@ -2310,13 +2563,25 @@ function createNetworkBackground({ canvas, reducedMotion }) {
             const fullLink = linkW + c.gap;
             const scroll = c.offset % fullLink;
             
-            ctx.strokeStyle = `rgba(${state.themeRGB}, ${0.15 + c.z * 0.2})`;
-            ctx.lineWidth = 1 + c.z * 2;
+            // 3D perspective: chains closer to center are brighter/larger
+            const distFromCenter = Math.abs(c.y - state.h / 2) / (state.h / 2);
+            const depthAlpha = (1 - distFromCenter * 0.4) * (0.15 + c.z * 0.2);
+            const depthScale = 1 + c.z * 0.5;
+            
+            ctx.strokeStyle = `rgba(${state.themeRGB}, ${depthAlpha})`;
+            ctx.lineWidth = (1 + c.z * 2) * depthScale;
+            
+            // Subtle glow for front chains
+            if (c.z > 0.6) {
+                ctx.shadowBlur = 8;
+                ctx.shadowColor = `rgba(${state.themeRGB}, 0.15)`;
+            }
             
             for (let x = -fullLink; x < state.w + fullLink; x += fullLink) {
                 const finalX = x + scroll;
-                // Shape: rounded rectangle
                 const r = 8;
+                
+                // Rounded rectangle link
                 ctx.beginPath();
                 ctx.moveTo(finalX + r, c.y);
                 ctx.lineTo(finalX + linkW - r, c.y);
@@ -2329,8 +2594,19 @@ function createNetworkBackground({ canvas, reducedMotion }) {
                 ctx.quadraticCurveTo(finalX, c.y, finalX + r, c.y);
                 ctx.stroke();
                 
-                // Inner link (connection) line maybe? Skip for clean look.
+                // Inner glow line
+                if (c.z > 0.4) {
+                    ctx.strokeStyle = `rgba(${state.themeRGB}, ${depthAlpha * 0.4})`;
+                    ctx.lineWidth = 0.5;
+                    ctx.beginPath();
+                    ctx.moveTo(finalX + r + 2, c.y + 2);
+                    ctx.lineTo(finalX + linkW - r - 2, c.y + 2);
+                    ctx.stroke();
+                    ctx.strokeStyle = `rgba(${state.themeRGB}, ${depthAlpha})`;
+                    ctx.lineWidth = (1 + c.z * 2) * depthScale;
+                }
             }
+            ctx.shadowBlur = 0;
         });
         ctx.restore();
     }
