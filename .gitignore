@@ -5,6 +5,7 @@ server/node_modules/
 # User uploads (these are excluded to keep the GitHub repo small)
 sounds/
 !sounds/diversipapa.mp3
+!sounds/camera-flash.mp3
 videos/
 avatars/
 
