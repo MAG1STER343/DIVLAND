@@ -1310,8 +1310,11 @@
   let participantsPage = 1;
   const PARTICIPANTS_PER_PAGE = 20;
   let participantSearchTerm = "";
-  const cardSwipeSound = new Audio("/sounds/tore-the-map.mp3");
-  cardSwipeSound.volume = 0.25;
+  function playSwipeSound() {
+    const s = new Audio("/sounds/tore-the-map.mp3");
+    s.volume = 0.3;
+    s.play().catch(() => {});
+  }
 
   const bgNameMap = {
     HOLO: "Голограф", BLACK_HOLE: "Чёрная Дыра", FLOWERS: "Цветы",
@@ -1422,7 +1425,7 @@
 
         item.onclick = (e) => {
           if (e.target.tagName !== 'BUTTON') {
-            cardSwipeSound.currentTime = 0; cardSwipeSound.play();
+            playSwipeSound();
             window.history.pushState({}, "", `/profile/${u.slug}`);
             window.location.reload();
           }
@@ -1456,7 +1459,7 @@
           const prev = document.createElement("button");
           prev.className = "btn ghost minimal";
           prev.textContent = "Назад";
-          prev.onclick = () => { participantsPage--; cardSwipeSound.currentTime = 0; cardSwipeSound.play(); loadParticipants(); };
+          prev.onclick = () => { participantsPage--; playSwipeSound(); loadParticipants(); };
           pagWrapper.appendChild(prev);
         }
 
@@ -1470,7 +1473,7 @@
           const next = document.createElement("button");
           next.className = "btn ghost minimal";
           next.textContent = "Далее";
-          next.onclick = () => { participantsPage++; cardSwipeSound.currentTime = 0; cardSwipeSound.play(); loadParticipants(); };
+          next.onclick = () => { participantsPage++; playSwipeSound(); loadParticipants(); };
           pagWrapper.appendChild(next);
         }
 
