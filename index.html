@@ -657,77 +657,90 @@
 
         <div class="centerStage">
 
+          <div class="dieversi-holo-wrapper">
 
-          <article class="card glass wide glitchCard">
-
-
-            <div class="glitchTitle glitch-on-hover" data-text="DIEVERSI">
-
-
-              <span class="glitchTitle__base">DIEVERSI</span>
-
-
+            <div class="holo-suitcase holo-suitcase--left" id="suitcaseLeft">
+              <div class="suitcase-body">
+                <div class="suitcase-handle"></div>
+                <div class="suitcase-latch"></div>
+                <div class="suitcase-grid"></div>
+                <div class="suitcase-label mono">DATA</div>
+              </div>
+              <div class="suitcase-shadow"></div>
+              <div class="suitcase-data-stream" id="dataStreamLeft"></div>
             </div>
 
+            <article class="card glass wide glitchCard dieversi-holo-widget" id="dieversiWidget">
 
-            <div class="caseTop">
+              <div class="holo-scanline"></div>
+              <div class="holo-flicker"></div>
 
-
-              <button class="btn primary glitch-on-hover" type="button" id="openCaseBtn">Открыть Обо мне</button>
-
-
-              <div class="muted mono" id="caseStatus">ОБО МНЕ: ЗАКРЫТО</div>
+              <div class="glitchTitle glitch-on-hover" data-text="DIEVERSI">
 
 
-            </div>
-
-
-
-
-
-            <div class="hr"></div>
-
-
-
-
-
-            <div class="caseLayout">
-
-
-              <div class="caseImgWrap">
-
-
-                <img
-
-
-                  id="dieversiCaseImg"
-
-
-                  src="/assets/dieversi-case.png"
-
-
-                  alt="DIEVERSI case"
-
-
-                  class="caseImg glitch-on-hover"
-
-
-                />
+                <span class="glitchTitle__base">DIEVERSI</span>
 
 
               </div>
 
 
-              <div class="caseTextWrap">
+              <div class="caseTop">
 
 
-                <pre class="caseText mono glitch-on-hover" id="caseOutput" aria-live="polite"></pre>
+                <button class="btn primary glitch-on-hover" type="button" id="openCaseBtn">Открыть Обо мне</button>
 
 
-                <div class="caseHint muted" id="caseHint">
+                <div class="muted mono" id="caseStatus">ОБО МНЕ: ЗАКРЫТО</div>
 
 
-                  Нажми «Открыть Обо мне», чтобы получить доступ к информации.
+              </div>
+
+
+
+              <div class="hr"></div>
+
+
+
+              <div class="caseLayout">
+
+
+                <div class="caseImgWrap">
+
+
+                  <img
+
+
+                    id="dieversiCaseImg"
+
+
+                    src="/assets/dieversi-case.png"
+
+
+                    alt="DIEVERSI case"
+
+
+                    class="caseImg glitch-on-hover"
+
+
+                  />
+
+
+                </div>
+
+
+                <div class="caseTextWrap">
+
+
+                  <pre class="caseText mono glitch-on-hover" id="caseOutput" aria-live="polite"></pre>
+
+
+                  <div class="caseHint muted" id="caseHint">
+
+
+                    Нажми «Открыть Обо мне», чтобы получить доступ к информации.
+
+
+                  </div>
 
 
                 </div>
@@ -736,53 +749,60 @@
               </div>
 
 
-            </div>
+
+              <div class="hr"></div>
 
 
+              <div class="libraryBox" style="display: none !important;">
 
 
-
-            <div class="hr"></div>
-
-
-            <div class="libraryBox" style="display: none !important;">
+                <div class="cardTitle">DIEVERSI / Library</div>
 
 
-              <div class="cardTitle">DIEVERSI / Library</div>
+                <div class="libraryRow">
 
 
-              <div class="libraryRow">
+                  <span class="muted">Sound:</span>
 
 
-                <span class="muted">Sound:</span>
+                  <span class="mono" id="librarySound">—</span>
 
 
-                <span class="mono" id="librarySound">—</span>
+                </div>
+
+
+                <div class="libraryRow">
+
+
+                  <span class="muted">Video:</span>
+
+
+                  <span class="mono" id="libraryVideo">—</span>
+
+
+                </div>
+
+
+                <div class="cardHint muted">Первые файлы в `sounds/` и `videos/` считаются его.</div>
 
 
               </div>
 
 
-              <div class="libraryRow">
+            </article>
 
-
-                <span class="muted">Video:</span>
-
-
-                <span class="mono" id="libraryVideo">—</span>
-
-
+            <div class="holo-suitcase holo-suitcase--right" id="suitcaseRight">
+              <div class="suitcase-body">
+                <div class="suitcase-handle"></div>
+                <div class="suitcase-latch"></div>
+                <div class="suitcase-grid"></div>
+                <div class="suitcase-label mono">FILES</div>
               </div>
-
-
-              <div class="cardHint muted">Первые файлы в `sounds/` и `videos/` считаются его.</div>
-
-
+              <div class="suitcase-shadow"></div>
+              <div class="suitcase-data-stream" id="dataStreamRight"></div>
             </div>
 
-
-          </article>
-
+          </div>
 
         </div>
 

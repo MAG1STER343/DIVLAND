@@ -2963,4 +2963,42 @@ function createNetworkBackground({ canvas, reducedMotion }) {
 
   return { setPointer, freezeFor, pulseGlitch, setZoom, setThemeColor, reposition };
 }
+
+// === DIEVERSI Hologram + Suitcase Glitch System ===
+(function initHologramEffects() {
+  const widget = document.getElementById("dieversiWidget");
+  const leftCase = document.getElementById("suitcaseLeft");
+  const rightCase = document.getElementById("suitcaseRight");
+  if (!widget) return;
+
+  function triggerWidgetFreeze() {
+    widget.classList.add("is-freezing");
+    setTimeout(() => widget.classList.remove("is-freezing"), 500);
+  }
+
+  function triggerSuitcaseGlitch(el) {
+    if (!el) return;
+    el.classList.add("is-glitching");
+    setTimeout(() => el.classList.remove("is-glitching"), 400);
+  }
+
+  function randomGlitchCycle() {
+    const delay = 2000 + Math.random() * 6000;
+    setTimeout(() => {
+      const roll = Math.random();
+      if (roll < 0.3) {
+        triggerWidgetFreeze();
+        triggerSuitcaseGlitch(leftCase);
+        setTimeout(() => triggerSuitcaseGlitch(rightCase), 80 + Math.random() * 150);
+      } else if (roll < 0.6) {
+        triggerSuitcaseGlitch(leftCase);
+      } else {
+        triggerSuitcaseGlitch(rightCase);
+      }
+      randomGlitchCycle();
+    }, delay);
+  }
+
+  randomGlitchCycle();
+})();
 })();

@@ -3161,3 +3161,329 @@ body::after {
   z-index: 0;
 }
 
+/* === DIEVERSI Hologram + Floating Suitcases === */
+
+.dieversi-holo-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 30px;
+  width: min(1200px, 95vw);
+  perspective: 1200px;
+  position: relative;
+}
+
+/* --- Hologram Widget --- */
+.dieversi-holo-widget {
+  position: relative;
+  overflow: hidden;
+  animation: holoFloat 6s ease-in-out infinite;
+  z-index: 2;
+}
+
+.dieversi-holo-widget::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  border: 1px solid rgba(var(--theme-glow), 0.25);
+  pointer-events: none;
+  z-index: 5;
+  box-shadow:
+    inset 0 0 30px rgba(var(--theme-glow), 0.05),
+    0 0 40px rgba(var(--theme-glow), 0.08);
+}
+
+.holo-scanline {
+  position: absolute;
+  top: -100%;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(
+    to bottom,
+    transparent,
+    rgba(var(--theme-glow), 0.2),
+    transparent
+  );
+  z-index: 6;
+  pointer-events: none;
+  animation: holoScanline 4s linear infinite;
+}
+
+.holo-flicker {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  z-index: 4;
+  opacity: 0;
+  background: rgba(var(--theme-glow), 0.03);
+  animation: holoFlicker 8s ease-in-out infinite;
+}
+
+.dieversi-holo-widget.is-freezing {
+  animation: holoFreeze 0.5s steps(8) forwards;
+}
+
+.dieversi-holo-widget.is-freezing .holo-flicker {
+  opacity: 1;
+  background: rgba(var(--theme-glow), 0.06);
+  animation: none;
+}
+
+.dieversi-holo-widget.is-freezing .holo-scanline {
+  animation-duration: 0.3s;
+}
+
+@keyframes holoFloat {
+  0%, 100% {
+    transform: translateY(0) rotateX(0deg);
+    box-shadow:
+      0 20px 60px rgba(0,0,0,0.4),
+      0 0 40px rgba(var(--theme-glow), 0.06);
+  }
+  50% {
+    transform: translateY(-8px) rotateX(0.5deg);
+    box-shadow:
+      0 30px 70px rgba(0,0,0,0.3),
+      0 0 60px rgba(var(--theme-glow), 0.1);
+  }
+}
+
+@keyframes holoScanline {
+  0% { top: -5%; }
+  100% { top: 105%; }
+}
+
+@keyframes holoFlicker {
+  0%, 90%, 100% { opacity: 0; }
+  92% { opacity: 0.6; }
+  94% { opacity: 0; }
+  96% { opacity: 0.3; }
+  98% { opacity: 0; }
+}
+
+@keyframes holoFreeze {
+  0% { filter: none; transform: translateY(0); }
+  10% { filter: contrast(1.6) saturate(0.3); transform: translate(-2px, 1px); }
+  20% { filter: hue-rotate(40deg) brightness(1.2); transform: translate(3px, -1px); }
+  30% { filter: contrast(1.8) saturate(0.1); transform: translate(-1px, 2px) skewX(0.5deg); }
+  40% { filter: none; transform: translate(1px, -1px); }
+  50% { filter: contrast(1.4) brightness(1.3); transform: translate(-3px, 0); }
+  60% { filter: hue-rotate(-20deg) saturate(0.5); transform: translate(2px, 1px); }
+  70% { filter: contrast(1.2); transform: translate(0, -2px) skewX(-0.3deg); }
+  80% { filter: brightness(1.4) saturate(0.2); transform: translate(-1px, 1px); }
+  90% { filter: contrast(1.5); transform: translate(1px, 0); }
+  100% { filter: none; transform: translateY(0); }
+}
+
+/* --- Floating Suitcases --- */
+.holo-suitcase {
+  position: relative;
+  flex-shrink: 0;
+  z-index: 1;
+}
+
+.holo-suitcase--left {
+  animation: suitcaseFlyLeft 7s ease-in-out infinite;
+}
+
+.holo-suitcase--right {
+  animation: suitcaseFlyRight 8s ease-in-out infinite;
+  animation-delay: -3s;
+}
+
+.suitcase-body {
+  width: 80px;
+  height: 60px;
+  border: 2px solid rgba(var(--theme-glow), 0.5);
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(8px);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  box-shadow:
+    0 0 20px rgba(var(--theme-glow), 0.15),
+    inset 0 0 15px rgba(var(--theme-glow), 0.05);
+  animation: suitcaseGlitch 5s ease-in-out infinite;
+}
+
+.suitcase-handle {
+  position: absolute;
+  top: -10px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 30px;
+  height: 8px;
+  border: 2px solid rgba(var(--theme-glow), 0.4);
+  border-bottom: none;
+  border-radius: 6px 6px 0 0;
+}
+
+.suitcase-latch {
+  width: 12px;
+  height: 4px;
+  background: rgba(var(--theme-glow), 0.5);
+  border-radius: 2px;
+  margin-top: 2px;
+}
+
+.suitcase-grid {
+  width: 50px;
+  height: 28px;
+  background:
+    repeating-linear-gradient(
+      0deg,
+      rgba(var(--theme-glow), 0.12) 0px,
+      rgba(var(--theme-glow), 0.12) 1px,
+      transparent 1px,
+      transparent 5px
+    ),
+    repeating-linear-gradient(
+      90deg,
+      rgba(var(--theme-glow), 0.08) 0px,
+      rgba(var(--theme-glow), 0.08) 1px,
+      transparent 1px,
+      transparent 8px
+    );
+  border: 1px solid rgba(var(--theme-glow), 0.2);
+  border-radius: 3px;
+}
+
+.suitcase-label {
+  font-size: 7px;
+  letter-spacing: 2px;
+  color: rgba(var(--theme-glow), 0.6);
+  text-transform: uppercase;
+}
+
+.suitcase-shadow {
+  width: 60px;
+  height: 8px;
+  margin: 6px auto 0;
+  background: radial-gradient(ellipse, rgba(var(--theme-glow), 0.15), transparent 70%);
+  border-radius: 50%;
+  animation: shadowPulse 3s ease-in-out infinite;
+}
+
+.suitcase-data-stream {
+  position: absolute;
+  top: 50%;
+  width: 2px;
+  height: 0;
+  background: linear-gradient(to bottom, transparent, rgba(var(--theme-glow), 0.6), transparent);
+  pointer-events: none;
+  opacity: 0;
+}
+
+.holo-suitcase--left .suitcase-data-stream {
+  right: -20px;
+}
+
+.holo-suitcase--right .suitcase-data-stream {
+  left: -20px;
+}
+
+.holo-suitcase.is-glitching .suitcase-data-stream {
+  height: 80px;
+  opacity: 1;
+  animation: dataStreamPulse 0.3s steps(4) forwards;
+}
+
+.holo-suitcase.is-glitching .suitcase-body {
+  animation: suitcaseHardGlitch 0.4s steps(6) forwards;
+}
+
+@keyframes suitcaseFlyLeft {
+  0%, 100% {
+    transform: translate(0, 0) rotate(-3deg) scale(0.95);
+  }
+  25% {
+    transform: translate(-10px, -15px) rotate(-5deg) scale(1);
+  }
+  50% {
+    transform: translate(5px, -25px) rotate(-2deg) scale(0.98);
+  }
+  75% {
+    transform: translate(-15px, -10px) rotate(-6deg) scale(1.02);
+  }
+}
+
+@keyframes suitcaseFlyRight {
+  0%, 100% {
+    transform: translate(0, 0) rotate(3deg) scale(0.95);
+  }
+  25% {
+    transform: translate(10px, -20px) rotate(5deg) scale(1);
+  }
+  50% {
+    transform: translate(-5px, -10px) rotate(2deg) scale(1.02);
+  }
+  75% {
+    transform: translate(15px, -25px) rotate(6deg) scale(0.98);
+  }
+}
+
+@keyframes suitcaseGlitch {
+  0%, 85%, 100% {
+    opacity: 1;
+    filter: none;
+  }
+  87% {
+    opacity: 0.6;
+    filter: hue-rotate(30deg);
+    transform: translate(2px, -1px);
+  }
+  89% {
+    opacity: 1;
+    filter: none;
+    transform: translate(-1px, 1px);
+  }
+  91% {
+    opacity: 0.4;
+    filter: brightness(1.5);
+    transform: translate(0, -2px);
+  }
+  93% {
+    opacity: 0.9;
+    filter: none;
+    transform: translate(1px, 0);
+  }
+}
+
+@keyframes suitcaseHardGlitch {
+  0% { filter: none; transform: translate(0); }
+  15% { filter: hue-rotate(90deg) contrast(2); transform: translate(5px, -3px) skewX(5deg); }
+  30% { filter: saturate(0); transform: translate(-4px, 2px) skewX(-3deg); }
+  45% { filter: hue-rotate(-60deg) brightness(1.5); transform: translate(3px, 1px); }
+  60% { filter: contrast(1.5); transform: translate(-2px, -4px) skewX(2deg); }
+  75% { filter: hue-rotate(30deg); transform: translate(1px, 3px); }
+  100% { filter: none; transform: translate(0); }
+}
+
+@keyframes shadowPulse {
+  0%, 100% { transform: scaleX(1); opacity: 0.5; }
+  50% { transform: scaleX(1.3); opacity: 0.8; }
+}
+
+@keyframes dataStreamPulse {
+  0% { height: 0; opacity: 0; }
+  50% { height: 80px; opacity: 1; }
+  100% { height: 0; opacity: 0; }
+}
+
+/* Responsive: hide suitcases on small screens */
+@media (max-width: 900px) {
+  .holo-suitcase {
+    display: none;
+  }
+  .dieversi-holo-wrapper {
+    gap: 0;
+  }
+}
+
