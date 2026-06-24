@@ -158,6 +158,7 @@
             setupCustomization();
           }
         }
+        initPromoSystem();
       } else {
         // Guest mode - hide owner-only features
         $("#headerUser")?.classList.add("hidden");
@@ -641,9 +642,74 @@
             widgets.forEach(w => {
               w.classList.remove("widget-animated");
               w.classList.add("is-visible");
-            });
-          }
-        }
+      });
+    }
+
+    // Widget Palette Modal
+    const widgetPaletteBtn = $("#widgetPaletteBtn");
+    const widgetPaletteModal = $("#widgetPaletteModal");
+    const widgetPaletteGrid = $("#widgetPaletteGrid");
+    if (widgetPaletteBtn && widgetPaletteModal) {
+      widgetPaletteBtn.onclick = () => {
+        const currentColor = me ? (me.bgColor || "default") : "default";
+        $$(".palette-swatch", widgetPaletteGrid).forEach(s => {
+          s.classList.toggle("is-active", s.dataset.color === currentColor);
+        });
+        showModal("widgetPaletteModal");
+      };
+      if (widgetPaletteGrid) {
+        $$(".palette-swatch", widgetPaletteGrid).forEach(s => {
+          s.onclick = async () => {
+            const color = s.dataset.color;
+            if (!color) return;
+            try {
+              document.body.setAttribute("data-theme", color);
+              $$(".palette-swatch", widgetPaletteGrid).forEach(x => x.classList.toggle("is-active", x === s));
+              $$(".colorBtn", colorPicker).forEach(b => b.classList.toggle("active", b.dataset.color === color));
+              if (background && background.setThemeColor) background.setThemeColor(color);
+              await apiJson("/api/profile/update", { method: "POST", body: { bgColor: color } });
+              if (me) me.bgColor = color;
+              showToast("Цвет обновлен");
+            } catch (e) {
+              showToast("Ошибка сохранения");
+            }
+          };
+        });
+      }
+    }
+
+    // Background Palette Modal
+    const bgPaletteBtn = $("#bgPaletteBtn");
+    const bgPaletteModal = $("#bgPaletteModal");
+    const bgPaletteGrid = $("#bgPaletteGrid");
+    if (bgPaletteBtn && bgPaletteModal) {
+      bgPaletteBtn.onclick = () => {
+        const currentBg = me ? (me.activeBackground || "HOLO") : "HOLO";
+        $$(".palette-swatch", bgPaletteGrid).forEach(s => {
+          s.classList.toggle("is-active", s.dataset.bg === currentBg);
+        });
+        showModal("bgPaletteModal");
+      };
+      if (bgPaletteGrid) {
+        $$(".palette-swatch", bgPaletteGrid).forEach(s => {
+          s.onclick = async () => {
+            const bgId = s.dataset.bg;
+            if (!bgId) return;
+            try {
+              document.body.setAttribute("data-background", bgId);
+              $$(".palette-swatch", bgPaletteGrid).forEach(x => x.classList.toggle("is-active", x === s));
+              if (background && background.setThemeColor && me) background.setThemeColor(me.bgColor || "default");
+              await apiJson("/api/background/set", { method: "POST", body: { backgroundId: bgId } });
+              if (me) me.activeBackground = bgId;
+              showToast("Фон обновлен");
+            } catch (e) {
+              showToast("Ошибка сохранения");
+            }
+          };
+        });
+      }
+    }
+  }
       });
       setActiveNav(viewName);
       currentViewName = viewName;
@@ -1781,6 +1847,7 @@
   async function initPromoSystem() {
     const container = $("#promoWidgetContainer");
     if (!container) return;
+    if (!me) { container.innerHTML = ""; return; }
 
     let currentFullCode = "";
     let timerId = null;
@@ -1912,6 +1979,9 @@ function createNetworkBackground({ canvas, reducedMotion }) {
      red: "255, 80, 80",
      purple: "140, 80, 255",
      blue: "80, 180, 255",
+     cyan: "0, 229, 255",
+     orange: "255, 140, 0",
+     yellow: "255, 230, 0",
      default: "255, 255, 255"
   };
 

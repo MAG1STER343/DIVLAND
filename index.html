@@ -495,21 +495,29 @@
 
               <div class="mediaControls row">
 
-
                 <button class="btn ghost" type="button" id="pickAudioBtn">Добавить музыку</button>
-
 
                 <button class="btn ghost" type="button" id="removeAudioBtn" hidden>Убрать музыку</button>
 
-
                 <input class="fileInput" id="audioFile" type="file" accept=".mp3" hidden />
-
 
                 <button class="btn ghost" type="button" id="openIntegrationsBtn">Интеграция</button>
 
-
                 <button class="btn ghost" type="button" id="bgSettingsBtn">Настройка фона</button>
 
+              </div>
+
+              <div class="mediaControls row">
+
+                <button class="btn ghost palette-btn" type="button" id="widgetPaletteBtn">
+                  <span class="palette-btn-dot" style="background:var(--theme-glow-raw,#fff)"></span>
+                  Палитра виджета
+                </button>
+
+                <button class="btn ghost palette-btn" type="button" id="bgPaletteBtn">
+                  <span class="palette-btn-dot palette-btn-dot--bg"></span>
+                  Палитра фона
+                </button>
 
               </div>
 
@@ -645,6 +653,88 @@
             <!-- Populated by JS -->
           </div>
           <button class="btn primary mt-20" onclick="hideModal('emojiModal')" style="width: 100%;">Закрыть</button>
+        </div>
+      </div>
+
+      <!-- Widget Palette Modal -->
+      <div class="modal hidden" id="widgetPaletteModal">
+        <div class="modalContent glass glitchCard">
+          <button class="close-x" onclick="hideModal('widgetPaletteModal')">×</button>
+          <div class="cardTitle">Палитра виджета</div>
+          <p class="muted mono mb-10" style="font-size:11px;">Выберите цветовую тему интерфейса</p>
+          <div class="palette-grid" id="widgetPaletteGrid">
+            <button class="palette-swatch" data-color="default" title="Белый">
+              <span class="swatch-fill" style="background:#ffffff"></span>
+              <span class="swatch-label mono">WHITE</span>
+            </button>
+            <button class="palette-swatch" data-color="pink" title="Розовый">
+              <span class="swatch-fill" style="background:#ff7896"></span>
+              <span class="swatch-label mono">PINK</span>
+            </button>
+            <button class="palette-swatch" data-color="green" title="Зелёный">
+              <span class="swatch-fill" style="background:#00f096"></span>
+              <span class="swatch-label mono">GREEN</span>
+            </button>
+            <button class="palette-swatch" data-color="red" title="Красный">
+              <span class="swatch-fill" style="background:#ff5050"></span>
+              <span class="swatch-label mono">RED</span>
+            </button>
+            <button class="palette-swatch" data-color="purple" title="Фиолетовый">
+              <span class="swatch-fill" style="background:#8c50ff"></span>
+              <span class="swatch-label mono">PURPLE</span>
+            </button>
+            <button class="palette-swatch" data-color="blue" title="Синий">
+              <span class="swatch-fill" style="background:#50b4ff"></span>
+              <span class="swatch-label mono">BLUE</span>
+            </button>
+            <button class="palette-swatch" data-color="cyan" title="Голубой">
+              <span class="swatch-fill" style="background:#00e5ff"></span>
+              <span class="swatch-label mono">CYAN</span>
+            </button>
+            <button class="palette-swatch" data-color="orange" title="Оранжевый">
+              <span class="swatch-fill" style="background:#ff8c00"></span>
+              <span class="swatch-label mono">ORANGE</span>
+            </button>
+            <button class="palette-swatch" data-color="yellow" title="Жёлтый">
+              <span class="swatch-fill" style="background:#ffe600"></span>
+              <span class="swatch-label mono">YELLOW</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Background Palette Modal -->
+      <div class="modal hidden" id="bgPaletteModal">
+        <div class="modalContent glass glitchCard">
+          <button class="close-x" onclick="hideModal('bgPaletteModal')">×</button>
+          <div class="cardTitle">Палитра фона</div>
+          <p class="muted mono mb-10" style="font-size:11px;">Выберите визуальный стиль фона</p>
+          <div class="palette-grid palette-grid--bg" id="bgPaletteGrid">
+            <button class="palette-swatch palette-swatch--bg" data-bg="HOLO" title="Голограф">
+              <span class="swatch-fill swatch-fill--bg" style="background:linear-gradient(135deg,#1a1a2e,#0f3460,#16213e)"></span>
+              <span class="swatch-label mono">HOLO</span>
+            </button>
+            <button class="palette-swatch palette-swatch--bg" data-bg="BLACK_HOLE" title="Чёрная Дыра">
+              <span class="swatch-fill swatch-fill--bg" style="background:linear-gradient(135deg,#000000,#1a0030,#0a0014)"></span>
+              <span class="swatch-label mono">BLACK HOLE</span>
+            </button>
+            <button class="palette-swatch palette-swatch--bg" data-bg="FLOWERS" title="Цветы">
+              <span class="swatch-fill swatch-fill--bg" style="background:linear-gradient(135deg,#0a2e1a,#1a4a2e,#0d3320)"></span>
+              <span class="swatch-label mono">FLOWERS</span>
+            </button>
+            <button class="palette-swatch palette-swatch--bg" data-bg="NEXUS" title="Nexus">
+              <span class="swatch-fill swatch-fill--bg" style="background:linear-gradient(135deg,#001a33,#003366,#001a40)"></span>
+              <span class="swatch-label mono">NEXUS</span>
+            </button>
+            <button class="palette-swatch palette-swatch--bg" data-bg="NEBULA" title="Nebula">
+              <span class="swatch-fill swatch-fill--bg" style="background:linear-gradient(135deg,#1a0030,#300060,#200040)"></span>
+              <span class="swatch-label mono">NEBULA</span>
+            </button>
+            <button class="palette-swatch palette-swatch--bg" data-bg="CONSTELLATION" title="Созвездие">
+              <span class="swatch-fill swatch-fill--bg" style="background:linear-gradient(135deg,#0a0a1a,#0f0f2e,#050510)"></span>
+              <span class="swatch-label mono">CONSTELLATION</span>
+            </button>
+          </div>
         </div>
       </div>
 
