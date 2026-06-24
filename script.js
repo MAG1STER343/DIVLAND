@@ -287,10 +287,9 @@
                try {
                  await apiJson("/api/background/set", { method: "POST", body: { backgroundId: bg.id } });
                  showToast("Фон обновлен");
-                 me.activeBackground = bg.id;
-                 document.body.setAttribute('data-background', bg.id);
-                 if (background && background.reposition) background.reposition(1000);
-                 modal.classList.add("hidden");
+                  me.activeBackground = bg.id;
+                  document.body.setAttribute('data-background', bg.id);
+                  modal.classList.add("hidden");
                } catch(e) { showToast(e.message); }
              };
            }
@@ -321,6 +320,9 @@
   const hudAchievement = $("#hudAchievement");
   const hudFingerprints = $("#hudFingerprints");
   const hudCodes = $("#hudCodes");
+  const hudGlitchMenu = $("#hudGlitchMenu");
+  const hudGlitchMenuItems = $("#hudGlitchMenuItems");
+  const hudGlitchBar = $("#hudGlitchBar");
   let hudActive = false;
 
   // Camera flash sound (quiet)
@@ -352,6 +354,85 @@
     hudFingerprints.innerHTML = html;
   }
 
+  // Render glitch menu items
+  const glitchMenuEntries = [
+    ">> INIT MEMORY SCAN",
+    ">> DECRYPT SECTOR 7G",
+    ">> INJECT PAYLOAD v0.3",
+    ">> BYPASS FIREWALL",
+    ">> EXTRACT HASH KEY",
+    ">> TRACE ORIGIN IP",
+    ">> SPOOF IDENTITY",
+    ">> OVERWRITE BUFFER",
+    ">> INTERCEPT SIGNAL",
+    ">> CRACK ENCRYPTION",
+    ">> DUMP KEYLOG CACHE",
+    ">> HIJACK SESSION",
+  ];
+
+  function renderGlitchMenu(durationMs) {
+    if (!hudGlitchMenu || !hudGlitchMenuItems) return;
+    hudGlitchMenu.classList.remove("hidden", "is-leaving");
+    hudGlitchMenuItems.innerHTML = "";
+
+    // Stagger items appearing
+    const totalItems = glitchMenuEntries.length;
+    const itemInterval = durationMs / (totalItems + 4);
+
+    glitchMenuEntries.forEach((text, i) => {
+      setTimeout(() => {
+        const el = document.createElement("div");
+        el.className = "hud-glitch-menu__item mono";
+        el.textContent = text;
+        el.style.animationDelay = "0s";
+        hudGlitchMenuItems.appendChild(el);
+
+        // Randomly corrupt some items
+        if (Math.random() < 0.3) {
+          setTimeout(() => el.classList.add("is-corrupt"), 200 + Math.random() * 600);
+          setTimeout(() => el.classList.remove("is-corrupt"), 500 + Math.random() * 800);
+        }
+      }, i * itemInterval);
+    });
+
+    // Start fading items out from the top
+    const fadeStart = durationMs * 0.45;
+    const fadePerItem = (durationMs * 0.4) / totalItems;
+    setTimeout(() => {
+      const items = hudGlitchMenuItems.querySelectorAll(".hud-glitch-menu__item");
+      items.forEach((el, i) => {
+        setTimeout(() => {
+          el.classList.add("is-fading");
+          setTimeout(() => el.classList.add("is-gone"), 800);
+        }, i * fadePerItem);
+      });
+    }, fadeStart);
+
+    // Progress bar countdown
+    if (hudGlitchBar) {
+      hudGlitchBar.style.transform = "scaleX(1)";
+      setTimeout(() => {
+        hudGlitchBar.style.transition = `transform ${durationMs}ms linear`;
+        hudGlitchBar.style.transform = "scaleX(0)";
+      }, 50);
+    }
+  }
+
+  function hideGlitchMenu() {
+    if (hudGlitchMenu) {
+      hudGlitchMenu.classList.add("is-leaving");
+      setTimeout(() => {
+        hudGlitchMenu.classList.add("hidden");
+        hudGlitchMenu.classList.remove("is-leaving");
+        if (hudGlitchMenuItems) hudGlitchMenuItems.innerHTML = "";
+        if (hudGlitchBar) {
+          hudGlitchBar.style.transition = "none";
+          hudGlitchBar.style.transform = "scaleX(1)";
+        }
+      }, 1500);
+    }
+  }
+
   // Render codes (server-generated or fallback)
   async function renderHudCodes() {
     if (!hudCodes) return;
@@ -369,7 +450,7 @@
     }
 
     let html = `<div class="hud-codes-title mono">ОДНОРАЗОВЫЕ КОДЫ</div>`;
-    html += `<div class="hud-codes-sub">Каждый код = <span class="hud-code-val">10 000 L</span></div>`;
+    html += `<div class="hud-codes-sub">Каждый код = <span class="hud-code-val">1 500 L</span></div>`;
     codes.forEach(c => {
       html += `<div class="hud-code-item mono" data-code="${c}">${c}</div>`;
     });
@@ -408,6 +489,8 @@
       if (hudActive) return;
       hudActive = true;
 
+      const hudDuration = 8000;
+
       // Play camera flash sound
       cameraFlash.currentTime = 0;
       cameraFlash.play().catch(() => {});
@@ -433,7 +516,6 @@
         if (!firstHud && hudAchievement) {
           localStorage.setItem("dv_hud_first", "1");
           hudAchievement.classList.remove("hidden", "is-leaving");
-          // Hide achievement after 3s
           setTimeout(() => {
             hudAchievement.classList.add("is-leaving");
             setTimeout(() => {
@@ -443,14 +525,18 @@
           }, 3000);
         }
 
-        // 5. Show codes
+        // 5. Show glitch menu
+        renderGlitchMenu(hudDuration);
+
+        // 6. Show codes
         renderHudCodes();
         if (hudCodes) hudCodes.classList.remove("hidden");
 
-        // 6. After 5 seconds — remove everything
+        // 7. After hudDuration — remove everything
         setTimeout(() => {
           if (hudCodes) hudCodes.classList.add("is-leaving");
           if (hudFingerprints) hudFingerprints.classList.add("is-leaving");
+          hideGlitchMenu();
 
           setTimeout(() => {
             document.body.classList.remove("hud-mode");
@@ -461,7 +547,7 @@
             if (hudAchievement) { hudAchievement.classList.add("hidden"); hudAchievement.classList.remove("is-leaving"); }
             hudActive = false;
           }, 400);
-        }, 5000);
+        }, hudDuration);
       }, 150);
     };
   }
@@ -496,6 +582,7 @@
   window.hideModal = hideModal;
 
   function showView(viewName, { withGlitch = true, originEl = null } = {}) {
+    if (hudActive) { showToast("Система занята..."); return; }
     const doIt = () => {
       let rect = null;
       if (originEl) {
@@ -657,9 +744,6 @@
         renderShop();
       }
       
-
-      // Reposition particles to match new view/theme
-      if (background && background.reposition) background.reposition(700);
 
     };
 
@@ -869,7 +953,6 @@
     document.body.setAttribute('data-theme', theme);
     document.body.setAttribute('data-background', bg);
     if (background && background.setThemeColor) background.setThemeColor(theme);
-    if (background && background.reposition) background.reposition(800);
     // persist to localStorage so it survives page reload
     try { 
       if (theme !== 'default') localStorage.setItem('dv_theme', theme); 
@@ -2942,10 +3025,12 @@ function createNetworkBackground({ canvas, reducedMotion }) {
         ty = (i / state.particles.length) * 1200 - 600;
         tz = (i % 5 - 2) * 80;
       } else {
-        // HOLO default: spread in 3D space
-        tx = (Math.random() - 0.5) * 1400;
-        ty = (Math.random() - 0.5) * 1400;
-        tz = (Math.random() - 0.5) * 1000;
+        // HOLO default: wide spread in 3D space
+        const angle = (i / state.particles.length) * Math.PI * 2;
+        const layer = (i % 4) * 200;
+        tx = Math.cos(angle + i * 0.7) * (400 + layer + Math.random() * 300);
+        ty = Math.sin(angle + i * 0.5) * (350 + layer + Math.random() * 250);
+        tz = (Math.random() - 0.5) * 1200;
       }
 
       p.x += (tx - p.x) * ease * 0.08;

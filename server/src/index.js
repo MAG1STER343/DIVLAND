@@ -646,7 +646,7 @@ app.post("/api/shop/buy", requireAuth, async (req, res) => {
   }
 });
 
-// --- HUD: generate codes (one-time 10000 L each) ---
+// --- HUD: generate codes (one-time 1500 L each) ---
 app.post("/api/hud/generate-codes", requireAuth, async (req, res) => {
   try {
     const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
@@ -657,7 +657,7 @@ app.post("/api/hud/generate-codes", requireAuth, async (req, res) => {
       code += "-";
       for (let j = 0; j < 4; j++) code += chars[Math.floor(Math.random() * chars.length)];
       codes.push(code);
-      await db.run("INSERT INTO hud_codes(code, value_l) VALUES($1, 10000)", [code]);
+      await db.run("INSERT INTO hud_codes(code, value_l) VALUES($1, 1500)", [code]);
     }
     return res.json({ ok: true, codes });
   } catch (e) {
