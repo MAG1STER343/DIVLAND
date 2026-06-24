@@ -655,7 +655,7 @@
         $$(".palette-swatch", widgetPaletteGrid).forEach(s => {
           s.classList.toggle("is-active", s.dataset.color === currentColor);
         });
-        showModal("widgetPaletteModal");
+        widgetPaletteModal.classList.remove("hidden");
       };
       if (widgetPaletteGrid) {
         $$(".palette-swatch", widgetPaletteGrid).forEach(s => {
@@ -688,7 +688,7 @@
         $$(".palette-swatch", bgPaletteGrid).forEach(s => {
           s.classList.toggle("is-active", s.dataset.bg === currentBg);
         });
-        showModal("bgPaletteModal");
+        bgPaletteModal.classList.remove("hidden");
       };
       if (bgPaletteGrid) {
         $$(".palette-swatch", bgPaletteGrid).forEach(s => {
@@ -2008,6 +2008,8 @@ function createNetworkBackground({ canvas, reducedMotion }) {
     targetPulseAlpha: 0,
     chainsAlpha: 0,
     targetChainsAlpha: 0,
+    dnaAlpha: 0,
+    targetDnaAlpha: 0,
     flowers: [],
     nexusStreams: [],
     nebulaClouds: [],
@@ -2309,6 +2311,7 @@ function createNetworkBackground({ canvas, reducedMotion }) {
 
     // Target Alphas for mobile/active sync
     state.targetChainsAlpha = (activeBg === 'CHAINS') ? 1 : 0;
+    state.targetDnaAlpha = (activeBg === 'DNA') ? 1 : 0;
 
     // Position of the Black Hole - Left side (30% width)
     cfg.blackHoleCenter.x = state.w * 0.28;
