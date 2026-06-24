@@ -185,7 +185,8 @@
       { id: "NEBULA", name: "Nebula Theme", price: 4000, desc: "Fluid plasma clouds reacting to your presence." },
       { id: "CONSTELLATION", name: "Constellation Theme", price: 6500, desc: "A hidden star network revealed by your touch." },
       { id: "PULSE", name: "Pulse Theme", price: 8000, desc: "Rhythmic geometric shockwaves radiating outwards." },
-      { id: "CHAINS", name: "Chains Theme", price: 3000, desc: "Moving linked steel following the rhythmic tide." }
+      { id: "CHAINS", name: "Chains Theme", price: 3000, desc: "Moving linked steel following the rhythmic tide." },
+      { id: "DNA", name: "DNA Helix Theme", price: 5500, desc: "Double helix spirals of shapes rotating like a DNA strand." }
     ];
     items.forEach(item => {
       const card = document.createElement("div");
@@ -265,8 +266,10 @@
            { id: "FLOWERS", name: "Цветы (FLOWERS)", desc: "Цифровой сад с вертикальным падением частиц" },
            { id: "NEXUS", name: "Нексус (NEXUS)", desc: "Потоки цифровых данных" },
            { id: "NEBULA", name: "Туманность (NEBULA)", desc: "Плазменные облака" },
-           { id: "CONSTELLATION", name: "Созвездие (CONSTELLATION)", desc: "Скрытая сеть связей" },
-           { id: "PULSE", name: "Пульс (PULSE)", desc: "Ритмичные шоковые волны" }
+            { id: "CONSTELLATION", name: "Созвездие (CONSTELLATION)", desc: "Скрытая сеть связей" },
+            { id: "PULSE", name: "Пульс (PULSE)", desc: "Ритмичные шоковые волны" },
+            { id: "CHAINS", name: "Цепи (CHAINS)", desc: "Подвижные звенья следуют ритму" },
+            { id: "DNA", name: "ДНК Спираль (DNA)", desc: "Двойная спираль из фигур, вращающихся как ДНК" }
          ];
 
          allBgs.forEach((bg, idx) => {
@@ -1468,7 +1471,7 @@
   const bgNameMap = {
     HOLO: "Голограф", BLACK_HOLE: "Чёрная Дыра", FLOWERS: "Цветы",
     NEXUS: "Нексус", NEBULA: "Туманность", CONSTELLATION: "Созвездие",
-    PULSE: "Пульс", CHAINS: "Цепи"
+    PULSE: "Пульс", CHAINS: "Цепи", DNA: "ДНК Спираль"
   };
 
   const integrationIconsSmall = {
@@ -2196,7 +2199,7 @@ function createNetworkBackground({ canvas, reducedMotion }) {
       vRotX: (Math.random() - 0.5) * 0.025,
       vRotY: (Math.random() - 0.5) * 0.025,
       vRotZ: (Math.random() - 0.5) * 0.015,
-      kind: ["cube", "pyramid", "octa"][Math.floor(Math.random() * 3)],
+      kind: ["cube", "pyramid", "octa", "icecream", "donut"][Math.floor(Math.random() * 5)],
       size: 14 + Math.random() * 18,
       hover: 0,
       isGlitchy: Math.random() < 0.12,
@@ -2237,6 +2240,14 @@ function createNetworkBackground({ canvas, reducedMotion }) {
       octa: {
         v: [[0,1,0],[0,-1,0],[1,0,0],[-1,0,0],[0,0,1],[0,0,-1]],
         e: [[0,2],[0,3],[0,4],[0,5],[1,2],[1,3],[1,4],[1,5],[2,4],[4,3],[3,5],[5,2]]
+      },
+      icecream: {
+        v: [[0,-1.2,0],[-0.5,0,-0.5],[0.5,0,-0.5],[0.5,0,0.5],[-0.5,0,0.5],[0,-0.3,0.9],[0,-0.3,-0.9],[0.9,-0.3,0],[-0.9,-0.3,0],[0,0.8,0]],
+        e: [[0,1],[0,2],[0,3],[0,4],[1,2],[2,3],[3,4],[4,1],[5,6],[6,7],[7,8],[8,5],[5,9],[6,9],[7,9],[8,9],[1,5],[2,6],[3,7],[4,8]]
+      },
+      donut: {
+        v: [],
+        e: []
       }
     };
     const m = models[p.kind];
@@ -2257,11 +2268,33 @@ function createNetworkBackground({ canvas, reducedMotion }) {
       ctx.shadowColor = `rgba(${state.themeRGB}, 0.8)`;
     }
 
-    m.e.forEach(e => {
-      ctx.beginPath();
-      const p1raw = m.v[e[0]], p2raw = m.v[e[1]];
-      const transform = (v) => {
-        let x = v[0], y = v[1], z = v[2];
+    if (m && m.e.length > 0) {
+      m.e.forEach(e => {
+        ctx.beginPath();
+        const p1raw = m.v[e[0]], p2raw = m.v[e[1]];
+        const transform = (v) => {
+          let x = v[0], y = v[1], z = v[2];
+          const rx = p.rotX, ry = p.rotY, rz = p.rotZ;
+          let t = y * Math.cos(rx) - z * Math.sin(rx);
+          z = y * Math.sin(rx) + z * Math.cos(rx); y = t;
+          t = x * Math.cos(ry) + z * Math.sin(ry);
+          z = -x * Math.sin(ry) + z * Math.cos(ry); x = t;
+          t = x * Math.cos(rz) - y * Math.sin(rz);
+          y = x * Math.sin(rz) + y * Math.cos(rz); x = t;
+          return { x: pr.x + x * finalSize, y: pr.y + y * finalSize };
+        };
+        let p1 = transform(p1raw), p2 = transform(p2raw);
+        if (p.isGlitchy && Math.random() < 0.15) {
+          const jitter = (Math.random() - 0.5) * 15;
+          p1 = { x: p1.x + jitter, y: p1.y + jitter };
+        }
+        ctx.moveTo(p1.x, p1.y); ctx.lineTo(p2.x, p2.y);
+        ctx.stroke();
+      });
+    } else if (p.kind === "donut") {
+      const segments = 16;
+      const R = 0.8, r = 0.3;
+      const transform3d = (x, y, z) => {
         const rx = p.rotX, ry = p.rotY, rz = p.rotZ;
         let t = y * Math.cos(rx) - z * Math.sin(rx);
         z = y * Math.sin(rx) + z * Math.cos(rx); y = t;
@@ -2271,14 +2304,39 @@ function createNetworkBackground({ canvas, reducedMotion }) {
         y = x * Math.sin(rz) + y * Math.cos(rz); x = t;
         return { x: pr.x + x * finalSize, y: pr.y + y * finalSize };
       };
-      let p1 = transform(p1raw), p2 = transform(p2raw);
-      if (p.isGlitchy && Math.random() < 0.15) {
-        const jitter = (Math.random() - 0.5) * 15;
-        p1 = { x: p1.x + jitter, y: p1.y + jitter };
+      ctx.lineWidth = (isHover ? 2 : 1) * pr.s * 0.8;
+      for (let j = 0; j < segments; j++) {
+        const u1 = (j / segments) * Math.PI * 2;
+        const u2 = ((j + 1) / segments) * Math.PI * 2;
+        const ringPts1 = [], ringPts2 = [];
+        for (let k = 0; k <= 8; k++) {
+          const v = (k / 8) * Math.PI * 2;
+          const x1 = (R + r * Math.cos(v)) * Math.cos(u1);
+          const y1 = r * Math.sin(v);
+          const z1 = (R + r * Math.cos(v)) * Math.sin(u1);
+          ringPts1.push(transform3d(x1, y1, z1));
+          const x2 = (R + r * Math.cos(v)) * Math.cos(u2);
+          const y2 = r * Math.sin(v);
+          const z2 = (R + r * Math.cos(v)) * Math.sin(u2);
+          ringPts2.push(transform3d(x2, y2, z2));
+        }
+        const ringDepth = (Math.cos(u1) + 1) / 2;
+        ctx.strokeStyle = `rgba(${state.themeRGB}, ${alpha * (0.4 + ringDepth * 0.6)})`;
+        ctx.beginPath();
+        ringPts1.forEach((pt, idx) => {
+          if (idx === 0) ctx.moveTo(pt.x, pt.y);
+          else ctx.lineTo(pt.x, pt.y);
+        });
+        ctx.stroke();
+        ctx.strokeStyle = `rgba(${state.themeRGB}, ${alpha * (0.3 + ringDepth * 0.4)})`;
+        ctx.beginPath();
+        ringPts2.forEach((pt, idx) => {
+          if (idx === 0) ctx.moveTo(pt.x, pt.y);
+          else ctx.lineTo(pt.x, pt.y);
+        });
+        ctx.stroke();
       }
-      ctx.moveTo(p1.x, p1.y); ctx.lineTo(p2.x, p2.y);
-      ctx.stroke();
-    });
+    }
     ctx.globalAlpha = 1;
     ctx.shadowBlur = 0;
   }
@@ -2308,6 +2366,7 @@ function createNetworkBackground({ canvas, reducedMotion }) {
     state.constAlpha += (state.targetConstAlpha - state.constAlpha) * 0.08 * dt;
     state.pulseAlpha += (state.targetPulseAlpha - state.pulseAlpha) * 0.08 * dt;
     state.chainsAlpha += (state.targetChainsAlpha - state.chainsAlpha) * 0.08 * dt;
+    state.dnaAlpha += (state.targetDnaAlpha - state.dnaAlpha) * 0.08 * dt;
 
     // Target Alphas for mobile/active sync
     state.targetChainsAlpha = (activeBg === 'CHAINS') ? 1 : 0;
@@ -3036,6 +3095,77 @@ function createNetworkBackground({ canvas, reducedMotion }) {
         ctx.restore();
     }
 
+    // DRAW DNA HELIX (double spiral of shapes with rungs)
+    if (state.dnaAlpha > 0.01) {
+      ctx.save();
+      ctx.globalAlpha = state.dnaAlpha;
+      const helixX = state.w * 0.5;
+      const helixH = state.h * 1.2;
+      const helixR = 120;
+      const rungs = 24;
+      const rotation = now * 0.0004;
+      const pts1 = [], pts2 = [];
+      for (let i = 0; i <= rungs; i++) {
+        const t = i / rungs;
+        const y = (t - 0.5) * helixH;
+        const a1 = rotation + t * Math.PI * 4;
+        const a2 = a1 + Math.PI;
+        const depth1 = Math.sin(a1);
+        const depth2 = Math.sin(a2);
+        const z1 = Math.cos(a1);
+        const z2 = Math.cos(a2);
+        pts1.push({ x: helixX + Math.cos(a1) * helixR, y, z: z1, depth: depth1 });
+        pts2.push({ x: helixX + Math.cos(a2) * helixR, y, z: z2, depth: depth2 });
+      }
+      function drawHelixStrand(pts, offset) {
+        ctx.beginPath();
+        ctx.strokeStyle = `rgba(${state.themeRGB}, 0.35)`;
+        ctx.lineWidth = 1.5;
+        pts.forEach((p, i) => {
+          if (i === 0) ctx.moveTo(p.x, p.y);
+          else ctx.lineTo(p.x, p.y);
+        });
+        ctx.stroke();
+        pts.forEach((p, i) => {
+          if (i % 2 !== offset) return;
+          const s = 5 + p.depth * 3;
+          const alpha = 0.2 + p.depth * 0.3;
+          ctx.strokeStyle = `rgba(${state.themeRGB}, ${alpha})`;
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          const v = p.depth > 0 ? [[-1,-1],[1,-1],[1,1],[-1,1]] : [[0,-1],[1,0],[0,1],[-1,0]];
+          v.forEach((vtx, vi) => {
+            const nx = p.x + vtx[0] * s, ny = p.y + vtx[1] * s;
+            if (vi === 0) ctx.moveTo(nx, ny);
+            else ctx.lineTo(nx, ny);
+          });
+          ctx.closePath();
+          ctx.stroke();
+        });
+      }
+      drawHelixStrand(pts1, 0);
+      drawHelixStrand(pts2, 1);
+      for (let i = 1; i < rungs; i += 2) {
+        const a = pts1[i], b = pts2[i];
+        const midZ = (a.z + b.z) / 2;
+        const rungAlpha = 0.1 + midZ * 0.15;
+        if (rungAlpha < 0.02) continue;
+        ctx.strokeStyle = `rgba(${state.themeRGB}, ${rungAlpha})`;
+        ctx.lineWidth = 1 + midZ * 0.5;
+        ctx.beginPath();
+        ctx.moveTo(a.x, a.y);
+        ctx.lineTo(b.x, b.y);
+        ctx.stroke();
+        const mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2;
+        const ms = 3 + midZ * 2;
+        ctx.fillStyle = `rgba(${state.themeRGB}, ${rungAlpha * 1.5})`;
+        ctx.beginPath();
+        ctx.arc(mx, my, ms, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.restore();
+    }
+
     requestAnimationFrame(draw);
   }
 
@@ -3097,6 +3227,14 @@ function createNetworkBackground({ canvas, reducedMotion }) {
         tx = (Math.random() - 0.5) * 1200;
         ty = (i / state.particles.length) * 1200 - 600;
         tz = (i % 5 - 2) * 80;
+      } else if (activeBg === 'DNA') {
+        const strand = i % 2;
+        const yOff = (i / state.particles.length) * 1400 - 700;
+        const angle = (i / 3) * 0.5 + strand * Math.PI;
+        const r = 160;
+        tx = Math.cos(angle) * r;
+        ty = yOff;
+        tz = Math.sin(angle) * r;
       } else {
         // HOLO default: wide spread in 3D space
         const angle = (i / state.particles.length) * Math.PI * 2;

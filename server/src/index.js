@@ -639,6 +639,24 @@ app.post("/api/shop/buy", requireAuth, async (req, res) => {
       return res.json({ ok: true, message: "Фон Pulse куплен!" });
     }
 
+    if (itemId === "CHAINS") {
+      const price = 3000;
+      if (owned.includes("CHAINS")) return bad(res, 400, "У вас уже есть этот фон");
+      if (user.balance_l < price) return bad(res, 400, "Недостаточно L валюты");
+      owned.push("CHAINS");
+      await db.run("UPDATE users SET balance_l = balance_l - $1, owned_backgrounds = $2 WHERE id = $3", [price, JSON.stringify(owned), req.user.id]);
+      return res.json({ ok: true, message: "Фон Chains куплен!" });
+    }
+
+    if (itemId === "DNA") {
+      const price = 5500;
+      if (owned.includes("DNA")) return bad(res, 400, "У вас уже есть этот фон");
+      if (user.balance_l < price) return bad(res, 400, "Недостаточно L валюты");
+      owned.push("DNA");
+      await db.run("UPDATE users SET balance_l = balance_l - $1, owned_backgrounds = $2 WHERE id = $3", [price, JSON.stringify(owned), req.user.id]);
+      return res.json({ ok: true, message: "Фон ДНК Спираль куплен!" });
+    }
+
     return bad(res, 400, "Предмет не найден в магазине");
   } catch (e) {
     console.error(e);

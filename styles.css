@@ -3728,3 +3728,146 @@ body::after {
   text-transform: uppercase;
 }
 
+/* 3D Digital Swimming Ring */
+.swim-ring-3d {
+  position: fixed;
+  top: 90px;
+  right: 30px;
+  z-index: 100;
+  width: 80px;
+  height: 80px;
+  pointer-events: none;
+  animation: swimRingFloat 4s ease-in-out infinite;
+  filter: drop-shadow(0 8px 16px rgba(0,0,0,0.3));
+}
+
+.swim-ring-3d__scene {
+  width: 80px;
+  height: 80px;
+  perspective: 400px;
+  perspective-origin: 50% 50%;
+}
+
+.swim-ring-3d__ring {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  transform-style: preserve-3d;
+  animation: swimRingSpin 8s linear infinite;
+}
+
+.swim-ring-3d__face {
+  position: absolute;
+  border-radius: 50%;
+}
+
+.swim-ring-3d__face--front {
+  width: 80px;
+  height: 80px;
+  background: linear-gradient(135deg, rgba(255,255,255,0.12), rgba(255,255,255,0.03));
+  border: 2px solid rgba(255,255,255,0.25);
+  transform: translateZ(14px);
+  box-shadow: inset 0 0 20px rgba(255,255,255,0.05);
+}
+
+.swim-ring-3d__face--back {
+  width: 80px;
+  height: 80px;
+  background: linear-gradient(135deg, rgba(255,255,255,0.06), rgba(255,255,255,0.01));
+  border: 1px solid rgba(255,255,255,0.12);
+  transform: translateZ(-14px);
+}
+
+.swim-ring-3d__face--inner {
+  width: 30px;
+  height: 30px;
+  top: 25px;
+  left: 25px;
+  background: transparent;
+  border: 2px solid rgba(255,255,255,0.2);
+  transform: translateZ(14px);
+  box-shadow: 0 0 15px rgba(255,255,255,0.08);
+}
+
+.swim-ring-3d__face--outer {
+  width: 80px;
+  height: 80px;
+  background: linear-gradient(135deg, rgba(255,255,255,0.15), rgba(255,255,255,0.05));
+  border: 3px solid rgba(255,255,255,0.3);
+  box-shadow: 
+    0 0 20px rgba(255,255,255,0.1),
+    inset 0 0 30px rgba(255,255,255,0.03);
+  transform: translateZ(0px);
+}
+
+.swim-ring-3d__face--top {
+  width: 80px;
+  height: 28px;
+  top: 0;
+  background: linear-gradient(180deg, rgba(255,255,255,0.2), rgba(255,255,255,0.08));
+  border: 1px solid rgba(255,255,255,0.2);
+  border-radius: 40px 40px 0 0;
+  transform: rotateX(90deg) translateZ(-14px);
+  transform-origin: top;
+}
+
+.swim-ring-3d__face--bottom {
+  width: 80px;
+  height: 28px;
+  bottom: 0;
+  background: linear-gradient(0deg, rgba(255,255,255,0.08), rgba(255,255,255,0.02));
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 0 0 40px 40px;
+  transform: rotateX(-90deg) translateZ(-14px);
+  transform-origin: bottom;
+}
+
+.swim-ring-3d__stripe--1 {
+  position: absolute;
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  border: 4px solid rgba(255, 100, 100, 0.35);
+  transform: translateZ(15px);
+  clip-path: polygon(50% 0%, 100% 0%, 100% 50%, 50% 50%);
+  box-shadow: 0 0 12px rgba(255, 100, 100, 0.15);
+}
+
+.swim-ring-3d__stripe--2 {
+  position: absolute;
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  border: 4px solid rgba(255, 200, 50, 0.3);
+  transform: translateZ(15px);
+  clip-path: polygon(0% 50%, 50% 50%, 50% 100%, 0% 100%);
+  box-shadow: 0 0 12px rgba(255, 200, 50, 0.12);
+}
+
+.swim-ring-3d__shadow {
+  position: absolute;
+  bottom: -10px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 50px;
+  height: 10px;
+  background: radial-gradient(ellipse, rgba(0,0,0,0.25), transparent);
+  border-radius: 50%;
+  animation: swimRingShadow 4s ease-in-out infinite;
+}
+
+@keyframes swimRingFloat {
+  0%, 100% { transform: translateY(0) rotate(-5deg); }
+  50% { transform: translateY(-12px) rotate(5deg); }
+}
+
+@keyframes swimRingSpin {
+  0% { transform: rotateX(-20deg) rotateY(0deg); }
+  100% { transform: rotateX(-20deg) rotateY(360deg); }
+}
+
+@keyframes swimRingShadow {
+  0%, 100% { transform: translateX(-50%) scale(1); opacity: 0.25; }
+  50% { transform: translateX(-50%) scale(0.7); opacity: 0.15; }
+}
+
