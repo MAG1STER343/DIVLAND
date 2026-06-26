@@ -1657,13 +1657,86 @@ body.hud-mode .brandTicker .glitchTitle {
 .profileAvatarWrap {
   width: 100px;
   height: 100px;
-  border-radius: 12px;
-  background: rgba(0,0,0,0.4);
-  border: 1px solid var(--stroke);
+  border-radius: 50%;
+  background: transparent;
+  border: none;
   position: relative;
-  overflow: hidden;
+  overflow: visible;
   cursor: pointer;
   transition: border-color 0.2s, transform 0.2s;
+}
+
+.profileAvatarWrap:hover {
+  transform: scale(1.08);
+}
+
+.torus-3d {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  perspective: 300px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.torus-scene {
+  width: 80px;
+  height: 80px;
+  position: relative;
+  transform-style: preserve-3d;
+  animation: torusSpin 5s linear infinite;
+}
+
+.torus-ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 1.5px solid rgba(var(--theme-glow), 0.55);
+  box-shadow:
+    0 0 6px rgba(var(--theme-glow), 0.25),
+    inset 0 0 6px rgba(var(--theme-glow), 0.1);
+  transform-style: preserve-3d;
+}
+
+.torus-ring:nth-child(1) { transform: rotateY(0deg); }
+.torus-ring:nth-child(2) { transform: rotateY(30deg); }
+.torus-ring:nth-child(3) { transform: rotateY(60deg); }
+.torus-ring:nth-child(4) { transform: rotateY(90deg); }
+.torus-ring:nth-child(5) { transform: rotateY(120deg); }
+.torus-ring:nth-child(6) { transform: rotateY(150deg); }
+
+@keyframes torusSpin {
+  from { transform: rotateX(18deg) rotateY(0deg); }
+  to { transform: rotateX(18deg) rotateY(360deg); }
+}
+
+.torus-pulse {
+  position: absolute;
+  inset: 20%;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(var(--theme-glow), 0.12) 0%, transparent 70%);
+  animation: torusPulse 2.5s ease-in-out infinite;
+  pointer-events: none;
+}
+
+@keyframes torusPulse {
+  0%, 100% { opacity: 0.4; transform: scale(0.85); }
+  50% { opacity: 1; transform: scale(1.1); }
+}
+
+.torus-label {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  letter-spacing: 2px;
+  color: rgba(var(--theme-glow), 0.7);
+  text-shadow: 0 0 8px rgba(var(--theme-glow), 0.4);
+  pointer-events: none;
+  z-index: 2;
 }
 
 .profileAvatarWrap:hover.owner-only {
@@ -1698,6 +1771,7 @@ body.hud-mode .brandTicker .glitchTitle {
   position: absolute;
   inset: 0;
   z-index: 1;
+  border-radius: 50%;
 }
 
 .profileInfoWrap {

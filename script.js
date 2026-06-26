@@ -1030,17 +1030,16 @@
 
   function updateProfileAvatarView(path) {
     const img = $("#profileAvatarImg");
-    const empty = $(".profileAvatarEmpty");
-    if (!img || !empty) return;
+    const torus = $("#avatarTorus");
+    if (!img || !torus) return;
 
     if (path) {
       img.src = path;
       img.hidden = false;
-      empty.hidden = true;
+      torus.style.display = "none";
     } else {
       img.hidden = true;
-      empty.hidden = false;
-      // Note: CSS handles the pencil vs question mark toggle via .owner-only / .guest-only
+      torus.style.display = "";
     }
     
     // update header
