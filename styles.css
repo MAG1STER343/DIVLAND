@@ -297,6 +297,7 @@ a {
   cursor: pointer;
   letter-spacing: 0.3px;
   font-size: 8px;
+  font-family: "Press Start 2P", monospace;
   white-space: nowrap;
   position: relative;
   z-index: 1;

@@ -752,17 +752,8 @@
       };
     }
 
-    // Background Palette Modal — 50+ gradient swatches
+    // Background Palette Modal — 50 CSS-only gradient swatches
     const bgGradients = [
-      {id:"HOLO",name:"HOLO",grad:"linear-gradient(135deg,#1a1a2e,#0f3460,#16213e)"},
-      {id:"BLACK_HOLE",name:"BLACK HOLE",grad:"linear-gradient(135deg,#000000,#1a0030,#0a0014)"},
-      {id:"FLOWERS",name:"FLOWERS",grad:"linear-gradient(135deg,#0a2e1a,#1a4a2e,#0d3320)"},
-      {id:"NEXUS",name:"NEXUS",grad:"linear-gradient(135deg,#001a33,#003366,#001a40)"},
-      {id:"NEBULA",name:"NEBULA",grad:"linear-gradient(135deg,#1a0030,#300060,#200040)"},
-      {id:"CONSTELLATION",name:"CONSTELLATION",grad:"linear-gradient(135deg,#0a0a1a,#0f0f2e,#050510)"},
-      {id:"DNA",name:"DNA HELIX",grad:"linear-gradient(135deg,#001a00,#003300,#004d00)"},
-      {id:"PULSE",name:"PULSE",grad:"linear-gradient(135deg,#1a0000,#330000,#4d0000)"},
-      {id:"CHAINS",name:"CHAINS",grad:"linear-gradient(135deg,#2a2a2a,#1a1a1a,#0a0a0a)"},
       {id:"bg_#0d1117",name:"OCEAN DEEP",grad:"linear-gradient(135deg,#0d1117,#161b22,#0d1117)"},
       {id:"bg_#1a0a2e",name:"VOID",grad:"linear-gradient(135deg,#1a0a2e,#0f0524,#15082e)"},
       {id:"bg_#0a1628",name:"ARCTIC",grad:"linear-gradient(135deg,#0a1628,#0d2137,#061322)"},
@@ -815,15 +806,13 @@
         btn.className = "palette-swatch palette-swatch--bg";
         btn.dataset.bg = bg.id;
         btn.innerHTML = `<span class="swatch-fill swatch-fill--bg" style="background:${bg.grad}"></span><span class="swatch-label">${bg.name}</span>`;
-        btn.onclick = async () => {
+        btn.onclick = () => {
           document.body.setAttribute("data-background", bg.id);
+          document.body.style.backgroundImage = bg.grad;
           $$(".palette-swatch", bgPaletteGrid).forEach(x => x.classList.toggle("is-active", x === btn));
-          if (background && background.setThemeColor && me) background.setThemeColor(me.bgColor || "default");
-          try {
-            await apiJson("/api/background/set", { method: "POST", body: { backgroundId: bg.id } });
-            if (me) me.activeBackground = bg.id;
-            showToast("Фон обновлен");
-          } catch (e) { showToast("Ошибка сохранения"); }
+          if (me) me.activeBackground = bg.id;
+          try { localStorage.setItem("dv_css_bg", bg.id); localStorage.setItem("dv_css_bg_grad", bg.grad); } catch(_){}
+          showToast("Фон обновлен");
         };
         bgPaletteGrid.appendChild(btn);
       });
@@ -840,6 +829,16 @@
         bgPaletteModal.classList.remove("hidden");
       };
     }
+
+    // Restore CSS background from localStorage on load
+    try {
+      const savedBgId = localStorage.getItem("dv_css_bg");
+      const savedBgGrad = localStorage.getItem("dv_css_bg_grad");
+      if (savedBgId && savedBgGrad && savedBgId.startsWith("bg_")) {
+        document.body.setAttribute("data-background", savedBgId);
+        document.body.style.backgroundImage = savedBgGrad;
+      }
+    } catch(_){}
   }
       });
       setActiveNav(viewName);
@@ -1158,6 +1157,15 @@
     if (background && background.setThemeColor) background.setThemeColor(theme);
     try {
       if (theme !== 'default') localStorage.setItem('dv_theme', theme);
+    } catch(_){}
+    // Restore CSS gradient background
+    try {
+      const savedBgId = localStorage.getItem('dv_css_bg');
+      const savedBgGrad = localStorage.getItem('dv_css_bg_grad');
+      if (savedBgId && savedBgGrad && savedBgId.startsWith('bg_')) {
+        document.body.setAttribute('data-background', savedBgId);
+        document.body.style.backgroundImage = savedBgGrad;
+      }
     } catch(_){}
   }
 
