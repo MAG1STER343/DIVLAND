@@ -20,6 +20,13 @@
   function $(s, c = document) { return c.querySelector(s); }
   const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
 
+  function hexToRgb(hex) {
+    const r = parseInt(hex.slice(1,3),16);
+    const g = parseInt(hex.slice(3,5),16);
+    const b = parseInt(hex.slice(5,7),16);
+    return `${r}, ${g}, ${b}`;
+  }
+
   const app = $("#app");
   const overlay = $("#glitchOverlay");
   const toast = $("#toast");
@@ -648,10 +655,93 @@
       });
     }
 
-    // Widget Palette Modal
+    // Widget Palette Modal — 50+ gradient swatches
+
+    const widgetColors = [
+      {id:"default",name:"WHITE",colors:["#ffffff","#cccccc"]},
+      {id:"c_#ff7896",name:"ROSE",colors:["#ff7896","#ff4070"]},
+      {id:"c_#ff4081",name:"MAGENTA",colors:["#ff4081","#c51162"]},
+      {id:"c_#e040fb",name:"FUCHSIA",colors:["#e040fb","#aa00ff"]},
+      {id:"c_#d500f9",name:"VIOLET",colors:["#d500f9","#9c27b0"]},
+      {id:"c_#8c50ff",name:"PURPLE",colors:["#8c50ff","#6200ea"]},
+      {id:"c_#651fff",name:"DEEP PURPLE",colors:["#651fff","#304ffe"]},
+      {id:"c_#536dfe",name:"INDIGO",colors:["#536dfe","#304ffe"]},
+      {id:"c_#448aff",name:"BLUE",colors:["#448aff","#2962ff"]},
+      {id:"c_#40c4ff",name:"LIGHT BLUE",colors:["#40c4ff","#0091ea"]},
+      {id:"c_#00b0ff",name:"SKY",colors:["#00b0ff","#0091ea"]},
+      {id:"c_#00e5ff",name:"CYAN",colors:["#00e5ff","#00b8d4"]},
+      {id:"c_#18ffff",name:"AQUA",colors:["#18ffff","#00e5ff"]},
+      {id:"c_#64ffda",name:"TEAL",colors:["#64ffda","#1de9b6"]},
+      {id:"c_#00f096",name:"GREEN",colors:["#00f096","#00c853"]},
+      {id:"c_#69f0ae",name:"MINT",colors:["#69f0ae","#00e676"]},
+      {id:"c_#76ff03",name:"LIME",colors:["#76ff03","#64dd17"]},
+      {id:"c_#b2ff59",name:"LIGHT GREEN",colors:["#b2ff59","#76ff03"]},
+      {id:"c_#eeff41",name:"YELLOW GREEN",colors:["#eeff41","#c6ff00"]},
+      {id:"c_#ffff00",name:"YELLOW",colors:["#ffff00","#ffd600"]},
+      {id:"c_#ffe600",name:"GOLD",colors:["#ffe600","#ffc400"]},
+      {id:"c_#ffc400",name:"AMBER",colors:["#ffc400","#ffab00"]},
+      {id:"c_#ff9100",name:"ORANGE",colors:["#ff9100","#ff6d00"]},
+      {id:"c_#ff6d00",name:"DEEP ORANGE",colors:["#ff6d00","#dd2c00"]},
+      {id:"c_#ff5050",name:"RED",colors:["#ff5050","#ff1744"]},
+      {id:"c_#ff1744",name:"CRIMSON",colors:["#ff1744","#d50000"]},
+      {id:"c_#f50057",name:"PINK RED",colors:["#f50057","#c51162"]},
+      {id:"c_#ff6090",name:"CORAL PINK",colors:["#ff6090","#ff4081"]},
+      {id:"c_#ff8a80",name:"SALMON",colors:["#ff8a80","#ff5252"]},
+      {id:"c_#ffab91",name:"PEACH",colors:["#ffab91","#ff8a65"]},
+      {id:"c_#ffd180",name:"APRICOT",colors:["#ffd180","#ffab40"]},
+      {id:"c_#ffe57f",name:"LEMON",colors:["#ffe57f","#ffd740"]},
+      {id:"c_#fff9c4",name:"CREAM",colors:["#fff9c4","#fff176"]},
+      {id:"c_#e8f5e9",name:"MINT WHITE",colors:["#c8e6c9","#a5d6a7"]},
+      {id:"c_#b2ebf2",name:"ICE",colors:["#b2ebf2","#80deea"]},
+      {id:"c_#bbdefb",name:"BABY BLUE",colors:["#bbdefb","#90caf9"]},
+      {id:"c_#d1c4e9",name:"LAVENDER",colors:["#d1c4e9","#b39ddb"]},
+      {id:"c_#f8bbd0",name:"BLUSH",colors:["#f8bbd0","#f48fb1"]},
+      {id:"c_#004d40",name:"DARK TEAL",colors:["#004d40","#00695c"]},
+      {id:"c_#1a237e",name:"MIDNIGHT",colors:["#1a237e","#0d47a1"]},
+      {id:"c_#b71c1c",name:"BLOOD",colors:["#b71c1c","#880e4f"]},
+      {id:"c_#311b92",name:"DARK VIOLET",colors:["#311b92","#4a148c"]},
+      {id:"c_#006064",name:"DARK CYAN",colors:["#006064","#00838f"]},
+      {id:"c_#33691e",name:"FOREST",colors:["#33691e","#1b5e20"]},
+      {id:"c_#bf360c",name:"RUST",colors:["#bf360c","#e65100"]},
+      {id:"c_#263238",name:"CHARCOAL",colors:["#263238","#37474f"]},
+      {id:"c_#4a148c",name:"PLUM",colors:["#4a148c","#6a1b9a"]},
+      {id:"c_#0d47a1",name:"NAVY",colors:["#0d47a1","#1565c0"]},
+      {id:"c_#00695c",name:"EMERALD",colors:["#00695c","#00897b"]},
+      {id:"c_#c62828",name:"CHERRY",colors:["#c62828","#d32f2f"]},
+      {id:"c_#ad1457",name:"WINE",colors:["#ad1457","#c2185b"]},
+      {id:"c_#f4511e",name:"TANGERINE",colors:["#f4511e","#ff5722"]},
+      {id:"c_#fdd835",name:"SUNFLOWER",colors:["#fdd835","#ffeb3b"]},
+      {id:"c_#43a047",name:"LAWN",colors:["#43a047","#4caf50"]},
+      {id:"c_#1e88e5",name:"ROYAL BLUE",colors:["#1e88e5","#2196f3"]},
+      {id:"c_#8e24aa",name:"GRAPE",colors:["#8e24aa","#9c27b0"]},
+      {id:"c_#fb8c00",name:"TANGERINE 2",colors:["#fb8c00","#ff9800"]},
+    ];
+
+    const widgetPaletteGrid = $("#widgetPaletteGrid");
+    if (widgetPaletteGrid) {
+      widgetColors.forEach(c => {
+        const btn = document.createElement("button");
+        btn.className = "palette-swatch";
+        btn.dataset.color = c.id;
+        btn.innerHTML = `<span class="swatch-fill" style="background:linear-gradient(135deg,${c.colors[0]},${c.colors[1]})"></span><span class="swatch-label">${c.name}</span>`;
+        btn.onclick = async () => {
+          const rgb = hexToRgb(c.colors[0]);
+          document.body.setAttribute("data-theme", c.id);
+          document.documentElement.style.setProperty("--theme-glow", rgb);
+          $$(".palette-swatch", widgetPaletteGrid).forEach(x => x.classList.toggle("is-active", x === btn));
+          if (background && background.setThemeColor) background.setThemeColor(c.id);
+          try {
+            await apiJson("/api/profile/update", { method: "POST", body: { bgColor: c.id } });
+            if (me) me.bgColor = c.id;
+            showToast("Цвет обновлен");
+          } catch (e) { showToast("Ошибка сохранения"); }
+        };
+        widgetPaletteGrid.appendChild(btn);
+      });
+    }
+
     const widgetPaletteBtn = $("#widgetPaletteBtn");
     const widgetPaletteModal = $("#widgetPaletteModal");
-    const widgetPaletteGrid = $("#widgetPaletteGrid");
     if (widgetPaletteBtn && widgetPaletteModal) {
       widgetPaletteBtn.onclick = () => {
         const currentColor = me ? (me.bgColor || "default") : "default";
@@ -660,31 +750,87 @@
         });
         widgetPaletteModal.classList.remove("hidden");
       };
-      if (widgetPaletteGrid) {
-        $$(".palette-swatch", widgetPaletteGrid).forEach(s => {
-          s.onclick = async () => {
-            const color = s.dataset.color;
-            if (!color) return;
-            try {
-              document.body.setAttribute("data-theme", color);
-              $$(".palette-swatch", widgetPaletteGrid).forEach(x => x.classList.toggle("is-active", x === s));
-              $$(".colorBtn", colorPicker).forEach(b => b.classList.toggle("active", b.dataset.color === color));
-              if (background && background.setThemeColor) background.setThemeColor(color);
-              await apiJson("/api/profile/update", { method: "POST", body: { bgColor: color } });
-              if (me) me.bgColor = color;
-              showToast("Цвет обновлен");
-            } catch (e) {
-              showToast("Ошибка сохранения");
-            }
-          };
-        });
-      }
     }
 
-    // Background Palette Modal
+    // Background Palette Modal — 50+ gradient swatches
+    const bgGradients = [
+      {id:"HOLO",name:"HOLO",grad:"linear-gradient(135deg,#1a1a2e,#0f3460,#16213e)"},
+      {id:"BLACK_HOLE",name:"BLACK HOLE",grad:"linear-gradient(135deg,#000000,#1a0030,#0a0014)"},
+      {id:"FLOWERS",name:"FLOWERS",grad:"linear-gradient(135deg,#0a2e1a,#1a4a2e,#0d3320)"},
+      {id:"NEXUS",name:"NEXUS",grad:"linear-gradient(135deg,#001a33,#003366,#001a40)"},
+      {id:"NEBULA",name:"NEBULA",grad:"linear-gradient(135deg,#1a0030,#300060,#200040)"},
+      {id:"CONSTELLATION",name:"CONSTELLATION",grad:"linear-gradient(135deg,#0a0a1a,#0f0f2e,#050510)"},
+      {id:"DNA",name:"DNA HELIX",grad:"linear-gradient(135deg,#001a00,#003300,#004d00)"},
+      {id:"PULSE",name:"PULSE",grad:"linear-gradient(135deg,#1a0000,#330000,#4d0000)"},
+      {id:"CHAINS",name:"CHAINS",grad:"linear-gradient(135deg,#2a2a2a,#1a1a1a,#0a0a0a)"},
+      {id:"bg_#0d1117",name:"OCEAN DEEP",grad:"linear-gradient(135deg,#0d1117,#161b22,#0d1117)"},
+      {id:"bg_#1a0a2e",name:"VOID",grad:"linear-gradient(135deg,#1a0a2e,#0f0524,#15082e)"},
+      {id:"bg_#0a1628",name:"ARCTIC",grad:"linear-gradient(135deg,#0a1628,#0d2137,#061322)"},
+      {id:"bg_#1c0a00",name:"EMBER",grad:"linear-gradient(135deg,#1c0a00,#2e1400,#3d1a00)"},
+      {id:"bg_#001a1a",name:"ABYSS",grad:"linear-gradient(135deg,#001a1a,#002e2e,#003d3d)"},
+      {id:"bg_#1a1a00",name:"SULFUR",grad:"linear-gradient(135deg,#1a1a00,#2e2e00,#3d3d00)"},
+      {id:"bg_#0f0f0f",name:"OBSIDIAN",grad:"linear-gradient(135deg,#0f0f0f,#1a1a1a,#050505)"},
+      {id:"bg_#200020",name:"PLASMA",grad:"linear-gradient(135deg,#200020,#300030,#400040)"},
+      {id:"bg_#001020",name:"DEEP SEA",grad:"linear-gradient(135deg,#001020,#001830,#000c18)"},
+      {id:"bg_#0a0020",name:"COSMOS",grad:"linear-gradient(135deg,#0a0020,#140040,#0a0018)"},
+      {id:"bg_#002000",name:"JUNGLE",grad:"linear-gradient(135deg,#002000,#003800,#004a00)"},
+      {id:"bg_#200a00",name:"MAGMA",grad:"linear-gradient(135deg,#200a00,#381200,#4a1800)"},
+      {id:"bg_#101020",name:"STEEL",grad:"linear-gradient(135deg,#101020,#181830,#0c0c18)"},
+      {id:"bg_#001828",name:"SAPPHIRE",grad:"linear-gradient(135deg,#001828,#002040,#001020)"},
+      {id:"bg_#180818",name:"AMETHYST",grad:"linear-gradient(135deg,#180818,#280c28,#100510)"},
+      {id:"bg_#081808",name:"JADE",grad:"linear-gradient(135deg,#081808,#0c280c,#051405)"},
+      {id:"bg_#181008",name:"COPPER",grad:"linear-gradient(135deg,#181008,#281c0c,#140a04)"},
+      {id:"bg_#080818",name:"SAPPHIRE 2",grad:"linear-gradient(135deg,#080818,#0c0c28,#050514)"},
+      {id:"bg_#180808",name:"GARNET",grad:"linear-gradient(135deg,#180808,#280c0c,#140505)"},
+      {id:"bg_#081818",name:"JADE 2",grad:"linear-gradient(135deg,#081818,#0c2828,#051414)"},
+      {id:"bg_#181808",name:"TOPAZ",grad:"linear-gradient(135deg,#181808,#28280c,#141405)"},
+      {id:"bg_#0f0a1e",name:"NEON NIGHT",grad:"linear-gradient(135deg,#0f0a1e,#1a0f33,#0a0518)"},
+      {id:"bg_#1e0a0f",name:"BLOOD MOON",grad:"linear-gradient(135deg,#1e0a0f,#330f1a,#18050a)"},
+      {id:"bg_#0a1e0f",name:"TOXIC",grad:"linear-gradient(135deg,#0a1e0f,#0f331a,#05180a)"},
+      {id:"bg_#1e1e0a",name:"ACID",grad:"linear-gradient(135deg,#1e1e0a,#33330f,#181805)"},
+      {id:"bg_#0a0f1e",name:"FROST",grad:"linear-gradient(135deg,#0a0f1e,#0f1a33,#050a18)"},
+      {id:"bg_#1e0a1e",name:"NEON PINK",grad:"linear-gradient(135deg,#1e0a1e,#330f33,#180518)"},
+      {id:"bg_#0f1e0a",name:"MATRIX",grad:"linear-gradient(135deg,#0f1e0a,#1a330f,#0a1805)"},
+      {id:"bg_#0a0a1e",name:"MIDNIGHT BLUE",grad:"linear-gradient(135deg,#0a0a1e,#0f0f33,#050518)"},
+      {id:"bg_#1e0f0a",name:"SUNSET",grad:"linear-gradient(135deg,#1e0f0a,#331a0f,#180a05)"},
+      {id:"bg_#0a1e1e",name:"CYBERPUNK",grad:"linear-gradient(135deg,#0a1e1e,#0f3333,#051818)"},
+      {id:"bg_#1e1e1e",name:"CHROME",grad:"linear-gradient(135deg,#1e1e1e,#333333,#181818)"},
+      {id:"bg_#0d0015",name:"ULTRAVIOLET",grad:"linear-gradient(135deg,#0d0015,#1a002a,#060010)"},
+      {id:"bg_#150000",name:"SCARLET",grad:"linear-gradient(135deg,#150000,#2a0000,#100000)"},
+      {id:"bg_#001500",name:"EMERALD 2",grad:"linear-gradient(135deg,#001500,#002a00,#001000)"},
+      {id:"bg_#000015",name:"SAPPHIRE 3",grad:"linear-gradient(135deg,#000015,#00002a,#000010)"},
+      {id:"bg_#151500",name:"OLIVE",grad:"linear-gradient(135deg,#151500,#2a2a00,#101000)"},
+      {id:"bg_#150015",name:"FUSCHIA DARK",grad:"linear-gradient(135deg,#150015,#2a002a,#100010)"},
+      {id:"bg_#001515",name:"TEAL DARK",grad:"linear-gradient(135deg,#001515,#002a2a,#001010)"},
+      {id:"bg_#0a0a0a",name:"VOID 2",grad:"linear-gradient(135deg,#0a0a0a,#141414,#050505)"},
+      {id:"bg_#1a0515",name:"CRIMSON DARK",grad:"linear-gradient(135deg,#1a0515,#2e0820,#120310)"},
+      {id:"bg_#051a15",name:"FOREST DARK",grad:"linear-gradient(135deg,#051a15,#082e20,#031210)"},
+      {id:"bg_#151a05",name:"MOSS",grad:"linear-gradient(135deg,#151a05,#202e08,#101203)"},
+    ];
+
+    const bgPaletteGrid = $("#bgPaletteGrid");
+    if (bgPaletteGrid) {
+      bgGradients.forEach(bg => {
+        const btn = document.createElement("button");
+        btn.className = "palette-swatch palette-swatch--bg";
+        btn.dataset.bg = bg.id;
+        btn.innerHTML = `<span class="swatch-fill swatch-fill--bg" style="background:${bg.grad}"></span><span class="swatch-label">${bg.name}</span>`;
+        btn.onclick = async () => {
+          document.body.setAttribute("data-background", bg.id);
+          $$(".palette-swatch", bgPaletteGrid).forEach(x => x.classList.toggle("is-active", x === btn));
+          if (background && background.setThemeColor && me) background.setThemeColor(me.bgColor || "default");
+          try {
+            await apiJson("/api/background/set", { method: "POST", body: { backgroundId: bg.id } });
+            if (me) me.activeBackground = bg.id;
+            showToast("Фон обновлен");
+          } catch (e) { showToast("Ошибка сохранения"); }
+        };
+        bgPaletteGrid.appendChild(btn);
+      });
+    }
+
     const bgPaletteBtn = $("#bgPaletteBtn");
     const bgPaletteModal = $("#bgPaletteModal");
-    const bgPaletteGrid = $("#bgPaletteGrid");
     if (bgPaletteBtn && bgPaletteModal) {
       bgPaletteBtn.onclick = () => {
         const currentBg = me ? (me.activeBackground || "HOLO") : "HOLO";
@@ -693,24 +839,6 @@
         });
         bgPaletteModal.classList.remove("hidden");
       };
-      if (bgPaletteGrid) {
-        $$(".palette-swatch", bgPaletteGrid).forEach(s => {
-          s.onclick = async () => {
-            const bgId = s.dataset.bg;
-            if (!bgId) return;
-            try {
-              document.body.setAttribute("data-background", bgId);
-              $$(".palette-swatch", bgPaletteGrid).forEach(x => x.classList.toggle("is-active", x === s));
-              if (background && background.setThemeColor && me) background.setThemeColor(me.bgColor || "default");
-              await apiJson("/api/background/set", { method: "POST", body: { backgroundId: bgId } });
-              if (me) me.activeBackground = bgId;
-              showToast("Фон обновлен");
-            } catch (e) {
-              showToast("Ошибка сохранения");
-            }
-          };
-        });
-      }
     }
   }
       });
@@ -1021,10 +1149,15 @@
     const bg = u.activeBackground || 'HOLO';
     document.body.setAttribute('data-theme', theme);
     document.body.setAttribute('data-background', bg);
+    if (theme.startsWith('c_')) {
+      const hex = theme.slice(2);
+      document.documentElement.style.setProperty('--theme-glow', hexToRgb(hex));
+    } else {
+      document.documentElement.style.setProperty('--theme-glow', '255, 255, 255');
+    }
     if (background && background.setThemeColor) background.setThemeColor(theme);
-    // persist to localStorage so it survives page reload
-    try { 
-      if (theme !== 'default') localStorage.setItem('dv_theme', theme); 
+    try {
+      if (theme !== 'default') localStorage.setItem('dv_theme', theme);
     } catch(_){}
   }
 
@@ -1428,33 +1561,6 @@
           }
         }, "image/jpeg", 0.9);
     });
-
-    // Color Theme Picker Logic
-    const colorPicker = $("#colorPicker");
-    if (colorPicker && !colorPicker.dataset.initialized) {
-      colorPicker.dataset.initialized = "true";
-      const buttons = $$(".colorBtn", colorPicker);
-      buttons.forEach(btn => {
-        btn.onclick = async () => {
-          const color = btn.dataset.color;
-          if (!color) return;
-          
-          try {
-            // Update UI immediately
-            document.body.setAttribute('data-theme', color);
-            buttons.forEach(b => b.classList.toggle("active", b === btn));
-            if (background && background.setThemeColor) background.setThemeColor(color);
-            
-            // Save to DB
-            await apiJson("/api/profile/update", { method: "POST", body: { bgColor: color } });
-            if (me) me.bgColor = color;
-            showToast("Цвет обновлен");
-          } catch(e) {
-            showToast("Ошибка сохранения");
-          }
-        };
-      });
-    }
   }
 
   let currentParticipants = [];
